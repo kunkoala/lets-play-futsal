@@ -41,9 +41,10 @@ export function AttendanceChecklist({
                 value={player.id}
                 label={player.name}
                 defaultChecked={initialSet.has(player.id)}
-                onChange={(e) =>
-                  setCount((c) => c + (e.currentTarget.checked ? 1 : -1))
-                }
+                onChange={(e) => {
+                  const { checked } = e.currentTarget;
+                  setCount((c) => c + (checked ? 1 : -1));
+                }}
               />
             ))}
             {players.length === 0 && (

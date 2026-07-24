@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Expanded:wght@600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  body{margin:0;background:#e9e7e1;font-family:'Archivo',system-ui,sans-serif}
+  a{color:inherit}
+  .dv-turn{padding:48px 52px 40px;border-bottom:1px solid rgba(0,0,0,.08);scroll-margin-top:16px}
+  .dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 26px}
+  .dv-tid{font:700 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:#12141a;color:#fff;border-radius:4px;text-decoration:none}
+  .dv-tname{font:700 13px/1.2 'Archivo',sans-serif;color:#12141a}
+  .dv-opts{display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start}
+  .dv-opt{flex:none;display:flex;flex-direction:column;gap:11px;scroll-margin-top:16px}
+  .dv-oid{font:700 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:rgba(0,0,0,.09);color:#12141a;border-radius:5px;text-decoration:none}
+  .dv-olabel{display:flex;align-items:baseline;gap:9px;font:500 11.5px/1.3 'Archivo',sans-serif;color:rgba(0,0,0,.55)}
+  .dv-opt:target .dv-oid{background:#12141a;color:#c8ff2f}
+  .dv-next{margin:30px 0 0;font:400 12px/1.6 'Archivo',sans-serif;color:rgba(0,0,0,.5)}
+  .ipad{background:#0a0b0e;border-radius:36px;padding:16px;box-shadow:0 30px 70px -30px rgba(0,0,0,.55),0 2px 0 rgba(255,255,255,.05) inset}
+  .ipad-screen{width:1000px;height:750px;border-radius:20px;overflow:hidden;background:#12141a;position:relative;color:#f4f5f7}
+  .phone{background:#0a0b0e;border-radius:44px;padding:12px;box-shadow:0 24px 56px -26px rgba(0,0,0,.55)}
+  .phone-screen{width:390px;height:800px;border-radius:34px;overflow:hidden;background:#12141a;position:relative;color:#f4f5f7}
+  .disp{font-family:'Archivo Expanded','Archivo',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+  .num{font-variant-numeric:tabular-nums}
+  ::-webkit-scrollbar{width:0;height:0}
+  @keyframes popIn{from{opacity:0;transform:translateY(8px) scale(.9)}to{opacity:1;transform:none}}
+</style>
+</helmet>
+
+<section class="dv-turn" id="t4">
+  <div class="dv-thd"><a class="dv-tid" href="#t4">4</a><span class="dv-tname">Public pages — desktop (~1280px), spotlight language</span></div>
+
+  <div class="dv-opts">
+
+    <!-- ============ 4a — LEADERBOARD DESKTOP ============ -->
+    <div class="dv-opt" id="4a">
+      <div class="dv-olabel"><a class="dv-oid" href="#4a">4a</a>Leaderboard — desktop</div>
+      <div style="width:1280px;max-width:100%;background:#0a0b0e;border-radius:16px;box-shadow:0 30px 70px -30px rgba(0,0,0,.55);overflow:hidden">
+        <div style="display:flex;align-items:center;gap:8px;padding:12px 16px;background:#1b1e26;border-bottom:1px solid rgba(255,255,255,.06)"><span style="width:11px;height:11px;border-radius:50%;background:#ff5f57"></span><span style="width:11px;height:11px;border-radius:50%;background:#febc2e"></span><span style="width:11px;height:11px;border-radius:50%;background:#28c840"></span><span style="margin-left:12px;font:500 12px ui-monospace,monospace;color:rgba(244,245,247,.45);background:#12141a;padding:5px 14px;border-radius:8px">futsal.ppibs.de</span></div>
+        <div style="background:#12141a;color:#f4f5f7">
+          <!-- navbar -->
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 40px;border-bottom:1px solid rgba(255,255,255,.06)">
+            <div style="display:flex;align-items:center;gap:11px"><span style="width:30px;height:30px;border-radius:9px;background:#c8ff2f;display:flex;align-items:center;justify-content:center;font-size:17px">⚽</span><span style="font:800 13px 'Archivo';letter-spacing:.1em;text-transform:uppercase">PPI Braunschweiger Futsal</span></div>
+            <div style="display:flex;align-items:center;gap:26px;font:600 13px 'Archivo';color:rgba(244,245,247,.6)"><span style="color:#c8ff2f">Leaderboard</span><span>Sessions</span><span>Awards</span><span style="font-size:11px;color:rgba(244,245,247,.55);background:#232732;padding:6px 12px;border-radius:20px">Odd Sem ’26 ▾</span></div>
+          </div>
+          <div style="padding:36px 40px;display:grid;grid-template-columns:380px 1fr;gap:28px">
+            <!-- hero -->
+            <div style="border-radius:22px;background:linear-gradient(150deg,#c8ff2f,#8fdc12);color:#12141a;padding:30px;position:relative;overflow:hidden;align-self:start">
+              <div style="position:absolute;right:-30px;bottom:-46px;font-size:190px;opacity:.13;font-family:'Archivo Expanded'">⚽</div>
+              <div style="font:800 10px 'Archivo';letter-spacing:.16em;text-transform:uppercase;opacity:.7">Top scorer · this season</div>
+              <div style="width:64px;height:64px;border-radius:18px;background:rgba(18,20,26,.14);display:flex;align-items:center;justify-content:center;font:800 24px 'Archivo';margin:18px 0 14px">FK</div>
+              <div class="disp" style="font-weight:900;font-size:44px;line-height:.95">FIKRI</div>
+              <div style="display:flex;align-items:baseline;gap:10px;margin-top:14px"><span class="disp" style="font-weight:900;font-size:80px;line-height:.8">12</span><div style="font-size:13px;font-weight:700;line-height:1.4">goals<br>6 games · 5 assists</div></div>
+            </div>
+            <!-- table -->
+            <div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+                <h2 class="disp" style="margin:0;font-weight:900;font-size:24px">SEASON STANDINGS</h2>
+                <div style="display:flex;gap:8px">
+                  <span style="font:700 12px 'Archivo';padding:8px 14px;border-radius:10px;background:#232732;color:#c8ff2f;border:1px solid #c8ff2f">Goals</span>
+                  <span style="font:600 12px 'Archivo';padding:8px 14px;border-radius:10px;background:#1b1e26;color:rgba(244,245,247,.6)">Assists</span>
+                  <span style="font:600 12px 'Archivo';padding:8px 14px;border-radius:10px;background:#1b1e26;color:rgba(244,245,247,.6)">Wins</span>
+                  <span style="font:600 12px 'Archivo';padding:8px 14px;border-radius:10px;background:#1b1e26;color:rgba(244,245,247,.6)">Win%</span>
+                </div>
+              </div>
+              <div style="border-radius:16px;background:#1b1e26;overflow:hidden">
+                <div style="display:grid;grid-template-columns:44px 1fr 60px 60px 60px 60px 60px 72px;padding:14px 20px;font:700 10px 'Archivo';letter-spacing:.08em;text-transform:uppercase;color:rgba(244,245,247,.4)"><span>#</span><span>Player</span><span style="text-align:right">G</span><span style="text-align:right">A</span><span style="text-align:right">W</span><span style="text-align:right">D</span><span style="text-align:right">L</span><span style="text-align:right">Win%</span></div>
+                <div style="display:grid;grid-template-columns:44px 1fr 60px 60px 60px 60px 60px 72px;align-items:center;padding:15px 20px;border-top:1px solid rgba(255,255,255,.06)"><span class="num disp" style="font-weight:800;color:#c8ff2f">1</span><span style="display:flex;align-items:center;gap:10px;font-weight:600"><span style="width:9px;height:9px;border-radius:3px;background:#ff4d57"></span>Fikri</span><span class="disp" style="text-align:right;font-weight:800;font-size:17px">12</span><span class="num" style="text-align:right;color:rgba(244,245,247,.6)">5</span><span class="num" style="text-align:right;color:rgba(244,245,247,.6)">4</span><span class="num" style="text-align:right;color:rgba(244,245,247,.6)">1</span><span class="num" style="text-align:right;color:rgba(244,245,247,.6)">1</span><span class="num" style="text-align:right;color:rgba(244,245,247,.6)">67%</span></div>
+                <div style="display:grid;grid-template-columns:44px 1fr 60px 60px 60px 60px 60px 72px;align-items:center;padding:15px 20px;border-top:1px solid rgba(255,255,255,.06)"><span class="num disp" style="font-weight:800;color:rgba(244,245,247,.5)">2</span><span style="display:flex;align-items:center;gap:10px;font-weight:600"><span style="width:9px;height:9px;border-radius:3px;background:#b06bff"></span>Dimas</span><span class="disp" style="text-align:right;font-weight:800;font-size:17px">9</span><span class="num" style="text-align:right;color:rgba(244,245,247,.6)">3</span><span class="num" style="text-align:right;color:rgba(244,245,247,.6)">3</span><span class="num" style="text-align:right;color:rgba(244,245,247,.6)">2</span><span class="num" style="text-align:right;color:rgba(244,245,247,.6)">1</span><span class="num" style="text-align:right;color:rgba(244,245,247,.6)">50%</span></div>
+                <div style="display:grid;grid-template-columns:44px 1fr 60px 60px 60px 60px 60px 72px;align-items:center;padding:15px 20px;border-top:1px solid rgba(255,255,255,.06)"><span class="num disp" style="font-weight:800;color:rgba(244,245,247,.5)">3</span><span style="display:flex;align-items:center;gap:10px;font-weight:600"><span style="width:9px;height:9px;border-radius:3px;background:#2fd06a"></span>Yusuf</span><span class="disp" style="text-align:right;font-weight:800;font-size:17px">7</span><span class="num" style="text-align:right;color:rgba(244,245,247,.6)">6</span><span class="num" style="text-align:right;color:rgba(244,245,247,.6)">5</span><span class="num" style="text-align:right;color:rgba(244,245,247,.6)">1</span><span class="num" style="text-align:right;color:rgba(244,245,247,.6)">1</span><span class="num" style="text-align:right;color:rgba(244,245,247,.6)">71%</span></div>
+                <div style="display:grid;grid-template-columns:44px 1fr 60px 60px 60px 60px 60px 72px;align-items:center;padding:15px 20px;border-top:1px solid rgba(255,255,255,.06)"><span class="num disp" style="font-weight:800;color:rgba(244,245,247,.5)">4</span><span style="display:flex;align-items:center;gap:10px;font-weight:600"><span style="width:9px;height:9px;border-radius:3px;background:#ffcb2b"></span>Raka</span><span class="disp" style="text-align:right;font-weight:800;font-size:17px">6</span><span class="num" style="text-align:right;color:rgba(244,245,247,.6)">4</span><span class="num" style="text-align:right;color:rgba(244,245,247,.6)">2</span><span class="num" style="text-align:right;color:rgba(244,245,247,.6)">3</span><span class="num" style="text-align:right;color:rgba(244,245,247,.6)">2</span><span class="num" style="text-align:right;color:rgba(244,245,247,.6)">29%</span></div>
+                <div style="display:grid;grid-template-columns:44px 1fr 60px 60px 60px 60px 60px 72px;align-items:center;padding:15px 20px;border-top:1px solid rgba(255,255,255,.06)"><span class="num disp" style="font-weight:800;color:rgba(244,245,247,.5)">5</span><span style="display:flex;align-items:center;gap:10px;font-weight:600"><span style="width:9px;height:9px;border-radius:3px;background:#2fd06a"></span>Rizky</span><span class="disp" style="text-align:right;font-weight:800;font-size:17px">5</span><span class="num" style="text-align:right;color:rgba(244,245,247,.6)">2</span><span class="num" style="text-align:right;color:rgba(244,245,247,.6)">4</span><span class="num" style="text-align:right;color:rgba(244,245,247,.6)">1</span><span class="num" style="text-align:right;color:rgba(244,245,247,.6)">1</span><span class="num" style="text-align:right;color:rgba(244,245,247,.6)">67%</span></div>
+                <div style="display:grid;grid-template-columns:44px 1fr 60px 60px 60px 60px 60px 72px;align-items:center;padding:15px 20px;border-top:1px solid rgba(255,255,255,.06)"><span class="num disp" style="font-weight:800;color:rgba(244,245,247,.5)">6</span><span style="display:flex;align-items:center;gap:10px;font-weight:600"><span style="width:9px;height:9px;border-radius:3px;background:#ff4d57"></span>Bagus</span><span class="disp" style="text-align:right;font-weight:800;font-size:17px">4</span><span class="num" style="text-align:right;color:rgba(244,245,247,.6)">1</span><span class="num" style="text-align:right;color:rgba(244,245,247,.6)">3</span><span class="num" style="text-align:right;color:rgba(244,245,247,.6)">2</span><span class="num" style="text-align:right;color:rgba(244,245,247,.6)">1</span><span class="num" style="text-align:right;color:rgba(244,245,247,.6)">50%</span></div>
+                <div style="display:grid;grid-template-columns:44px 1fr 60px 60px 60px 60px 60px 72px;align-items:center;padding:15px 20px;border-top:1px solid rgba(255,255,255,.06)"><span class="num disp" style="font-weight:800;color:rgba(244,245,247,.5)">7</span><span style="display:flex;align-items:center;gap:10px;font-weight:600"><span style="width:9px;height:9px;border-radius:3px;background:#4d8bff"></span>Aditya</span><span class="disp" style="text-align:right;font-weight:800;font-size:17px">3</span><span class="num" style="text-align:right;color:rgba(244,245,247,.6)">2</span><span class="num" style="text-align:right;color:rgba(244,245,247,.6)">2</span><span class="num" style="text-align:right;color:rgba(244,245,247,.6)">2</span><span class="num" style="text-align:right;color:rgba(244,245,247,.6)">2</span><span class="num" style="text-align:right;color:rgba(244,245,247,.6)">33%</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 4b — PLAYER PROFILE DESKTOP ============ -->
+    <div class="dv-opt" id="4b">
+      <div class="dv-olabel"><a class="dv-oid" href="#4b">4b</a>Player profile — desktop</div>
+      <div style="width:1280px;max-width:100%;background:#0a0b0e;border-radius:16px;box-shadow:0 30px 70px -30px rgba(0,0,0,.55);overflow:hidden">
+        <div style="display:flex;align-items:center;gap:8px;padding:12px 16px;background:#1b1e26;border-bottom:1px solid rgba(255,255,255,.06)"><span style="width:11px;height:11px;border-radius:50%;background:#ff5f57"></span><span style="width:11px;height:11px;border-radius:50%;background:#febc2e"></span><span style="width:11px;height:11px;border-radius:50%;background:#28c840"></span><span style="margin-left:12px;font:500 12px ui-monospace,monospace;color:rgba(244,245,247,.45);background:#12141a;padding:5px 14px;border-radius:8px">futsal.ppibs.de/players/fikri</span></div>
+        <div style="background:#12141a;color:#f4f5f7">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 40px;border-bottom:1px solid rgba(255,255,255,.06)">
+            <div style="display:flex;align-items:center;gap:11px"><span style="width:30px;height:30px;border-radius:9px;background:#c8ff2f;display:flex;align-items:center;justify-content:center;font-size:17px">⚽</span><span style="font:800 13px 'Archivo';letter-spacing:.1em;text-transform:uppercase">PPI Braunschweiger Futsal</span></div>
+            <div style="display:flex;align-items:center;gap:26px;font:600 13px 'Archivo';color:rgba(244,245,247,.6)"><span>Leaderboard</span><span>Sessions</span><span>Awards</span></div>
+          </div>
+          <div style="padding:36px 40px;display:grid;grid-template-columns:360px 1fr;gap:28px;align-items:start">
+            <div style="border-radius:22px;background:linear-gradient(150deg,#1b1e26,#12141a);border:1px solid rgba(255,255,255,.08);padding:30px">
+              <div style="width:70px;height:70px;border-radius:20px;background:#232732;border:2px solid #ff4d57;display:flex;align-items:center;justify-content:center;font:800 26px 'Archivo';margin-bottom:18px">FK</div>
+              <div class="disp" style="font-weight:900;font-size:40px;line-height:1">FIKRI</div>
+              <div style="font-size:13px;color:rgba(244,245,247,.5);margin-top:6px">Usually Red · 6 games this season</div>
+              <div style="display:flex;gap:10px;margin-top:24px">
+                <div style="flex:1;text-align:center;padding:16px 0;border-radius:14px;background:#12141a"><div class="disp" style="font-weight:900;font-size:30px;color:#c8ff2f">12</div><div style="font:700 9px 'Archivo';letter-spacing:.08em;color:rgba(244,245,247,.45)">GOALS</div></div>
+                <div style="flex:1;text-align:center;padding:16px 0;border-radius:14px;background:#12141a"><div class="disp" style="font-weight:900;font-size:30px">5</div><div style="font:700 9px 'Archivo';letter-spacing:.08em;color:rgba(244,245,247,.45)">ASSISTS</div></div>
+                <div style="flex:1;text-align:center;padding:16px 0;border-radius:14px;background:#12141a"><div class="disp" style="font-weight:900;font-size:30px">4</div><div style="font:700 9px 'Archivo';letter-spacing:.08em;color:rgba(244,245,247,.45)">WINS</div></div>
+              </div>
+              <div style="margin-top:20px;padding-top:18px;border-top:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-between;align-items:center"><span style="font:700 10px 'Archivo';letter-spacing:.1em;text-transform:uppercase;color:rgba(244,245,247,.4)">All-time</span><span style="font-size:13px;color:rgba(244,245,247,.7)">31 G · 14 A · 11 W · 18 games</span></div>
+            </div>
+            <div>
+              <h2 class="disp" style="margin:0 0 16px;font-weight:900;font-size:22px">SESSION HISTORY</h2>
+              <div style="border-radius:16px;background:#1b1e26;overflow:hidden">
+                <div style="display:grid;grid-template-columns:1fr 130px 90px 80px 80px 70px;padding:14px 22px;font:700 10px 'Archivo';letter-spacing:.08em;text-transform:uppercase;color:rgba(244,245,247,.4)"><span>Matchday</span><span>Date</span><span>Team</span><span style="text-align:right">Goals</span><span style="text-align:right">Assists</span><span style="text-align:right">Result</span></div>
+                <div style="display:grid;grid-template-columns:1fr 130px 90px 80px 80px 70px;align-items:center;padding:15px 22px;border-top:1px solid rgba(255,255,255,.06)"><span style="font-weight:600">Matchday 07</span><span style="color:rgba(244,245,247,.55);font-size:13px">Sat 18 Jul</span><span style="display:flex;align-items:center;gap:7px;font-size:13px"><span style="width:9px;height:9px;border-radius:3px;background:#ff4d57"></span>Red</span><span class="disp" style="text-align:right;font-weight:800">3</span><span class="disp" style="text-align:right;font-weight:800">1</span><span style="text-align:right"><span style="font:800 11px 'Archivo';color:#c8ff2f;background:rgba(200,255,47,.14);padding:4px 8px;border-radius:6px">W</span></span></div>
+                <div style="display:grid;grid-template-columns:1fr 130px 90px 80px 80px 70px;align-items:center;padding:15px 22px;border-top:1px solid rgba(255,255,255,.06)"><span style="font-weight:600">Matchday 06</span><span style="color:rgba(244,245,247,.55);font-size:13px">Sat 11 Jul</span><span style="display:flex;align-items:center;gap:7px;font-size:13px"><span style="width:9px;height:9px;border-radius:3px;background:#4d8bff"></span>Blue</span><span class="disp" style="text-align:right;font-weight:800">2</span><span class="disp" style="text-align:right;font-weight:800">0</span><span style="text-align:right"><span style="font:800 11px 'Archivo';color:rgba(244,245,247,.55);background:rgba(255,255,255,.08);padding:4px 8px;border-radius:6px">D</span></span></div>
+                <div style="display:grid;grid-template-columns:1fr 130px 90px 80px 80px 70px;align-items:center;padding:15px 22px;border-top:1px solid rgba(255,255,255,.06)"><span style="font-weight:600">Matchday 05</span><span style="color:rgba(244,245,247,.55);font-size:13px">Sat 04 Jul</span><span style="display:flex;align-items:center;gap:7px;font-size:13px"><span style="width:9px;height:9px;border-radius:3px;background:#ff4d57"></span>Red</span><span class="disp" style="text-align:right;font-weight:800">4</span><span class="disp" style="text-align:right;font-weight:800">2</span><span style="text-align:right"><span style="font:800 11px 'Archivo';color:#c8ff2f;background:rgba(200,255,47,.14);padding:4px 8px;border-radius:6px">W</span></span></div>
+                <div style="display:grid;grid-template-columns:1fr 130px 90px 80px 80px 70px;align-items:center;padding:15px 22px;border-top:1px solid rgba(255,255,255,.06)"><span style="font-weight:600">Matchday 04</span><span style="color:rgba(244,245,247,.55);font-size:13px">Sat 27 Jun</span><span style="display:flex;align-items:center;gap:7px;font-size:13px"><span style="width:9px;height:9px;border-radius:3px;background:#2fd06a"></span>Green</span><span class="disp" style="text-align:right;font-weight:800">1</span><span class="disp" style="text-align:right;font-weight:800">1</span><span style="text-align:right"><span style="font:800 11px 'Archivo';color:#ff8a8a;background:rgba(255,77,87,.14);padding:4px 8px;border-radius:6px">L</span></span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 4c — AWARDS DESKTOP ============ -->
+    <div class="dv-opt" id="4c">
+      <div class="dv-olabel"><a class="dv-oid" href="#4c">4c</a>Season awards — desktop</div>
+      <div style="width:1280px;max-width:100%;background:#0a0b0e;border-radius:16px;box-shadow:0 30px 70px -30px rgba(0,0,0,.55);overflow:hidden">
+        <div style="display:flex;align-items:center;gap:8px;padding:12px 16px;background:#1b1e26;border-bottom:1px solid rgba(255,255,255,.06)"><span style="width:11px;height:11px;border-radius:50%;background:#ff5f57"></span><span style="width:11px;height:11px;border-radius:50%;background:#febc2e"></span><span style="width:11px;height:11px;border-radius:50%;background:#28c840"></span><span style="margin-left:12px;font:500 12px ui-monospace,monospace;color:rgba(244,245,247,.45);background:#12141a;padding:5px 14px;border-radius:8px">futsal.ppibs.de/awards</span></div>
+        <div style="background:#12141a;color:#f4f5f7">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 40px;border-bottom:1px solid rgba(255,255,255,.06)">
+            <div style="display:flex;align-items:center;gap:11px"><span style="width:30px;height:30px;border-radius:9px;background:#c8ff2f;display:flex;align-items:center;justify-content:center;font-size:17px">⚽</span><span style="font:800 13px 'Archivo';letter-spacing:.1em;text-transform:uppercase">PPI Braunschweiger Futsal</span></div>
+            <div style="display:flex;align-items:center;gap:26px;font:600 13px 'Archivo';color:rgba(244,245,247,.6)"><span>Leaderboard</span><span>Sessions</span><span style="color:#c8ff2f">Awards</span></div>
+          </div>
+          <div style="padding:36px 40px">
+            <div style="text-align:center;margin-bottom:24px"><div style="font:700 10px 'Archivo';letter-spacing:.18em;text-transform:uppercase;color:rgba(244,245,247,.45)">Odd Semester 2026</div><h2 class="disp" style="margin:6px 0 0;font-weight:900;font-size:34px">SEASON AWARDS</h2></div>
+            <!-- MVP banner -->
+            <div style="border-radius:22px;background:linear-gradient(135deg,#c8ff2f,#8fdc12);color:#12141a;padding:32px 40px;display:flex;align-items:center;gap:28px;position:relative;overflow:hidden;margin-bottom:20px">
+              <div style="position:absolute;right:40px;top:-20px;font-size:150px;opacity:.14;font-family:'Archivo Expanded'">★</div>
+              <div style="font-size:60px">🏆</div>
+              <div><div style="font:800 11px 'Archivo';letter-spacing:.18em;text-transform:uppercase;opacity:.7">MVP · Admin's pick</div><div class="disp" style="font-weight:900;font-size:48px;line-height:1;margin:6px 0 6px">DIMAS</div><div style="font-size:14px;font-weight:600;opacity:.82">"Carried every clutch moment this semester."</div></div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px">
+              <div style="border-radius:18px;background:#1b1e26;padding:24px">
+                <div style="display:flex;align-items:center;gap:9px;margin-bottom:16px"><span style="font-size:18px">⚽</span><span style="font:800 12px 'Archivo';letter-spacing:.1em;text-transform:uppercase">Top Scorer</span></div>
+                <div style="display:flex;align-items:center;gap:12px;padding-bottom:12px"><span class="num disp" style="font-weight:800;color:#c8ff2f;width:18px">1</span><span style="flex:1;font-weight:700;font-size:15px">Fikri</span><span class="disp" style="font-weight:900;font-size:22px;color:#c8ff2f">12</span></div>
+                <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-top:1px solid rgba(255,255,255,.06)"><span class="num disp" style="font-weight:800;color:rgba(244,245,247,.4);width:18px">2</span><span style="flex:1;font-weight:600;color:rgba(244,245,247,.8)">Dimas</span><span class="disp" style="font-weight:800;font-size:17px">9</span></div>
+                <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-top:1px solid rgba(255,255,255,.06)"><span class="num disp" style="font-weight:800;color:rgba(244,245,247,.4);width:18px">3</span><span style="flex:1;font-weight:600;color:rgba(244,245,247,.8)">Yusuf</span><span class="disp" style="font-weight:800;font-size:17px">7</span></div>
+              </div>
+              <div style="border-radius:18px;background:#1b1e26;padding:24px">
+                <div style="display:flex;align-items:center;gap:9px;margin-bottom:16px"><span style="font-size:18px">🅰</span><span style="font:800 12px 'Archivo';letter-spacing:.1em;text-transform:uppercase">Top Assists</span></div>
+                <div style="display:flex;align-items:center;gap:12px;padding-bottom:12px"><span class="num disp" style="font-weight:800;color:#4d8bff;width:18px">1</span><span style="flex:1;font-weight:700;font-size:15px">Yusuf</span><span class="disp" style="font-weight:900;font-size:22px;color:#4d8bff">6</span></div>
+                <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-top:1px solid rgba(255,255,255,.06)"><span class="num disp" style="font-weight:800;color:rgba(244,245,247,.4);width:18px">2</span><span style="flex:1;font-weight:600;color:rgba(244,245,247,.8)">Fikri</span><span class="disp" style="font-weight:800;font-size:17px">5</span></div>
+                <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-top:1px solid rgba(255,255,255,.06)"><span class="num disp" style="font-weight:800;color:rgba(244,245,247,.4);width:18px">3</span><span style="flex:1;font-weight:600;color:rgba(244,245,247,.8)">Raka</span><span class="disp" style="font-weight:800;font-size:17px">4</span></div>
+              </div>
+              <div style="border-radius:18px;background:#1b1e26;padding:24px">
+                <div style="display:flex;align-items:center;gap:9px;margin-bottom:16px"><span style="font-size:18px">🥇</span><span style="font:800 12px 'Archivo';letter-spacing:.1em;text-transform:uppercase">Most Wins</span></div>
+                <div style="display:flex;align-items:center;gap:12px;padding-bottom:12px"><span class="num disp" style="font-weight:800;color:#2fd06a;width:18px">1</span><span style="flex:1;font-weight:700;font-size:15px">Yusuf</span><span class="disp" style="font-weight:900;font-size:22px;color:#2fd06a">5</span></div>
+                <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-top:1px solid rgba(255,255,255,.06)"><span class="num disp" style="font-weight:800;color:rgba(244,245,247,.4);width:18px">2</span><span style="flex:1;font-weight:600;color:rgba(244,245,247,.8)">Rizky</span><span class="disp" style="font-weight:800;font-size:17px">4</span></div>
+                <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-top:1px solid rgba(255,255,255,.06)"><span class="num disp" style="font-weight:800;color:rgba(244,245,247,.4);width:18px">3</span><span style="flex:1;font-weight:600;color:rgba(244,245,247,.8)">Fikri</span><span class="disp" style="font-weight:800;font-size:17px">4</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <p class="dv-next">Try next: “add a desktop sessions list + session detail” · “now build the Claude Code handoff”</p>
+</section>
+<section class="dv-turn" id="t3">
+  <div class="dv-thd"><a class="dv-tid" href="#t3">3</a><span class="dv-tname">Admin dashboard (responsive desktop) + interactive shuffle reveal — <span style="color:#c8ff2f">tap SHUFFLE in <a class="dv-oid" href="#3b" style="color:#c8ff2f">3b</a></span></span></div>
+
+  <div class="dv-opts">
+
+    <!-- ============ 3b — ANIMATED SHUFFLE REVEAL (interactive) ============ -->
+    <div class="dv-opt" id="3b">
+      <div class="dv-olabel"><a class="dv-oid" href="#3b">3b</a>Shuffle reveal — live slot-machine → locks teams · iPad landscape · <b style="color:#12141a">tap the button</b></div>
+      <div class="ipad">
+        <div class="ipad-screen" style="display:flex;flex-direction:column;padding:26px 28px">
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px">
+            <div>
+              <div style="font:700 10px 'Archivo';letter-spacing:.16em;text-transform:uppercase;color:#c8ff2f">Matchday 08 · draft</div>
+              <h2 class="disp" style="margin:4px 0 0;font-weight:900;font-size:30px;line-height:1">MAKE THE TEAMS</h2>
+              <div style="font-size:12.5px;color:rgba(244,245,247,.5);margin-top:4px">{{ statusLabel }}</div>
+            </div>
+            <sc-if value="{{ isDone }}" hint-placeholder-val="{{ false }}">
+              <button onClick="{{ reset }}" style="all:unset;touch-action:manipulation;cursor:pointer;padding:12px 18px;border-radius:12px;background:#232732;font:700 12px 'Archivo';color:#f4f5f7">↺ Reshuffle</button>
+            </sc-if>
+          </div>
+          <div style="flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+            <div style="border-radius:18px;background:linear-gradient(180deg,#ff4d57,#c41f2b);padding:16px 14px;display:flex;flex-direction:column;gap:9px">
+              <div style="display:flex;align-items:center;justify-content:space-between;color:#fff;margin-bottom:2px"><span class="disp" style="font-weight:900;font-size:18px">RED</span><span style="font:700 11px 'Archivo';opacity:.8">5</span></div>
+              <sc-for list="{{ redSlots }}" as="slot" hint-placeholder-count="5"><div style="{{ slot.style }}">{{ slot.name }}</div></sc-for>
+            </div>
+            <div style="border-radius:18px;background:linear-gradient(180deg,#4d8bff,#1e56c9);padding:16px 14px;display:flex;flex-direction:column;gap:9px">
+              <div style="display:flex;align-items:center;justify-content:space-between;color:#fff;margin-bottom:2px"><span class="disp" style="font-weight:900;font-size:18px">BLUE</span><span style="font:700 11px 'Archivo';opacity:.8">5</span></div>
+              <sc-for list="{{ blueSlots }}" as="slot" hint-placeholder-count="5"><div style="{{ slot.style }}">{{ slot.name }}</div></sc-for>
+            </div>
+            <div style="border-radius:18px;background:linear-gradient(180deg,#2fd06a,#149b47);padding:16px 14px;display:flex;flex-direction:column;gap:9px">
+              <div style="display:flex;align-items:center;justify-content:space-between;color:#fff;margin-bottom:2px"><span class="disp" style="font-weight:900;font-size:18px">GREEN</span><span style="font:700 11px 'Archivo';opacity:.8">4</span></div>
+              <sc-for list="{{ greenSlots }}" as="slot" hint-placeholder-count="4"><div style="{{ slot.style }}">{{ slot.name }}</div></sc-for>
+            </div>
+          </div>
+          <div style="display:flex;gap:12px;margin-top:20px">
+            <button onClick="{{ shuffle }}" style="all:unset;touch-action:manipulation;cursor:pointer;flex:2;text-align:center;padding:20px;border-radius:16px;background:#c8ff2f;color:#12141a;font-family:'Archivo Expanded';font-weight:900;font-size:20px;box-shadow:0 12px 30px -12px rgba(200,255,47,.6)">🎲 SHUFFLE TEAMS</button>
+            <sc-if value="{{ isDone }}" hint-placeholder-val="{{ false }}">
+              <button style="all:unset;touch-action:manipulation;cursor:pointer;flex:1;text-align:center;padding:20px;border-radius:16px;background:#232732;color:#f4f5f7;font-family:'Archivo Expanded';font-weight:900;font-size:16px">🔒 LOCK TEAMS</button>
+            </sc-if>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 3a — ADMIN DASHBOARD (responsive desktop) ============ -->
+    <div class="dv-opt" id="3a">
+      <div class="dv-olabel"><a class="dv-oid" href="#3a">3a</a>Admin dashboard — fluid grid, reflows to any width · desktop browser</div>
+      <div style="width:1120px;max-width:100%;background:#0a0b0e;border-radius:16px;box-shadow:0 30px 70px -30px rgba(0,0,0,.55);overflow:hidden">
+        <div style="display:flex;align-items:center;gap:8px;padding:12px 16px;background:#1b1e26;border-bottom:1px solid rgba(255,255,255,.06)">
+          <span style="width:11px;height:11px;border-radius:50%;background:#ff5f57"></span><span style="width:11px;height:11px;border-radius:50%;background:#febc2e"></span><span style="width:11px;height:11px;border-radius:50%;background:#28c840"></span>
+          <span style="margin-left:12px;font:500 12px ui-monospace,monospace;color:rgba(244,245,247,.45);background:#12141a;padding:5px 14px;border-radius:8px">futsal.ppibs.de/admin</span>
+        </div>
+        <div style="background:#12141a;color:#f4f5f7;padding:30px 34px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:26px">
+            <div style="display:flex;align-items:center;gap:11px"><span style="width:30px;height:30px;border-radius:9px;background:#c8ff2f;display:flex;align-items:center;justify-content:center;font-size:17px">⚽</span><span style="font:800 12px 'Archivo';letter-spacing:.12em;text-transform:uppercase">Matchday HQ</span></div>
+            <div style="display:flex;align-items:center;gap:14px"><span style="font:600 11px 'Archivo';color:#12141a;background:#c8ff2f;padding:5px 12px;border-radius:20px">Odd Semester 2026 · active</span><span style="font:600 12px 'Archivo';color:rgba(244,245,247,.5)">Log out</span></div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px">
+            <!-- resume big card -->
+            <div style="grid-column:span 2;min-width:0;border-radius:18px;background:linear-gradient(135deg,#1b1e26,#12141a);border:1px solid rgba(255,255,255,.08);padding:24px">
+              <div style="font:700 10px 'Archivo';letter-spacing:.14em;text-transform:uppercase;color:#c8ff2f">Session in progress</div>
+              <div class="disp" style="font-weight:900;font-size:28px;margin:8px 0 2px">MATCHDAY 08</div>
+              <div style="font-size:12.5px;color:rgba(244,245,247,.55)">Sat 25 Jul · 14 checked in · teams not locked</div>
+              <div style="display:flex;gap:10px;margin-top:18px">
+                <button style="all:unset;cursor:pointer;padding:13px 22px;border-radius:12px;background:#c8ff2f;color:#12141a;font:800 13px 'Archivo'">Resume session →</button>
+                <button style="all:unset;cursor:pointer;padding:13px 20px;border-radius:12px;background:#232732;font:700 13px 'Archivo'">New session</button>
+              </div>
+            </div>
+            <!-- snapshot -->
+            <div style="min-width:0;border-radius:18px;background:#1b1e26;padding:22px">
+              <div style="font:700 10px 'Archivo';letter-spacing:.14em;text-transform:uppercase;color:rgba(244,245,247,.4);margin-bottom:14px">Season snapshot</div>
+              <div style="display:flex;justify-content:space-between;align-items:baseline;padding:6px 0"><span style="font-size:12.5px;color:rgba(244,245,247,.6)">Sessions</span><span class="disp" style="font-weight:900;font-size:20px">7</span></div>
+              <div style="display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;border-top:1px solid rgba(255,255,255,.06)"><span style="font-size:12.5px;color:rgba(244,245,247,.6)">Goals logged</span><span class="disp" style="font-weight:900;font-size:20px">148</span></div>
+              <div style="display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;border-top:1px solid rgba(255,255,255,.06)"><span style="font-size:12.5px;color:rgba(244,245,247,.6)">Top scorer</span><span style="font-weight:700;font-size:14px;color:#c8ff2f">Fikri · 12</span></div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px;margin-top:16px">
+            <div style="border-radius:16px;background:#1b1e26;padding:20px"><div style="font-size:22px;margin-bottom:10px">👥</div><div style="font-weight:700;font-size:15px">Players</div><div style="font-size:12px;color:rgba(244,245,247,.5);margin-top:3px">18 active · add / rename</div></div>
+            <div style="border-radius:16px;background:#1b1e26;padding:20px"><div style="font-size:22px;margin-bottom:10px">📅</div><div style="font-weight:700;font-size:15px">Sessions</div><div style="font-size:12px;color:rgba(244,245,247,.5);margin-top:3px">7 this season</div></div>
+            <div style="border-radius:16px;background:#1b1e26;padding:20px"><div style="font-size:22px;margin-bottom:10px">🗓️</div><div style="font-weight:700;font-size:15px">Seasons</div><div style="font-size:12px;color:rgba(244,245,247,.5);margin-top:3px">Set active · pick MVP</div></div>
+            <div style="border-radius:16px;background:#1b1e26;padding:20px"><div style="font-size:22px;margin-bottom:10px">🏆</div><div style="font-weight:700;font-size:15px">Awards</div><div style="font-size:12px;color:rgba(244,245,247,.5);margin-top:3px">Preview season page</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <p class="dv-next">Try next: “add the sessions list + session detail (public)” · “empty states for a brand-new season” · “make the shuffle reveal spray confetti on lock”</p>
+</section>
+<section class="dv-turn" id="t2">
+  <div class="dv-thd"><a class="dv-tid" href="#t2">2</a><span class="dv-tname">Game-day flow + public pages — built in the <a class="dv-oid" href="#1b">1b</a> split-court + <a class="dv-oid" href="#1d">1d</a> spotlight language</span></div>
+
+  <div class="dv-opts">
+
+    <!-- ============ 2a — CHECK-IN (draft) ============ -->
+    <div class="dv-opt" id="2a">
+      <div class="dv-olabel"><a class="dv-oid" href="#2a">2a</a>Game-day · Stage 1 — check-in + shuffle preview · iPad landscape</div>
+      <div class="ipad">
+        <div class="ipad-screen" style="display:grid;grid-template-columns:1fr 308px">
+          <div style="padding:24px 24px 20px;display:flex;flex-direction:column;overflow:hidden">
+            <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:4px">
+              <div>
+                <div style="font:700 10px 'Archivo';letter-spacing:.16em;text-transform:uppercase;color:#c8ff2f">Draft · not locked</div>
+                <h2 class="disp" style="margin:4px 0 0;font-weight:900;font-size:30px;line-height:1">MATCHDAY 08</h2>
+                <div style="font-size:12.5px;color:rgba(244,245,247,.5);margin-top:3px">Sat 25 Jul · Sporthalle West</div>
+              </div>
+              <div style="text-align:right"><span class="disp" style="font-weight:900;font-size:40px;color:#c8ff2f">14</span><div style="font:600 10px 'Archivo';letter-spacing:.12em;text-transform:uppercase;color:rgba(244,245,247,.45)">checked in</div></div>
+            </div>
+            <div style="font:700 10px 'Archivo';letter-spacing:.12em;text-transform:uppercase;color:rgba(244,245,247,.4);margin:16px 0 12px">Who's here?</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;overflow:hidden">
+              <!-- checked -->
+              <div style="display:flex;align-items:center;gap:10px;min-height:50px;padding:0 14px;border-radius:12px;background:#1b1e26;border:1px solid #c8ff2f"><span style="width:20px;height:20px;border-radius:6px;background:#c8ff2f;color:#12141a;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px">✓</span><span style="font-weight:600;font-size:13px">Fikri</span></div>
+              <div style="display:flex;align-items:center;gap:10px;min-height:50px;padding:0 14px;border-radius:12px;background:#1b1e26;border:1px solid #c8ff2f"><span style="width:20px;height:20px;border-radius:6px;background:#c8ff2f;color:#12141a;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px">✓</span><span style="font-weight:600;font-size:13px">Raka</span></div>
+              <div style="display:flex;align-items:center;gap:10px;min-height:50px;padding:0 14px;border-radius:12px;background:#1b1e26;border:1px solid #c8ff2f"><span style="width:20px;height:20px;border-radius:6px;background:#c8ff2f;color:#12141a;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px">✓</span><span style="font-weight:600;font-size:13px">Dimas</span></div>
+              <div style="display:flex;align-items:center;gap:10px;min-height:50px;padding:0 14px;border-radius:12px;background:#1b1e26;border:1px solid #c8ff2f"><span style="width:20px;height:20px;border-radius:6px;background:#c8ff2f;color:#12141a;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px">✓</span><span style="font-weight:600;font-size:13px">Bagus</span></div>
+              <div style="display:flex;align-items:center;gap:10px;min-height:50px;padding:0 14px;border-radius:12px;background:#1b1e26;border:1px solid #c8ff2f"><span style="width:20px;height:20px;border-radius:6px;background:#c8ff2f;color:#12141a;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px">✓</span><span style="font-weight:600;font-size:13px">Andi</span></div>
+              <div style="display:flex;align-items:center;gap:10px;min-height:50px;padding:0 14px;border-radius:12px;background:#1b1e26;border:1px solid #c8ff2f"><span style="width:20px;height:20px;border-radius:6px;background:#c8ff2f;color:#12141a;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px">✓</span><span style="font-weight:600;font-size:13px">Yusuf</span></div>
+              <div style="display:flex;align-items:center;gap:10px;min-height:50px;padding:0 14px;border-radius:12px;background:#1b1e26;border:1px solid #c8ff2f"><span style="width:20px;height:20px;border-radius:6px;background:#c8ff2f;color:#12141a;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px">✓</span><span style="font-weight:600;font-size:13px">Rizky</span></div>
+              <div style="display:flex;align-items:center;gap:10px;min-height:50px;padding:0 14px;border-radius:12px;background:#1b1e26;border:1px solid #c8ff2f"><span style="width:20px;height:20px;border-radius:6px;background:#c8ff2f;color:#12141a;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px">✓</span><span style="font-weight:600;font-size:13px">Aditya</span></div>
+              <div style="display:flex;align-items:center;gap:10px;min-height:50px;padding:0 14px;border-radius:12px;background:#1b1e26;border:1px solid #c8ff2f"><span style="width:20px;height:20px;border-radius:6px;background:#c8ff2f;color:#12141a;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px">✓</span><span style="font-weight:600;font-size:13px">Hafiz</span></div>
+              <div style="display:flex;align-items:center;gap:10px;min-height:50px;padding:0 14px;border-radius:12px;background:#1b1e26;border:1px solid #c8ff2f"><span style="width:20px;height:20px;border-radius:6px;background:#c8ff2f;color:#12141a;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px">✓</span><span style="font-weight:600;font-size:13px">Reza</span></div>
+              <div style="display:flex;align-items:center;gap:10px;min-height:50px;padding:0 14px;border-radius:12px;background:#1b1e26;border:1px solid #c8ff2f"><span style="width:20px;height:20px;border-radius:6px;background:#c8ff2f;color:#12141a;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px">✓</span><span style="font-weight:600;font-size:13px">Ilham</span></div>
+              <div style="display:flex;align-items:center;gap:10px;min-height:50px;padding:0 14px;border-radius:12px;background:#1b1e26;border:1px solid #c8ff2f"><span style="width:20px;height:20px;border-radius:6px;background:#c8ff2f;color:#12141a;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px">✓</span><span style="font-weight:600;font-size:13px">Galih</span></div>
+              <div style="display:flex;align-items:center;gap:10px;min-height:50px;padding:0 14px;border-radius:12px;background:#1b1e26;border:1px solid #c8ff2f"><span style="width:20px;height:20px;border-radius:6px;background:#c8ff2f;color:#12141a;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px">✓</span><span style="font-weight:600;font-size:13px">Nabil</span></div>
+              <div style="display:flex;align-items:center;gap:10px;min-height:50px;padding:0 14px;border-radius:12px;background:#1b1e26;border:1px solid #c8ff2f"><span style="width:20px;height:20px;border-radius:6px;background:#c8ff2f;color:#12141a;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px">✓</span><span style="font-weight:600;font-size:13px">Toni</span></div>
+              <!-- unchecked -->
+              <div style="display:flex;align-items:center;gap:10px;min-height:50px;padding:0 14px;border-radius:12px;background:#15171d;border:1px solid rgba(255,255,255,.06);opacity:.5"><span style="width:20px;height:20px;border-radius:6px;border:1.5px solid rgba(255,255,255,.25)"></span><span style="font-weight:600;font-size:13px">Bima</span></div>
+              <div style="display:flex;align-items:center;gap:10px;min-height:50px;padding:0 14px;border-radius:12px;background:#15171d;border:1px solid rgba(255,255,255,.06);opacity:.5"><span style="width:20px;height:20px;border-radius:6px;border:1.5px solid rgba(255,255,255,.25)"></span><span style="font-weight:600;font-size:13px">Fajar</span></div>
+              <div style="display:flex;align-items:center;gap:10px;min-height:50px;padding:0 14px;border-radius:12px;background:#15171d;border:1px solid rgba(255,255,255,.06);opacity:.5"><span style="width:20px;height:20px;border-radius:6px;border:1.5px solid rgba(255,255,255,.25)"></span><span style="font-weight:600;font-size:13px">Gilang</span></div>
+              <div style="display:flex;align-items:center;gap:10px;min-height:50px;padding:0 14px;border-radius:12px;background:#15171d;border:1px solid rgba(255,255,255,.06);opacity:.5"><span style="width:20px;height:20px;border-radius:6px;border:1.5px solid rgba(255,255,255,.25)"></span><span style="font-weight:600;font-size:13px">Panji</span></div>
+            </div>
+          </div>
+          <!-- setup panel -->
+          <div style="background:#1b1e26;border-left:1px solid rgba(255,255,255,.06);padding:24px 22px;display:flex;flex-direction:column">
+            <div style="font:700 10px 'Archivo';letter-spacing:.14em;text-transform:uppercase;color:rgba(244,245,247,.4)">Team size</div>
+            <div style="display:flex;align-items:center;gap:14px;margin:12px 0 22px">
+              <button style="all:unset;touch-action:manipulation;cursor:pointer;width:46px;height:46px;border-radius:12px;background:#232732;display:flex;align-items:center;justify-content:center;font:800 22px 'Archivo'">−</button>
+              <span class="disp" style="font-weight:900;font-size:42px;flex:1;text-align:center">5</span>
+              <button style="all:unset;touch-action:manipulation;cursor:pointer;width:46px;height:46px;border-radius:12px;background:#232732;display:flex;align-items:center;justify-content:center;font:800 22px 'Archivo'">+</button>
+            </div>
+            <div style="padding:18px;border-radius:16px;background:#12141a;border:1px solid rgba(255,255,255,.06)">
+              <div style="font-size:13px;color:rgba(244,245,247,.6)">14 attending splits into</div>
+              <div class="disp" style="font-weight:900;font-size:30px;margin:6px 0 12px">3 TEAMS</div>
+              <div style="display:flex;gap:8px">
+                <div style="flex:1;text-align:center;padding:10px 0;border-radius:10px;background:rgba(255,77,87,.16);border:1px solid rgba(255,77,87,.4)"><div class="disp" style="font-weight:800;font-size:20px;color:#ff4d57">5</div><div style="font:700 9px 'Archivo';color:#ff4d57">RED</div></div>
+                <div style="flex:1;text-align:center;padding:10px 0;border-radius:10px;background:rgba(77,139,255,.16);border:1px solid rgba(77,139,255,.4)"><div class="disp" style="font-weight:800;font-size:20px;color:#4d8bff">5</div><div style="font:700 9px 'Archivo';color:#4d8bff">BLUE</div></div>
+                <div style="flex:1;text-align:center;padding:10px 0;border-radius:10px;background:rgba(47,208,106,.16);border:1px solid rgba(47,208,106,.4)"><div class="disp" style="font-weight:800;font-size:20px;color:#2fd06a">4</div><div style="font:700 9px 'Archivo';color:#2fd06a">GREEN</div></div>
+              </div>
+            </div>
+            <button style="all:unset;touch-action:manipulation;cursor:pointer;margin-top:auto;text-align:center;padding:20px;border-radius:16px;background:#c8ff2f;color:#12141a;font-family:'Archivo Expanded';font-weight:900;font-size:20px;box-shadow:0 12px 30px -12px rgba(200,255,47,.6)">🎲 SHUFFLE TEAMS</button>
+            <div style="text-align:center;font-size:11px;color:rgba(244,245,247,.4);margin-top:10px">Random split · re-shuffle anytime before lock</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 2b — TEAMS SET / NEXT MATCH (courtside) ============ -->
+    <div class="dv-opt" id="2b">
+      <div class="dv-olabel"><a class="dv-oid" href="#2b">2b</a>Game-day · Stage 2 — teams locked + matchmaker's next match · iPad landscape</div>
+      <div class="ipad">
+        <div class="ipad-screen" style="display:grid;grid-template-columns:322px 1fr">
+          <!-- team cards -->
+          <div style="padding:22px 18px;display:flex;flex-direction:column;gap:11px;overflow:hidden;border-right:1px solid rgba(255,255,255,.06)">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px"><span class="disp" style="font-weight:800;font-size:16px">TEAMS · LOCKED</span><span style="font:600 11px 'Archivo';color:#c8ff2f">↺ Reshuffle</span></div>
+            <div style="border-radius:14px;background:#1b1e26;border-left:4px solid #ff4d57;padding:12px 14px">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span class="disp" style="font-weight:800;font-size:15px;color:#ff4d57">RED</span><span style="font:700 10px 'Archivo';color:rgba(244,245,247,.45)">2 played</span></div>
+              <div style="font-size:11.5px;color:rgba(244,245,247,.7);line-height:1.7">Fikri · Raka · Dimas · Bagus · Andi</div>
+            </div>
+            <div style="border-radius:14px;background:#1b1e26;border-left:4px solid #4d8bff;padding:12px 14px">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span class="disp" style="font-weight:800;font-size:15px;color:#4d8bff">BLUE</span><span style="font:700 10px 'Archivo';color:rgba(244,245,247,.45)">1 played</span></div>
+              <div style="font-size:11.5px;color:rgba(244,245,247,.7);line-height:1.7">Aditya · Hafiz · Ilham · Galih · Nabil</div>
+            </div>
+            <div style="border-radius:14px;background:#1b1e26;border-left:4px solid #2fd06a;padding:12px 14px">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span class="disp" style="font-weight:800;font-size:15px;color:#2fd06a">GREEN</span><span style="font:700 10px 'Archivo';color:rgba(244,245,247,.45)">1 played</span></div>
+              <div style="font-size:11.5px;color:rgba(244,245,247,.7);line-height:1.7">Yusuf · Rizky · Reza · Toni</div>
+            </div>
+            <button style="all:unset;touch-action:manipulation;cursor:pointer;margin-top:auto;text-align:center;padding:13px;border-radius:12px;border:1px solid rgba(255,255,255,.12);color:rgba(244,245,247,.55);font:700 12px 'Archivo'">Complete session</button>
+          </div>
+          <!-- right: next match + feed -->
+          <div style="display:flex;flex-direction:column">
+            <div style="padding:22px 24px 18px">
+              <div style="font:700 10px 'Archivo';letter-spacing:.16em;text-transform:uppercase;color:#c8ff2f;margin-bottom:12px">Matchmaker says · Match 4</div>
+              <div style="border-radius:20px;background:linear-gradient(135deg,#1b1e26,#12141a);border:1px solid rgba(255,255,255,.08);padding:26px 24px">
+                <div style="display:flex;align-items:center;justify-content:center;gap:22px">
+                  <div style="text-align:center"><div style="width:60px;height:60px;border-radius:16px;background:#ff4d57;margin:0 auto 8px;box-shadow:0 8px 22px -8px #ff4d57"></div><div class="disp" style="font-weight:900;font-size:22px;color:#ff4d57">RED</div><div style="font:600 10px 'Archivo';color:rgba(244,245,247,.45);margin-top:2px">2 played</div></div>
+                  <div class="disp" style="font-weight:900;font-size:30px;color:rgba(244,245,247,.3)">VS</div>
+                  <div style="text-align:center"><div style="width:60px;height:60px;border-radius:16px;background:#2fd06a;margin:0 auto 8px;box-shadow:0 8px 22px -8px #2fd06a"></div><div class="disp" style="font-weight:900;font-size:22px;color:#2fd06a">GREEN</div><div style="font:600 10px 'Archivo';color:rgba(244,245,247,.45);margin-top:2px">1 played</div></div>
+                </div>
+                <div style="display:flex;gap:12px;margin-top:24px">
+                  <button style="all:unset;touch-action:manipulation;cursor:pointer;flex:1.5;text-align:center;padding:18px;border-radius:14px;background:#c8ff2f;color:#12141a;font-family:'Archivo Expanded';font-weight:900;font-size:17px;box-shadow:0 10px 26px -12px rgba(200,255,47,.6)">▶ START THIS MATCH</button>
+                  <button style="all:unset;touch-action:manipulation;cursor:pointer;flex:1;text-align:center;padding:18px;border-radius:14px;background:#232732;font:700 13px 'Archivo'">Pick different teams</button>
+                </div>
+              </div>
+            </div>
+            <div style="flex:1;padding:0 24px 20px;overflow:hidden">
+              <div style="font:700 10px 'Archivo';letter-spacing:.12em;text-transform:uppercase;color:rgba(244,245,247,.4);margin-bottom:11px">Matches so far</div>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;align-items:center;gap:12px;padding:13px 16px;border-radius:12px;background:#1b1e26"><span style="font:700 10px 'Archivo';color:rgba(244,245,247,.35);width:16px">1</span><span class="disp" style="font-weight:800;font-size:14px;color:#ff4d57;flex:1">RED</span><span class="disp" style="font-weight:900;font-size:18px;color:#ff4d57">4</span><span style="color:rgba(244,245,247,.3)">–</span><span class="disp" style="font-weight:900;font-size:18px;color:#4d8bff">2</span><span class="disp" style="font-weight:800;font-size:14px;color:#4d8bff;flex:1;text-align:right">BLUE</span></div>
+                <div style="display:flex;align-items:center;gap:12px;padding:13px 16px;border-radius:12px;background:#1b1e26"><span style="font:700 10px 'Archivo';color:rgba(244,245,247,.35);width:16px">2</span><span class="disp" style="font-weight:800;font-size:14px;color:#2fd06a;flex:1">GREEN</span><span class="disp" style="font-weight:900;font-size:18px;color:#2fd06a">3</span><span style="color:rgba(244,245,247,.3)">–</span><span class="disp" style="font-weight:900;font-size:18px;color:#ff4d57">3</span><span class="disp" style="font-weight:800;font-size:14px;color:#ff4d57;flex:1;text-align:right">RED</span></div>
+                <div style="display:flex;align-items:center;gap:12px;padding:13px 16px;border-radius:12px;background:#1b1e26"><span style="font:700 10px 'Archivo';color:rgba(244,245,247,.35);width:16px">3</span><span class="disp" style="font-weight:800;font-size:14px;color:#4d8bff;flex:1">BLUE</span><span class="disp" style="font-weight:900;font-size:18px;color:#4d8bff">1</span><span style="color:rgba(244,245,247,.3)">–</span><span class="disp" style="font-weight:900;font-size:18px;color:#2fd06a">5</span><span class="disp" style="font-weight:800;font-size:14px;color:#2fd06a;flex:1;text-align:right">GREEN</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 2e — PORTRAIT LIVE SCREEN ============ -->
+    <div class="dv-opt" id="2e">
+      <div class="dv-olabel"><a class="dv-oid" href="#2e">2e</a>Live console — split court, portrait · iPad portrait</div>
+      <div class="ipad">
+        <div class="ipad-screen" style="width:740px;height:1000px;display:flex;flex-direction:column">
+          <!-- top RED half -->
+          <div style="flex:1;position:relative;background:linear-gradient(160deg,#ff4d57,#c41f2b);padding:22px 24px 26px;display:flex;flex-direction:column">
+            <div style="position:absolute;inset:0;background:radial-gradient(120% 80% at 0% 0%,rgba(0,0,0,.4),transparent 55%)"></div>
+            <div style="position:relative;display:flex;align-items:center;justify-content:space-between">
+              <span class="disp" style="font-weight:900;font-size:26px;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.3)">RED</span>
+              <span class="disp" style="font-weight:900;font-size:96px;line-height:.7;color:#fff;text-shadow:0 4px 20px rgba(0,0,0,.35)">3</span>
+            </div>
+            <div style="position:relative;display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px;margin-top:auto">
+              <button style="all:unset;touch-action:manipulation;cursor:pointer;min-height:74px;border-radius:15px;background:rgba(255,255,255,.16);display:flex;flex-direction:column;justify-content:center;padding:0 15px;color:#fff"><span style="font-weight:700;font-size:15px">Fikri</span><span style="font-size:11px;opacity:.8">2</span></button>
+              <button style="all:unset;touch-action:manipulation;cursor:pointer;min-height:74px;border-radius:15px;background:rgba(255,255,255,.16);display:flex;flex-direction:column;justify-content:center;padding:0 15px;color:#fff"><span style="font-weight:700;font-size:15px">Raka</span><span style="font-size:11px;opacity:.8">1</span></button>
+              <button style="all:unset;touch-action:manipulation;cursor:pointer;min-height:74px;border-radius:15px;background:rgba(255,255,255,.16);display:flex;flex-direction:column;justify-content:center;padding:0 15px;color:#fff"><span style="font-weight:700;font-size:15px">Dimas</span><span style="font-size:11px;opacity:.8">0</span></button>
+              <button style="all:unset;touch-action:manipulation;cursor:pointer;min-height:74px;border-radius:15px;background:rgba(255,255,255,.16);display:flex;flex-direction:column;justify-content:center;padding:0 15px;color:#fff"><span style="font-weight:700;font-size:15px">Bagus</span><span style="font-size:11px;opacity:.8">0</span></button>
+              <button style="all:unset;touch-action:manipulation;cursor:pointer;min-height:74px;border-radius:15px;background:rgba(255,255,255,.16);display:flex;flex-direction:column;justify-content:center;padding:0 15px;color:#fff"><span style="font-weight:700;font-size:15px">Andi</span><span style="font-size:11px;opacity:.8">0</span></button>
+              <button style="all:unset;touch-action:manipulation;cursor:pointer;min-height:74px;border-radius:15px;background:rgba(0,0,0,.22);display:flex;align-items:center;justify-content:center;color:#fff;text-align:center;font-weight:600;font-size:12px">Own goal +1</button>
+            </div>
+          </div>
+          <!-- control seam -->
+          <div style="position:relative;z-index:2;background:#0a0b0e;padding:12px 24px;display:flex;align-items:center;gap:10px">
+            <span class="disp" style="font-weight:800;font-size:13px;color:rgba(244,245,247,.55);letter-spacing:.06em">MD08 · MATCH 4</span>
+            <button style="all:unset;touch-action:manipulation;cursor:pointer;margin-left:auto;padding:13px 20px;border-radius:12px;background:#232732;color:#f4f5f7;font:700 13px 'Archivo'">↺ Undo</button>
+            <button style="all:unset;touch-action:manipulation;cursor:pointer;padding:13px 22px;border-radius:12px;background:#c8ff2f;color:#12141a;font:800 13px 'Archivo'">End match</button>
+          </div>
+          <!-- bottom GREEN half -->
+          <div style="flex:1;position:relative;background:linear-gradient(200deg,#2fd06a,#149b47);padding:26px 24px 22px;display:flex;flex-direction:column">
+            <div style="position:absolute;inset:0;background:radial-gradient(120% 80% at 100% 100%,rgba(0,0,0,.4),transparent 55%)"></div>
+            <div style="position:relative;display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px">
+              <button style="all:unset;touch-action:manipulation;cursor:pointer;min-height:74px;border-radius:15px;background:rgba(255,255,255,.16);display:flex;flex-direction:column;justify-content:center;padding:0 15px;color:#fff"><span style="font-weight:700;font-size:15px">Yusuf</span><span style="font-size:11px;opacity:.8">1</span></button>
+              <button style="all:unset;touch-action:manipulation;cursor:pointer;min-height:74px;border-radius:15px;background:rgba(255,255,255,.16);display:flex;flex-direction:column;justify-content:center;padding:0 15px;color:#fff"><span style="font-weight:700;font-size:15px">Rizky</span><span style="font-size:11px;opacity:.8">0</span></button>
+              <button style="all:unset;touch-action:manipulation;cursor:pointer;min-height:74px;border-radius:15px;background:rgba(255,255,255,.16);display:flex;flex-direction:column;justify-content:center;padding:0 15px;color:#fff"><span style="font-weight:700;font-size:15px">Reza</span><span style="font-size:11px;opacity:.8">1</span></button>
+              <button style="all:unset;touch-action:manipulation;cursor:pointer;min-height:74px;border-radius:15px;background:rgba(255,255,255,.16);display:flex;flex-direction:column;justify-content:center;padding:0 15px;color:#fff"><span style="font-weight:700;font-size:15px">Toni</span><span style="font-size:11px;opacity:.8">0</span></button>
+              <button style="all:unset;touch-action:manipulation;cursor:pointer;min-height:74px;border-radius:15px;background:rgba(0,0,0,.22);display:flex;align-items:center;justify-content:center;color:#fff;text-align:center;font-weight:600;font-size:12px">Own goal +1</button>
+            </div>
+            <div style="position:relative;display:flex;align-items:center;justify-content:space-between;margin-top:auto">
+              <span class="disp" style="font-weight:900;font-size:96px;line-height:.7;color:#fff;text-shadow:0 4px 20px rgba(0,0,0,.35)">2</span>
+              <span class="disp" style="font-weight:900;font-size:26px;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.3)">GREEN</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 2c — PLAYER PROFILE ============ -->
+    <div class="dv-opt" id="2c">
+      <div class="dv-olabel"><a class="dv-oid" href="#2c">2c</a>Player profile · phone</div>
+      <div class="phone">
+        <div class="phone-screen" style="display:flex;flex-direction:column">
+          <div style="padding:52px 20px 12px;display:flex;align-items:center;gap:12px"><span style="font-size:18px;color:rgba(244,245,247,.6)">‹</span><span style="font:600 12px 'Archivo';color:rgba(244,245,247,.5)">Leaderboard</span></div>
+          <div style="margin:4px 16px 0;padding:22px;border-radius:20px;background:linear-gradient(135deg,#1b1e26,#12141a);border:1px solid rgba(255,255,255,.07);position:relative;overflow:hidden">
+            <div style="position:absolute;right:16px;top:16px;width:12px;height:12px;border-radius:4px;background:#ff4d57"></div>
+            <div style="width:56px;height:56px;border-radius:16px;background:#232732;border:2px solid #ff4d57;display:flex;align-items:center;justify-content:center;font:800 20px 'Archivo';margin-bottom:14px">FK</div>
+            <h2 class="disp" style="margin:0;font-weight:900;font-size:32px;line-height:1">FIKRI</h2>
+            <div style="font-size:12px;color:rgba(244,245,247,.5);margin-top:5px">Usually Red · 6 games this season</div>
+            <div style="display:flex;gap:9px;margin-top:18px">
+              <div style="flex:1;text-align:center;padding:12px 0;border-radius:12px;background:#12141a"><div class="disp" style="font-weight:900;font-size:26px;color:#c8ff2f">12</div><div style="font:700 9px 'Archivo';letter-spacing:.08em;color:rgba(244,245,247,.45)">GOALS</div></div>
+              <div style="flex:1;text-align:center;padding:12px 0;border-radius:12px;background:#12141a"><div class="disp" style="font-weight:900;font-size:26px">5</div><div style="font:700 9px 'Archivo';letter-spacing:.08em;color:rgba(244,245,247,.45)">ASSISTS</div></div>
+              <div style="flex:1;text-align:center;padding:12px 0;border-radius:12px;background:#12141a"><div class="disp" style="font-weight:900;font-size:26px">4</div><div style="font:700 9px 'Archivo';letter-spacing:.08em;color:rgba(244,245,247,.45)">WINS</div></div>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:16px 24px 8px"><span style="font:700 10px 'Archivo';letter-spacing:.12em;text-transform:uppercase;color:rgba(244,245,247,.4)">All-time</span><span style="font-size:12px;color:rgba(244,245,247,.6)">31 G · 14 A · 11 W · 18 games</span></div>
+          <div style="font:700 10px 'Archivo';letter-spacing:.12em;text-transform:uppercase;color:rgba(244,245,247,.4);padding:8px 24px 10px">Session history</div>
+          <div style="flex:1;padding:0 16px 18px;display:flex;flex-direction:column;gap:8px;overflow:hidden">
+            <div style="display:flex;align-items:center;gap:12px;padding:13px 15px;border-radius:13px;background:#1b1e26"><span style="width:10px;height:10px;border-radius:3px;background:#ff4d57"></span><div style="flex:1"><div style="font-weight:600;font-size:13px">Matchday 07</div><div style="font-size:11px;color:rgba(244,245,247,.45)">Sat 18 Jul · Red</div></div><span style="font-size:12px;color:rgba(244,245,247,.7)">3⚽ 1🅰</span><span style="font:800 11px 'Archivo';color:#c8ff2f;background:rgba(200,255,47,.14);padding:4px 8px;border-radius:6px">W</span></div>
+            <div style="display:flex;align-items:center;gap:12px;padding:13px 15px;border-radius:13px;background:#1b1e26"><span style="width:10px;height:10px;border-radius:3px;background:#4d8bff"></span><div style="flex:1"><div style="font-weight:600;font-size:13px">Matchday 06</div><div style="font-size:11px;color:rgba(244,245,247,.45)">Sat 11 Jul · Blue</div></div><span style="font-size:12px;color:rgba(244,245,247,.7)">2⚽ 0🅰</span><span style="font:800 11px 'Archivo';color:rgba(244,245,247,.55);background:rgba(255,255,255,.08);padding:4px 8px;border-radius:6px">D</span></div>
+            <div style="display:flex;align-items:center;gap:12px;padding:13px 15px;border-radius:13px;background:#1b1e26"><span style="width:10px;height:10px;border-radius:3px;background:#ff4d57"></span><div style="flex:1"><div style="font-weight:600;font-size:13px">Matchday 05</div><div style="font-size:11px;color:rgba(244,245,247,.45)">Sat 04 Jul · Red</div></div><span style="font-size:12px;color:rgba(244,245,247,.7)">4⚽ 2🅰</span><span style="font:800 11px 'Archivo';color:#c8ff2f;background:rgba(200,255,47,.14);padding:4px 8px;border-radius:6px">W</span></div>
+            <div style="display:flex;align-items:center;gap:12px;padding:13px 15px;border-radius:13px;background:#1b1e26"><span style="width:10px;height:10px;border-radius:3px;background:#2fd06a"></span><div style="flex:1"><div style="font-weight:600;font-size:13px">Matchday 04</div><div style="font-size:11px;color:rgba(244,245,247,.45)">Sat 27 Jun · Green</div></div><span style="font-size:12px;color:rgba(244,245,247,.7)">1⚽ 1🅰</span><span style="font:800 11px 'Archivo';color:#ff8a8a;background:rgba(255,77,87,.14);padding:4px 8px;border-radius:6px">L</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 2d — AWARDS ============ -->
+    <div class="dv-opt" id="2d">
+      <div class="dv-olabel"><a class="dv-oid" href="#2d">2d</a>Season awards · phone</div>
+      <div class="phone">
+        <div class="phone-screen" style="display:flex;flex-direction:column">
+          <div style="padding:52px 20px 8px;text-align:center">
+            <div style="font:700 10px 'Archivo';letter-spacing:.18em;text-transform:uppercase;color:rgba(244,245,247,.45)">Odd Semester 2026</div>
+            <h2 class="disp" style="margin:6px 0 0;font-weight:900;font-size:30px;line-height:1">SEASON AWARDS</h2>
+          </div>
+          <!-- MVP hero -->
+          <div style="margin:16px 16px 0;padding:24px 22px;border-radius:22px;background:linear-gradient(135deg,#c8ff2f,#8fdc12);color:#12141a;position:relative;overflow:hidden;text-align:center">
+            <div style="position:absolute;left:-20px;top:-30px;font-size:120px;opacity:.14;font-family:'Archivo Expanded'">★</div>
+            <div style="font-size:34px;margin-bottom:4px">🏆</div>
+            <div style="font:800 11px 'Archivo';letter-spacing:.18em;text-transform:uppercase;opacity:.7">MVP · Admin's pick</div>
+            <div class="disp" style="font-weight:900;font-size:38px;line-height:1;margin:8px 0 4px">DIMAS</div>
+            <div style="font-size:12px;font-weight:600;opacity:.8">"Carried every clutch moment this semester."</div>
+          </div>
+          <!-- award cards -->
+          <div style="flex:1;padding:16px 16px 18px;display:flex;flex-direction:column;gap:11px;overflow:hidden">
+            <div style="padding:16px 18px;border-radius:16px;background:#1b1e26">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><span style="font-size:15px">⚽</span><span style="font:800 11px 'Archivo';letter-spacing:.1em;text-transform:uppercase">Top Scorer</span></div>
+              <div style="display:flex;align-items:center;gap:11px;padding-bottom:9px"><span class="num disp" style="font-weight:800;color:#c8ff2f;width:16px">1</span><span style="flex:1;font-weight:700">Fikri</span><span class="disp" style="font-weight:900;font-size:17px;color:#c8ff2f">12</span></div>
+              <div style="display:flex;align-items:center;gap:11px;padding:5px 0;border-top:1px solid rgba(255,255,255,.06)"><span class="num disp" style="font-weight:800;color:rgba(244,245,247,.4);width:16px">2</span><span style="flex:1;font-weight:600;color:rgba(244,245,247,.8)">Dimas</span><span class="disp" style="font-weight:800;font-size:15px">9</span></div>
+              <div style="display:flex;align-items:center;gap:11px;padding:5px 0;border-top:1px solid rgba(255,255,255,.06)"><span class="num disp" style="font-weight:800;color:rgba(244,245,247,.4);width:16px">3</span><span style="flex:1;font-weight:600;color:rgba(244,245,247,.8)">Yusuf</span><span class="disp" style="font-weight:800;font-size:15px">7</span></div>
+            </div>
+            <div style="display:flex;gap:11px">
+              <div style="flex:1;padding:16px 16px;border-radius:16px;background:#1b1e26">
+                <div style="display:flex;align-items:center;gap:7px;margin-bottom:12px"><span style="font-size:14px">🅰</span><span style="font:800 10px 'Archivo';letter-spacing:.08em;text-transform:uppercase">Top Assists</span></div>
+                <div style="display:flex;justify-content:space-between;padding-bottom:7px"><span style="font-weight:700;font-size:13px">Yusuf</span><span class="disp" style="font-weight:900;color:#4d8bff">6</span></div>
+                <div style="display:flex;justify-content:space-between;padding:4px 0;border-top:1px solid rgba(255,255,255,.06);font-size:12px;color:rgba(244,245,247,.75)"><span>Fikri</span><span class="disp" style="font-weight:700">5</span></div>
+                <div style="display:flex;justify-content:space-between;padding:4px 0;border-top:1px solid rgba(255,255,255,.06);font-size:12px;color:rgba(244,245,247,.75)"><span>Raka</span><span class="disp" style="font-weight:700">4</span></div>
+              </div>
+              <div style="flex:1;padding:16px 16px;border-radius:16px;background:#1b1e26">
+                <div style="display:flex;align-items:center;gap:7px;margin-bottom:12px"><span style="font-size:14px">🥇</span><span style="font:800 10px 'Archivo';letter-spacing:.08em;text-transform:uppercase">Most Wins</span></div>
+                <div style="display:flex;justify-content:space-between;padding-bottom:7px"><span style="font-weight:700;font-size:13px">Yusuf</span><span class="disp" style="font-weight:900;color:#2fd06a">5</span></div>
+                <div style="display:flex;justify-content:space-between;padding:4px 0;border-top:1px solid rgba(255,255,255,.06);font-size:12px;color:rgba(244,245,247,.75)"><span>Rizky</span><span class="disp" style="font-weight:700">4</span></div>
+                <div style="display:flex;justify-content:space-between;padding:4px 0;border-top:1px solid rgba(255,255,255,.06);font-size:12px;color:rgba(244,245,247,.75)"><span>Fikri</span><span class="disp" style="font-weight:700">4</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <p class="dv-next">Try next: “add the admin dashboard + sessions list” · “show the shuffle reveal as an animation” · “tighten the check-in <a class="dv-oid" href="#2a">2a</a> for 20 players” · “add empty states (no season yet)”</p>
+</section>
+<section class="dv-turn" id="t1">
+  <div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">PPI Braunschweiger Futsal — visual language + hero screens</span></div>
+
+  <!-- ===== DESIGN LANGUAGE CARD ===== -->
+  <div style="max-width:1080px;background:#12141a;color:#f4f5f7;border-radius:20px;padding:40px 44px;margin-bottom:44px;box-shadow:0 20px 50px -28px rgba(0,0,0,.5)">
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:6px">
+      <div style="width:38px;height:38px;border-radius:11px;background:#c8ff2f;display:flex;align-items:center;justify-content:center;font-size:22px">⚽</div>
+      <div style="font:800 13px/1 'Archivo',sans-serif;letter-spacing:.18em;text-transform:uppercase;color:#c8ff2f">PPI Braunschweiger Futsal</div>
+    </div>
+    <h1 class="disp" style="margin:0 0 8px;font-weight:900;font-size:46px;line-height:.98;letter-spacing:-.02em">EVERY WEEKEND<br>HAS A SCOREBOARD.</h1>
+    <p style="margin:0 0 30px;max-width:620px;font-size:14.5px;line-height:1.55;color:rgba(244,245,247,.62)">A hype, broadcast-flavored system built so players feel proud to show up. Big tabular scores, turf-electric accent, five bold team identities, and a live console that turns courtside taps into a season story.</p>
+
+    <div style="display:grid;grid-template-columns:1.1fr 1fr 1.4fr;gap:34px;border-top:1px solid rgba(255,255,255,.09);padding-top:26px">
+      <div>
+        <div style="font:700 10px/1 'Archivo',sans-serif;letter-spacing:.16em;text-transform:uppercase;color:rgba(244,245,247,.4);margin-bottom:14px">Type</div>
+        <div class="disp" style="font-weight:900;font-size:30px;line-height:1">ARCHIVO<br>EXPANDED</div>
+        <div style="font-size:12px;color:rgba(244,245,247,.5);margin:8px 0 16px">Display · scores · headlines</div>
+        <div style="font-weight:700;font-size:16px">Archivo</div>
+        <div style="font-size:12px;color:rgba(244,245,247,.5);margin-top:2px">UI · body · rosters</div>
+      </div>
+      <div>
+        <div style="font:700 10px/1 'Archivo',sans-serif;letter-spacing:.16em;text-transform:uppercase;color:rgba(244,245,247,.4);margin-bottom:14px">Surface</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;align-items:center;gap:10px"><span style="width:26px;height:26px;border-radius:7px;background:#12141a;border:1px solid rgba(255,255,255,.14)"></span><span style="font-size:12px;color:rgba(244,245,247,.6)">Court night #12141A</span></div>
+          <div style="display:flex;align-items:center;gap:10px"><span style="width:26px;height:26px;border-radius:7px;background:#1b1e26"></span><span style="font-size:12px;color:rgba(244,245,247,.6)">Panel #1B1E26</span></div>
+          <div style="display:flex;align-items:center;gap:10px"><span style="width:26px;height:26px;border-radius:7px;background:#c8ff2f"></span><span style="font-size:12px;color:rgba(244,245,247,.6)">Turf volt #C8FF2F</span></div>
+        </div>
+      </div>
+      <div>
+        <div style="font:700 10px/1 'Archivo',sans-serif;letter-spacing:.16em;text-transform:uppercase;color:rgba(244,245,247,.4);margin-bottom:14px">Team identities (refined)</div>
+        <div style="display:flex;flex-wrap:wrap;gap:10px">
+          <div style="text-align:center"><div style="width:52px;height:52px;border-radius:13px;background:#ff4d57;box-shadow:0 6px 16px -6px #ff4d57"></div><div style="font:700 10px 'Archivo';margin-top:6px">RED</div></div>
+          <div style="text-align:center"><div style="width:52px;height:52px;border-radius:13px;background:#4d8bff;box-shadow:0 6px 16px -6px #4d8bff"></div><div style="font:700 10px 'Archivo';margin-top:6px">BLUE</div></div>
+          <div style="text-align:center"><div style="width:52px;height:52px;border-radius:13px;background:#2fd06a;box-shadow:0 6px 16px -6px #2fd06a"></div><div style="font:700 10px 'Archivo';margin-top:6px">GREEN</div></div>
+          <div style="text-align:center"><div style="width:52px;height:52px;border-radius:13px;background:#ffcb2b;box-shadow:0 6px 16px -6px #ffcb2b"></div><div style="font:700 10px 'Archivo';margin-top:6px">YELLOW</div></div>
+          <div style="text-align:center"><div style="width:52px;height:52px;border-radius:13px;background:#b06bff;box-shadow:0 6px 16px -6px #b06bff"></div><div style="font:700 10px 'Archivo';margin-top:6px">PURPLE</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dv-opts">
+
+    <!-- ============ 1a — LIVE CONSOLE: BROADCAST ============ -->
+    <div class="dv-opt" id="1a">
+      <div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Live console — “Broadcast” · roster columns + center scoreboard · iPad landscape</div>
+      <div class="ipad">
+        <div class="ipad-screen" style="display:grid;grid-template-columns:1fr 288px 1fr;font-size:15px">
+          <!-- LEFT ROSTER (RED) -->
+          <div style="padding:20px 18px;display:flex;flex-direction:column;gap:10px;background:linear-gradient(180deg,rgba(255,77,87,.14),transparent 60%)">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <div style="display:flex;align-items:center;gap:9px"><span style="width:14px;height:14px;border-radius:4px;background:#ff4d57"></span><span class="disp" style="font-weight:800;font-size:19px">RED</span></div>
+              <span style="font:600 11px 'Archivo';color:rgba(244,245,247,.45)">5 on court</span>
+            </div>
+            <button style="all:unset;touch-action:manipulation;cursor:pointer;display:flex;align-items:center;justify-content:space-between;min-height:66px;padding:0 18px;border-radius:14px;background:#1b1e26;border:1px solid rgba(255,255,255,.06)"><span style="font-weight:600">Fikri</span><span class="disp" style="font-weight:800;font-size:22px;color:#ff4d57">2</span></button>
+            <button style="all:unset;touch-action:manipulation;cursor:pointer;display:flex;align-items:center;justify-content:space-between;min-height:66px;padding:0 18px;border-radius:14px;background:#232732;border:1px solid #ff4d57;box-shadow:0 0 0 3px rgba(255,77,87,.18)"><span style="font-weight:700">Raka <span style="font-size:11px;color:rgba(244,245,247,.5);font-weight:500">· just scored</span></span><span class="disp" style="font-weight:800;font-size:22px;color:#ff4d57">1</span></button>
+            <!-- assist strip -->
+            <div style="margin:-2px 0 2px;padding:12px 14px;border-radius:14px;background:#161922;border:1px dashed rgba(255,255,255,.14)">
+              <div style="font:700 10px 'Archivo';letter-spacing:.12em;text-transform:uppercase;color:#c8ff2f;margin-bottom:9px">Assist?</div>
+              <div style="display:flex;flex-wrap:wrap;gap:7px">
+                <span style="font:600 12px 'Archivo';padding:7px 12px;border-radius:9px;background:#2a2f3d">Fikri</span>
+                <span style="font:600 12px 'Archivo';padding:7px 12px;border-radius:9px;background:#2a2f3d">Dimas</span>
+                <span style="font:600 12px 'Archivo';padding:7px 12px;border-radius:9px;background:#2a2f3d">Bagus</span>
+                <span style="font:600 12px 'Archivo';padding:7px 12px;border-radius:9px;background:#2a2f3d">Andi</span>
+                <span style="font:600 12px 'Archivo';padding:7px 12px;border-radius:9px;background:transparent;border:1px solid rgba(255,255,255,.18);color:rgba(244,245,247,.6)">No assist</span>
+              </div>
+            </div>
+            <button style="all:unset;touch-action:manipulation;cursor:pointer;display:flex;align-items:center;justify-content:space-between;min-height:66px;padding:0 18px;border-radius:14px;background:#1b1e26;border:1px solid rgba(255,255,255,.06)"><span style="font-weight:600">Dimas</span><span class="disp" style="font-weight:800;font-size:22px;color:rgba(244,245,247,.35)">0</span></button>
+            <button style="all:unset;touch-action:manipulation;cursor:pointer;display:flex;align-items:center;justify-content:space-between;min-height:66px;padding:0 18px;border-radius:14px;background:#1b1e26;border:1px solid rgba(255,255,255,.06)"><span style="font-weight:600">Bagus</span><span class="disp" style="font-weight:800;font-size:22px;color:rgba(244,245,247,.35)">0</span></button>
+            <button style="all:unset;touch-action:manipulation;cursor:pointer;display:flex;align-items:center;justify-content:space-between;min-height:66px;padding:0 18px;border-radius:14px;background:#1b1e26;border:1px solid rgba(255,255,255,.06)"><span style="font-weight:600">Andi</span><span class="disp" style="font-weight:800;font-size:22px;color:rgba(244,245,247,.35)">0</span></button>
+            <button style="all:unset;touch-action:manipulation;cursor:pointer;text-align:center;padding:11px;border-radius:12px;background:transparent;border:1px solid rgba(255,255,255,.12);color:rgba(244,245,247,.6);font:600 12px 'Archivo';margin-top:2px">Own goal / unknown +1</button>
+          </div>
+
+          <!-- CENTER -->
+          <div style="background:#0d0f14;border-left:1px solid rgba(255,255,255,.06);border-right:1px solid rgba(255,255,255,.06);display:flex;flex-direction:column">
+            <div style="padding:14px 16px;text-align:center;border-bottom:1px solid rgba(255,255,255,.06)">
+              <div style="font:700 10px 'Archivo';letter-spacing:.14em;text-transform:uppercase;color:rgba(244,245,247,.4)">Matchday 07 · Match 3</div>
+            </div>
+            <div style="padding:22px 12px 18px;text-align:center">
+              <div style="display:flex;align-items:baseline;justify-content:center;gap:12px">
+                <span class="disp" style="font-weight:900;font-size:82px;line-height:.8;color:#ff4d57">3</span>
+                <span class="disp" style="font-weight:800;font-size:26px;color:rgba(244,245,247,.3)">—</span>
+                <span class="disp" style="font-weight:900;font-size:82px;line-height:.8;color:#2fd06a">2</span>
+              </div>
+              <div style="display:flex;justify-content:center;gap:34px;margin-top:12px">
+                <span class="disp" style="font-weight:800;font-size:14px;color:#ff4d57">RED</span>
+                <span class="disp" style="font-weight:800;font-size:14px;color:#2fd06a">GREEN</span>
+              </div>
+            </div>
+            <!-- feed -->
+            <div style="flex:1;overflow:hidden;padding:4px 14px">
+              <div style="font:700 10px 'Archivo';letter-spacing:.12em;text-transform:uppercase;color:rgba(244,245,247,.35);margin-bottom:10px">Live feed</div>
+              <div style="display:flex;flex-direction:column;gap:8px;font-size:12.5px">
+                <div style="display:flex;gap:9px;align-items:center;padding:9px 11px;border-radius:10px;background:#151821"><span class="num" style="color:rgba(244,245,247,.35);width:14px">5</span><span style="width:8px;height:8px;border-radius:3px;background:#ff4d57"></span><span style="font-weight:600">Raka</span><span style="color:rgba(244,245,247,.5)">⚽ (Fikri 🅰)</span></div>
+                <div style="display:flex;gap:9px;align-items:center;padding:9px 11px;border-radius:10px;background:#151821"><span class="num" style="color:rgba(244,245,247,.35);width:14px">4</span><span style="width:8px;height:8px;border-radius:3px;background:#2fd06a"></span><span style="font-weight:600">Yusuf</span><span style="color:rgba(244,245,247,.5)">⚽</span></div>
+                <div style="display:flex;gap:9px;align-items:center;padding:9px 11px;border-radius:10px;background:#151821"><span class="num" style="color:rgba(244,245,247,.35);width:14px">3</span><span style="width:8px;height:8px;border-radius:3px;background:#ff4d57"></span><span style="font-weight:600">Fikri</span><span style="color:rgba(244,245,247,.5)">⚽ (Dimas 🅰)</span></div>
+                <div style="display:flex;gap:9px;align-items:center;padding:9px 11px;border-radius:10px;background:#151821"><span class="num" style="color:rgba(244,245,247,.35);width:14px">2</span><span style="width:8px;height:8px;border-radius:3px;background:#2fd06a"></span><span style="font-weight:600">Own goal</span><span style="color:rgba(244,245,247,.5)">for Green</span></div>
+              </div>
+            </div>
+            <div style="padding:12px 14px;display:flex;gap:9px;border-top:1px solid rgba(255,255,255,.06)">
+              <button style="all:unset;touch-action:manipulation;cursor:pointer;flex:1;text-align:center;padding:14px;border-radius:12px;background:#232732;font:700 13px 'Archivo'">↺ Undo</button>
+              <button style="all:unset;touch-action:manipulation;cursor:pointer;flex:1.3;text-align:center;padding:14px;border-radius:12px;background:#c8ff2f;color:#12141a;font:800 13px 'Archivo'">End match</button>
+            </div>
+          </div>
+
+          <!-- RIGHT ROSTER (GREEN) -->
+          <div style="padding:20px 18px;display:flex;flex-direction:column;gap:10px;background:linear-gradient(180deg,rgba(47,208,106,.14),transparent 60%)">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <span style="font:600 11px 'Archivo';color:rgba(244,245,247,.45)">5 on court</span>
+              <div style="display:flex;align-items:center;gap:9px"><span class="disp" style="font-weight:800;font-size:19px">GREEN</span><span style="width:14px;height:14px;border-radius:4px;background:#2fd06a"></span></div>
+            </div>
+            <button style="all:unset;touch-action:manipulation;cursor:pointer;display:flex;align-items:center;justify-content:space-between;min-height:66px;padding:0 18px;border-radius:14px;background:#1b1e26;border:1px solid rgba(255,255,255,.06)"><span class="disp" style="font-weight:800;font-size:22px;color:#2fd06a">1</span><span style="font-weight:600">Yusuf</span></button>
+            <button style="all:unset;touch-action:manipulation;cursor:pointer;display:flex;align-items:center;justify-content:space-between;min-height:66px;padding:0 18px;border-radius:14px;background:#1b1e26;border:1px solid rgba(255,255,255,.06)"><span class="disp" style="font-weight:800;font-size:22px;color:rgba(244,245,247,.35)">0</span><span style="font-weight:600">Rizky</span></button>
+            <button style="all:unset;touch-action:manipulation;cursor:pointer;display:flex;align-items:center;justify-content:space-between;min-height:66px;padding:0 18px;border-radius:14px;background:#1b1e26;border:1px solid rgba(255,255,255,.06)"><span class="disp" style="font-weight:800;font-size:22px;color:rgba(244,245,247,.35)">0</span><span style="font-weight:600">Aditya</span></button>
+            <button style="all:unset;touch-action:manipulation;cursor:pointer;display:flex;align-items:center;justify-content:space-between;min-height:66px;padding:0 18px;border-radius:14px;background:#1b1e26;border:1px solid rgba(255,255,255,.06)"><span class="disp" style="font-weight:800;font-size:22px;color:rgba(244,245,247,.35)">0</span><span style="font-weight:600">Hafiz</span></button>
+            <button style="all:unset;touch-action:manipulation;cursor:pointer;display:flex;align-items:center;justify-content:space-between;min-height:66px;padding:0 18px;border-radius:14px;background:#1b1e26;border:1px solid rgba(255,255,255,.06)"><span class="disp" style="font-weight:800;font-size:22px;color:rgba(244,245,247,.35)">0</span><span style="font-weight:600">Reza</span></button>
+            <button style="all:unset;touch-action:manipulation;cursor:pointer;text-align:center;padding:11px;border-radius:12px;background:transparent;border:1px solid rgba(255,255,255,.12);color:rgba(244,245,247,.6);font:600 12px 'Archivo';margin-top:auto">Own goal / unknown +1</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 1b — LIVE CONSOLE: SPLIT COURT ============ -->
+    <div class="dv-opt" id="1b">
+      <div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>Live console — “Split court” · immersive two-color halves · iPad landscape</div>
+      <div class="ipad">
+        <div class="ipad-screen" style="display:flex">
+          <!-- RED HALF -->
+          <div style="flex:1;position:relative;background:linear-gradient(160deg,#ff4d57,#c41f2b);padding:22px 24px;display:flex;flex-direction:column">
+            <div style="position:absolute;inset:0;background:radial-gradient(120% 90% at 0% 0%,rgba(0,0,0,.42),transparent 55%)"></div>
+            <div style="position:relative;display:flex;align-items:center;justify-content:flex-start">
+              <span class="disp" style="font-weight:900;font-size:24px;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.3)">RED</span>
+            </div>
+            <div style="position:relative;flex:1;display:flex;align-items:center;justify-content:center"><span class="disp" style="font-weight:900;font-size:104px;line-height:.7;color:#fff;text-shadow:0 4px 24px rgba(0,0,0,.35)">3</span></div>
+            <div style="position:relative;display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-top:auto">
+              <button style="all:unset;touch-action:manipulation;cursor:pointer;min-height:70px;border-radius:15px;background:rgba(255,255,255,.16);backdrop-filter:blur(6px);display:flex;flex-direction:column;justify-content:center;padding:0 16px;color:#fff"><span style="font-weight:700;font-size:15px">Raka</span><span style="font-size:11px;opacity:.8">1 goal</span></button>
+              <button style="all:unset;touch-action:manipulation;cursor:pointer;min-height:70px;border-radius:15px;background:rgba(255,255,255,.16);display:flex;flex-direction:column;justify-content:center;padding:0 16px;color:#fff"><span style="font-weight:700;font-size:15px">Fikri</span><span style="font-size:11px;opacity:.8">2 goals</span></button>
+              <button style="all:unset;touch-action:manipulation;cursor:pointer;min-height:70px;border-radius:15px;background:rgba(255,255,255,.16);display:flex;flex-direction:column;justify-content:center;padding:0 16px;color:#fff"><span style="font-weight:700;font-size:15px">Dimas</span><span style="font-size:11px;opacity:.8">0 goals</span></button>
+              <button style="all:unset;touch-action:manipulation;cursor:pointer;min-height:70px;border-radius:15px;background:rgba(255,255,255,.16);display:flex;flex-direction:column;justify-content:center;padding:0 16px;color:#fff"><span style="font-weight:700;font-size:15px">Bagus</span><span style="font-size:11px;opacity:.8">0 goals</span></button>
+              <button style="all:unset;touch-action:manipulation;cursor:pointer;min-height:70px;border-radius:15px;background:rgba(255,255,255,.16);display:flex;flex-direction:column;justify-content:center;padding:0 16px;color:#fff"><span style="font-weight:700;font-size:15px">Andi</span><span style="font-size:11px;opacity:.8">0 goals</span></button>
+              <button style="all:unset;touch-action:manipulation;cursor:pointer;min-height:70px;border-radius:15px;background:rgba(0,0,0,.22);display:flex;align-items:center;justify-content:center;padding:0 12px;color:#fff;text-align:center;font-weight:600;font-size:12px">Own goal +1</button>
+            </div>
+          </div>
+          <!-- GREEN HALF -->
+          <div style="flex:1;position:relative;background:linear-gradient(200deg,#2fd06a,#149b47);padding:22px 24px;display:flex;flex-direction:column">
+            <div style="position:absolute;inset:0;background:radial-gradient(120% 90% at 100% 0%,rgba(0,0,0,.42),transparent 55%)"></div>
+            <div style="position:relative;display:flex;align-items:center;justify-content:flex-end">
+              <span class="disp" style="font-weight:900;font-size:24px;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.3)">GREEN</span>
+            </div>
+            <div style="position:relative;flex:1;display:flex;align-items:center;justify-content:center"><span class="disp" style="font-weight:900;font-size:104px;line-height:.7;color:#fff;text-shadow:0 4px 24px rgba(0,0,0,.35)">2</span></div>
+            <!-- assist overlay demo -->
+            <div style="position:relative;margin:0 0 16px;padding:13px 15px;border-radius:15px;background:rgba(0,0,0,.28);backdrop-filter:blur(4px)">
+              <div style="font:700 10px 'Archivo';letter-spacing:.12em;text-transform:uppercase;color:#c8ff2f;margin-bottom:9px">Yusuf scored — assist?</div>
+              <div style="display:flex;flex-wrap:wrap;gap:7px">
+                <span style="font:600 12px 'Archivo';padding:7px 12px;border-radius:9px;background:rgba(255,255,255,.22);color:#fff">Rizky</span>
+                <span style="font:600 12px 'Archivo';padding:7px 12px;border-radius:9px;background:rgba(255,255,255,.22);color:#fff">Aditya</span>
+                <span style="font:600 12px 'Archivo';padding:7px 12px;border-radius:9px;background:rgba(255,255,255,.22);color:#fff">Hafiz</span>
+                <span style="font:600 12px 'Archivo';padding:7px 12px;border-radius:9px;background:transparent;border:1px solid rgba(255,255,255,.4);color:#fff">No assist</span>
+              </div>
+            </div>
+            <div style="position:relative;display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-top:auto">
+              <button style="all:unset;touch-action:manipulation;cursor:pointer;min-height:70px;border-radius:15px;background:rgba(255,255,255,.16);display:flex;flex-direction:column;justify-content:center;padding:0 16px;color:#fff"><span style="font-weight:700;font-size:15px">Yusuf</span><span style="font-size:11px;opacity:.8">1 goal</span></button>
+              <button style="all:unset;touch-action:manipulation;cursor:pointer;min-height:70px;border-radius:15px;background:rgba(255,255,255,.16);display:flex;flex-direction:column;justify-content:center;padding:0 16px;color:#fff"><span style="font-weight:700;font-size:15px">Rizky</span><span style="font-size:11px;opacity:.8">0 goals</span></button>
+              <button style="all:unset;touch-action:manipulation;cursor:pointer;min-height:70px;border-radius:15px;background:rgba(255,255,255,.16);display:flex;flex-direction:column;justify-content:center;padding:0 16px;color:#fff"><span style="font-weight:700;font-size:15px">Aditya</span><span style="font-size:11px;opacity:.8">0 goals</span></button>
+              <button style="all:unset;touch-action:manipulation;cursor:pointer;min-height:70px;border-radius:15px;background:rgba(255,255,255,.16);display:flex;flex-direction:column;justify-content:center;padding:0 16px;color:#fff"><span style="font-weight:700;font-size:15px">Hafiz</span><span style="font-size:11px;opacity:.8">0 goals</span></button>
+              <button style="all:unset;touch-action:manipulation;cursor:pointer;min-height:70px;border-radius:15px;background:rgba(255,255,255,.16);display:flex;flex-direction:column;justify-content:center;padding:0 16px;color:#fff"><span style="font-weight:700;font-size:15px">Reza</span><span style="font-size:11px;opacity:.8">0 goals</span></button>
+              <button style="all:unset;touch-action:manipulation;cursor:pointer;min-height:70px;border-radius:15px;background:rgba(0,0,0,.22);display:flex;align-items:center;justify-content:center;padding:0 12px;color:#fff;text-align:center;font-weight:600;font-size:12px">Own goal +1</button>
+            </div>
+          </div>
+          <!-- floating control bar -->
+          <div style="position:absolute;left:50%;top:14px;transform:translateX(-50%);display:flex;gap:9px;align-items:center;background:rgba(10,11,14,.82);backdrop-filter:blur(10px);padding:8px;border-radius:16px;box-shadow:0 10px 30px -12px rgba(0,0,0,.6)">
+            <span style="font:700 10px 'Archivo';letter-spacing:.1em;color:rgba(244,245,247,.55);padding:0 8px">MD07 · M3</span>
+            <button style="all:unset;touch-action:manipulation;cursor:pointer;padding:11px 16px;border-radius:11px;background:#232732;color:#f4f5f7;font:700 12px 'Archivo'">↺ Undo</button>
+            <button style="all:unset;touch-action:manipulation;cursor:pointer;padding:11px 16px;border-radius:11px;background:#c8ff2f;color:#12141a;font:800 12px 'Archivo'">End match</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 1c — LEADERBOARD: PODIUM ============ -->
+    <div class="dv-opt" id="1c">
+      <div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Leaderboard — “Podium” · top-3 stage + ranked list · phone</div>
+      <div class="phone">
+        <div class="phone-screen" style="display:flex;flex-direction:column">
+          <div style="padding:52px 20px 16px;background:linear-gradient(180deg,#1b1e26,#12141a)">
+            <div style="display:flex;align-items:center;gap:9px;margin-bottom:14px"><span style="width:26px;height:26px;border-radius:8px;background:#c8ff2f;display:flex;align-items:center;justify-content:center;font-size:15px">⚽</span><span style="font:800 11px 'Archivo';letter-spacing:.12em;text-transform:uppercase">PPI BS Futsal</span><span style="margin-left:auto;font:600 10.5px 'Archivo';color:#12141a;background:#c8ff2f;padding:4px 9px;border-radius:20px">Odd Sem ’26</span></div>
+            <h2 class="disp" style="margin:0;font-weight:900;font-size:30px;line-height:.95">LEADERBOARD</h2>
+            <div style="display:flex;gap:8px;margin-top:16px;overflow:hidden">
+              <span style="font:700 12px 'Archivo';padding:8px 14px;border-radius:20px;background:#c8ff2f;color:#12141a">Goals</span>
+              <span style="font:600 12px 'Archivo';padding:8px 14px;border-radius:20px;background:#232732;color:rgba(244,245,247,.7)">Assists</span>
+              <span style="font:600 12px 'Archivo';padding:8px 14px;border-radius:20px;background:#232732;color:rgba(244,245,247,.7)">Wins</span>
+              <span style="font:600 12px 'Archivo';padding:8px 14px;border-radius:20px;background:#232732;color:rgba(244,245,247,.7)">Win%</span>
+            </div>
+          </div>
+          <!-- podium -->
+          <div style="display:flex;align-items:flex-end;justify-content:center;gap:10px;padding:24px 18px 20px;background:#12141a">
+            <div style="text-align:center;flex:1">
+              <div style="width:52px;height:52px;border-radius:50%;margin:0 auto 8px;background:#232732;border:2px solid #b06bff;display:flex;align-items:center;justify-content:center;font:800 16px 'Archivo'">DM</div>
+              <div style="font-weight:700;font-size:12px">Dimas</div>
+              <div style="background:#1b1e26;border-radius:12px 12px 0 0;margin-top:8px;padding:12px 0 14px"><div class="disp" style="font-weight:900;font-size:26px;color:#b06bff">9</div><div style="font-size:9px;color:rgba(244,245,247,.4)">2ND</div></div>
+            </div>
+            <div style="text-align:center;flex:1.15">
+              <div style="font-size:16px;margin-bottom:2px">👑</div>
+              <div style="width:62px;height:62px;border-radius:50%;margin:0 auto 8px;background:#232732;border:2px solid #c8ff2f;display:flex;align-items:center;justify-content:center;font:800 19px 'Archivo';box-shadow:0 0 0 4px rgba(200,255,47,.15)">FK</div>
+              <div style="font-weight:800;font-size:13px">Fikri</div>
+              <div style="background:linear-gradient(180deg,#232732,#1b1e26);border-radius:12px 12px 0 0;margin-top:8px;padding:18px 0 20px"><div class="disp" style="font-weight:900;font-size:38px;color:#c8ff2f">12</div><div style="font-size:9px;color:rgba(244,245,247,.5)">GOALS · 1ST</div></div>
+            </div>
+            <div style="text-align:center;flex:1">
+              <div style="width:52px;height:52px;border-radius:50%;margin:0 auto 8px;background:#232732;border:2px solid #4d8bff;display:flex;align-items:center;justify-content:center;font:800 16px 'Archivo'">YS</div>
+              <div style="font-weight:700;font-size:12px">Yusuf</div>
+              <div style="background:#1b1e26;border-radius:12px 12px 0 0;margin-top:8px;padding:9px 0 12px"><div class="disp" style="font-weight:900;font-size:22px;color:#4d8bff">7</div><div style="font-size:9px;color:rgba(244,245,247,.4)">3RD</div></div>
+            </div>
+          </div>
+          <!-- list -->
+          <div style="flex:1;background:#12141a;padding:4px 14px 20px;display:flex;flex-direction:column;gap:7px;overflow:hidden">
+            <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:13px;background:#1b1e26"><span class="num disp" style="font-weight:800;font-size:15px;color:rgba(244,245,247,.4);width:20px">4</span><span style="width:9px;height:9px;border-radius:3px;background:#ffcb2b"></span><span style="font-weight:600;flex:1">Raka</span><span class="disp" style="font-weight:800;font-size:19px">6</span></div>
+            <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:13px;background:#1b1e26"><span class="num disp" style="font-weight:800;font-size:15px;color:rgba(244,245,247,.4);width:20px">5</span><span style="width:9px;height:9px;border-radius:3px;background:#2fd06a"></span><span style="font-weight:600;flex:1">Rizky</span><span class="disp" style="font-weight:800;font-size:19px">5</span></div>
+            <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:13px;background:#1b1e26"><span class="num disp" style="font-weight:800;font-size:15px;color:rgba(244,245,247,.4);width:20px">6</span><span style="width:9px;height:9px;border-radius:3px;background:#ff4d57"></span><span style="font-weight:600;flex:1">Bagus</span><span class="disp" style="font-weight:800;font-size:19px">4</span></div>
+            <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:13px;background:#1b1e26"><span class="num disp" style="font-weight:800;font-size:15px;color:rgba(244,245,247,.4);width:20px">7</span><span style="width:9px;height:9px;border-radius:3px;background:#4d8bff"></span><span style="font-weight:600;flex:1">Aditya</span><span class="disp" style="font-weight:800;font-size:19px">3</span></div>
+            <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:13px;background:#1b1e26"><span class="num disp" style="font-weight:800;font-size:15px;color:rgba(244,245,247,.4);width:20px">8</span><span style="width:9px;height:9px;border-radius:3px;background:#b06bff"></span><span style="font-weight:600;flex:1">Andi</span><span class="disp" style="font-weight:800;font-size:19px">2</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 1d — LEADERBOARD: SPOTLIGHT ============ -->
+    <div class="dv-opt" id="1d">
+      <div class="dv-olabel"><a class="dv-oid" href="#1d">1d</a>Leaderboard — “Spotlight” · hero leader + dense table · phone</div>
+      <div class="phone">
+        <div class="phone-screen" style="display:flex;flex-direction:column">
+          <div style="padding:52px 20px 14px">
+            <div style="display:flex;align-items:center;gap:9px;margin-bottom:16px"><span style="width:26px;height:26px;border-radius:8px;background:#c8ff2f;display:flex;align-items:center;justify-content:center;font-size:15px">⚽</span><span style="font:800 11px 'Archivo';letter-spacing:.12em;text-transform:uppercase">PPI BS Futsal</span><span style="margin-left:auto;font:600 10.5px 'Archivo';color:rgba(244,245,247,.55);background:#232732;padding:5px 10px;border-radius:20px">Odd Sem ’26 ▾</span></div>
+          </div>
+          <!-- hero -->
+          <div style="margin:0 16px;padding:22px;border-radius:20px;background:linear-gradient(135deg,#c8ff2f,#8fdc12);color:#12141a;position:relative;overflow:hidden">
+            <div style="position:absolute;right:-30px;bottom:-40px;font-size:150px;opacity:.13;font-family:'Archivo Expanded'">⚽</div>
+            <div style="font:800 10px 'Archivo';letter-spacing:.16em;text-transform:uppercase;opacity:.7">Top scorer · this season</div>
+            <div class="disp" style="font-weight:900;font-size:34px;line-height:1;margin:10px 0 2px">FIKRI</div>
+            <div style="display:flex;align-items:baseline;gap:8px;margin-top:8px"><span class="disp" style="font-weight:900;font-size:64px;line-height:.8">12</span><div style="font-size:12px;font-weight:600;line-height:1.3">goals<br>6 games · 5 assists</div></div>
+          </div>
+          <!-- tabs -->
+          <div style="display:flex;gap:8px;padding:18px 16px 10px;overflow:hidden">
+            <span style="font:700 12px 'Archivo';padding:8px 14px;border-radius:10px;background:#232732;color:#c8ff2f;border:1px solid #c8ff2f">Goals</span>
+            <span style="font:600 12px 'Archivo';padding:8px 14px;border-radius:10px;background:#1b1e26;color:rgba(244,245,247,.6)">Assists</span>
+            <span style="font:600 12px 'Archivo';padding:8px 14px;border-radius:10px;background:#1b1e26;color:rgba(244,245,247,.6)">Wins</span>
+            <span style="font:600 12px 'Archivo';padding:8px 14px;border-radius:10px;background:#1b1e26;color:rgba(244,245,247,.6)">Win%</span>
+          </div>
+          <!-- table -->
+          <div style="flex:1;padding:0 16px 18px;overflow:hidden">
+            <div style="display:grid;grid-template-columns:26px 1fr 44px 44px 44px;padding:8px 12px;font:700 9.5px 'Archivo';letter-spacing:.08em;text-transform:uppercase;color:rgba(244,245,247,.4)">
+              <span>#</span><span>Player</span><span style="text-align:right">G</span><span style="text-align:right">A</span><span style="text-align:right">W</span>
+            </div>
+            <div style="display:flex;flex-direction:column">
+              <div style="display:grid;grid-template-columns:26px 1fr 44px 44px 44px;align-items:center;padding:11px 12px;border-top:1px solid rgba(255,255,255,.06)"><span class="num" style="font-weight:700;color:#c8ff2f">1</span><span style="display:flex;align-items:center;gap:8px;font-weight:600"><span style="width:8px;height:8px;border-radius:2px;background:#ff4d57"></span>Fikri</span><span class="disp" style="text-align:right;font-weight:800">12</span><span class="num" style="text-align:right;color:rgba(244,245,247,.6)">5</span><span class="num" style="text-align:right;color:rgba(244,245,247,.6)">4</span></div>
+              <div style="display:grid;grid-template-columns:26px 1fr 44px 44px 44px;align-items:center;padding:11px 12px;border-top:1px solid rgba(255,255,255,.06)"><span class="num" style="font-weight:700;color:rgba(244,245,247,.5)">2</span><span style="display:flex;align-items:center;gap:8px;font-weight:600"><span style="width:8px;height:8px;border-radius:2px;background:#b06bff"></span>Dimas</span><span class="disp" style="text-align:right;font-weight:800">9</span><span class="num" style="text-align:right;color:rgba(244,245,247,.6)">3</span><span class="num" style="text-align:right;color:rgba(244,245,247,.6)">3</span></div>
+              <div style="display:grid;grid-template-columns:26px 1fr 44px 44px 44px;align-items:center;padding:11px 12px;border-top:1px solid rgba(255,255,255,.06)"><span class="num" style="font-weight:700;color:rgba(244,245,247,.5)">3</span><span style="display:flex;align-items:center;gap:8px;font-weight:600"><span style="width:8px;height:8px;border-radius:2px;background:#2fd06a"></span>Yusuf</span><span class="disp" style="text-align:right;font-weight:800">7</span><span class="num" style="text-align:right;color:rgba(244,245,247,.6)">6</span><span class="num" style="text-align:right;color:rgba(244,245,247,.6)">5</span></div>
+              <div style="display:grid;grid-template-columns:26px 1fr 44px 44px 44px;align-items:center;padding:11px 12px;border-top:1px solid rgba(255,255,255,.06)"><span class="num" style="font-weight:700;color:rgba(244,245,247,.5)">4</span><span style="display:flex;align-items:center;gap:8px;font-weight:600"><span style="width:8px;height:8px;border-radius:2px;background:#ffcb2b"></span>Raka</span><span class="disp" style="text-align:right;font-weight:800">6</span><span class="num" style="text-align:right;color:rgba(244,245,247,.6)">4</span><span class="num" style="text-align:right;color:rgba(244,245,247,.6)">2</span></div>
+              <div style="display:grid;grid-template-columns:26px 1fr 44px 44px 44px;align-items:center;padding:11px 12px;border-top:1px solid rgba(255,255,255,.06)"><span class="num" style="font-weight:700;color:rgba(244,245,247,.5)">5</span><span style="display:flex;align-items:center;gap:8px;font-weight:600"><span style="width:8px;height:8px;border-radius:2px;background:#2fd06a"></span>Rizky</span><span class="disp" style="text-align:right;font-weight:800">5</span><span class="num" style="text-align:right;color:rgba(244,245,247,.6)">2</span><span class="num" style="text-align:right;color:rgba(244,245,247,.6)">4</span></div>
+              <div style="display:grid;grid-template-columns:26px 1fr 44px 44px 44px;align-items:center;padding:11px 12px;border-top:1px solid rgba(255,255,255,.06)"><span class="num" style="font-weight:700;color:rgba(244,245,247,.5)">6</span><span style="display:flex;align-items:center;gap:8px;font-weight:600"><span style="width:8px;height:8px;border-radius:2px;background:#ff4d57"></span>Bagus</span><span class="disp" style="text-align:right;font-weight:800">4</span><span class="num" style="text-align:right;color:rgba(244,245,247,.6)">1</span><span class="num" style="text-align:right;color:rgba(244,245,247,.6)">3</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <p class="dv-next">Try next: “build out the game-day flow (check-in → shuffle → play) in the <a class="dv-oid" href="#1a">1a</a> style” · “do the awards page + player profile” · “add the portrait iPad live screen” · “combine <a class="dv-oid" href="#1c">1c</a> podium with <a class="dv-oid" href="#1d">1d</a> hero”</p>
+</section>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  constructor(props){
+    super(props);
+    this.players = ['Fikri','Raka','Dimas','Bagus','Andi','Yusuf','Rizky','Aditya','Hafiz','Reza','Ilham','Galih','Nabil','Toni'];
+    this.state = { phase:'idle', red:[], blue:[], green:[] };
+    this.shuffle = this.shuffle.bind(this);
+    this.reset = this.reset.bind(this);
+  }
+  shuffle(){
+    if(this.state.phase==='rolling') return;
+    this.setState({phase:'rolling'});
+    let ticks=0;
+    clearInterval(this._iv);
+    const rnd=(n)=>Array.from({length:n},()=>this.players[Math.floor(Math.random()*this.players.length)]);
+    this._iv=setInterval(()=>{
+      ticks++;
+      this.setState({red:rnd(5),blue:rnd(5),green:rnd(4)});
+      if(ticks>=16){
+        clearInterval(this._iv);
+        const p=[...this.players];
+        for(let i=p.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[p[i],p[j]]=[p[j],p[i]];}
+        this.setState({phase:'done',red:p.slice(0,5),blue:p.slice(5,10),green:p.slice(10,14)});
+      }
+    },85);
+  }
+  reset(){ clearInterval(this._iv); this.setState({phase:'idle',red:[],blue:[],green:[]}); }
+  componentWillUnmount(){ clearInterval(this._iv); }
+  slots(arr,count){
+    const phase=this.state.phase;
+    return Array.from({length:count},(_,i)=>{
+      let s='display:flex;align-items:center;justify-content:center;min-height:50px;padding:0 12px;border-radius:12px;color:#fff;font-weight:700;font-size:14px;';
+      if(phase==='done') s+='background:rgba(255,255,255,.2);animation:popIn .34s cubic-bezier(.2,.8,.3,1.4) both;animation-delay:'+(i*45)+'ms;';
+      else if(phase==='rolling') s+='background:rgba(255,255,255,.1);opacity:.65;filter:blur(.5px);';
+      else s+='background:rgba(255,255,255,.05);opacity:.35;';
+      return { name: (arr[i]||'—'), style:s };
+    });
+  }
+  renderVals(){
+    const phase=this.state.phase;
+    return {
+      isIdle: phase==='idle', isRolling: phase==='rolling', isDone: phase==='done',
+      statusLabel: phase==='done'?'Teams ready — lock them in':(phase==='rolling'?'Shuffling…':'14 attending · tap to shuffle'),
+      redSlots:this.slots(this.state.red,5),
+      blueSlots:this.slots(this.state.blue,5),
+      greenSlots:this.slots(this.state.green,4),
+      shuffle:this.shuffle, reset:this.reset,
+    };
+  }
+}
+</script>
+</body>
+</html>

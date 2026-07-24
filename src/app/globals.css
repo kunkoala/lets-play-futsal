@@ -1,26 +1,103 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/*
+ * Mantine owns the color scheme (light/dark, following the OS via
+ * defaultColorScheme="auto" in layout.tsx). The page surface and text defer
+ * to Mantine's variables so Tailwind and Mantine never disagree about which
+ * mode is active — otherwise you get a black page with light-mode white cards
+ * and near-invisible text.
+ */
+body {
+  background: var(--mantine-color-body);
+  color: var(--mantine-color-text);
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ---------------------------------------------------------------------
+ * "Feel special" motion system for the public site (awards, leaderboard,
+ * player profiles). The admin console deliberately does NOT use these —
+ * it stays plain/fast for courtside use. All animations are disabled
+ * under prefers-reduced-motion.
+ * ------------------------------------------------------------------- */
+
+@keyframes fs-fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fs-pop-in {
+  0% { opacity: 0; transform: scale(0.85); }
+  60% { opacity: 1; transform: scale(1.04); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes fs-confetti-fall {
+  0% { transform: translateY(-12px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(360px) rotate(360deg); opacity: 0; }
+}
+
+.fs-fade-up {
+  animation: fs-fade-up 0.5s ease-out both;
+}
+
+.fs-pop-in {
+  animation: fs-pop-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/*
+ * The one signature gradient in the app (teal -> cyan), reused as a static
+ * text fill wherever a heading/name needs a bit of visual weight. Not
+ * animated — deliberately a single reusable recipe instead of a shimmer
+ * effect or per-component gradient choices.
+ */
+.fs-gradient-text {
+  background: linear-gradient(135deg, var(--mantine-color-teal-6), var(--mantine-color-cyan-5));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.fs-confetti-container {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.fs-confetti-piece {
+  position: absolute;
+  top: -10px;
+  border-radius: 1px;
+  animation-name: fs-confetti-fall;
+  animation-timing-function: ease-in;
+  animation-iteration-count: 1;
+  animation-fill-mode: forwards;
+}
+
+.fs-card-hover {
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.fs-card-hover:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--mantine-shadow-md);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fs-fade-up,
+  .fs-pop-in,
+  .fs-confetti-piece {
+    animation: none !important;
+  }
+  .fs-card-hover:hover {
+    transform: none;
+  }
+  .fs-confetti-container {
+    display: none;
+  }
 }

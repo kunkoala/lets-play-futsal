@@ -36,10 +36,10 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        <ColorSchemeScript />
+        <ColorSchemeScript defaultColorScheme="auto" />
       </head>
       <body className="min-h-full flex flex-col">
-        <MantineProvider theme={theme}>
+        <MantineProvider theme={theme} defaultColorScheme="auto">
           <Notifications />
           {children}
         </MantineProvider>

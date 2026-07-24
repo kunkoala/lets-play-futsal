@@ -1,37 +1,9 @@
-import { Card, Container, Stack, Text, Title } from "@mantine/core";
+import { Container, Group, Stack, Text, Title } from "@mantine/core";
 import { getActiveSeason, getSeasonLeaderboard, type PlayerSeasonStats } from "@/lib/leaderboard";
 import { prisma } from "@/lib/prisma";
-import { NavLink } from "@/components/NavLink";
-
-function TopList({
-  title,
-  items,
-}: {
-  title: string;
-  items: { playerId: number; name: string; value: number }[];
-}) {
-  return (
-    <Card withBorder padding="lg" radius="md">
-      <Stack gap="xs">
-        <Text fw={500}>{title}</Text>
-        {items.length === 0 && (
-          <Text size="sm" c="dimmed">
-            No data yet.
-          </Text>
-        )}
-        {items.map((item, i) => (
-          <Text key={item.playerId} size="sm">
-            {i + 1}.{" "}
-            <NavLink href={`/players/${item.playerId}`}>
-              {item.name}
-            </NavLink>{" "}
-            — {item.value}
-          </Text>
-        ))}
-      </Stack>
-    </Card>
-  );
-}
+import { MvpSpotlight } from "./MvpSpotlight";
+import { Podium } from "./Podium";
+import { Trophy, SoccerBall, Target, Fire } from "@/components/icons";
 
 function top(
   stats: PlayerSeasonStats[],
@@ -48,8 +20,11 @@ export default async function AwardsPage() {
   const activeSeason = await getActiveSeason();
   if (!activeSeason) {
     return (
-      <Container size="sm" py="xl">
-        <Title order={1}>Awards</Title>
+      <Container size="md" py="xl">
+        <Group gap={10}>
+          <Trophy size={30} weight="fill" color="var(--mantine-color-teal-6)" />
+          <Title order={1}>Awards</Title>
+        </Group>
         <Text c="dimmed" mt="sm">
           No active season yet.
         </Text>
@@ -64,29 +39,44 @@ export default async function AwardsPage() {
   });
 
   return (
-    <Container size="sm" py="xl">
-      <Stack gap="lg">
-        <div>
-          <Title order={1}>Awards</Title>
+    <Container size="md" py="xl">
+      <Stack gap="xl">
+        <Stack gap={4} className="fs-fade-up">
+          <Group gap={10}>
+            <Trophy size={30} weight="fill" color="var(--mantine-color-teal-6)" />
+            <Title order={1} fz={{ base: 30, sm: 38 }}>
+              Season Awards
+            </Title>
+          </Group>
           <Text c="dimmed">{activeSeason.name}</Text>
+        </Stack>
+
+        {mvpAward && <MvpSpotlight mvp={mvpAward.player} />}
+
+        <div className="fs-fade-up" style={{ animationDelay: "0.1s" }}>
+          <Podium
+            title="Top Scorer"
+            icon={<SoccerBall size={22} weight="fill" color="var(--mantine-color-teal-6)" />}
+            unit="goals"
+            items={top(stats, "goals")}
+          />
         </div>
-
-        {mvpAward && (
-          <Card withBorder padding="lg" radius="md" bg="yellow.0">
-            <Stack gap={4}>
-              <Text fw={500}>MVP</Text>
-              <Text fz={24} fw={700}>
-                <NavLink href={`/players/${mvpAward.player.id}`}>
-                  {mvpAward.player.name}
-                </NavLink>
-              </Text>
-            </Stack>
-          </Card>
-        )}
-
-        <TopList title="Top Scorer" items={top(stats, "goals")} />
-        <TopList title="Top Assists" items={top(stats, "assists")} />
-        <TopList title="Most Wins" items={top(stats, "wins")} />
+        <div className="fs-fade-up" style={{ animationDelay: "0.2s" }}>
+          <Podium
+            title="Top Assists"
+            icon={<Target size={22} weight="fill" color="var(--mantine-color-teal-6)" />}
+            unit="assists"
+            items={top(stats, "assists")}
+          />
+        </div>
+        <div className="fs-fade-up" style={{ animationDelay: "0.3s" }}>
+          <Podium
+            title="Most Wins"
+            icon={<Fire size={22} weight="fill" color="var(--mantine-color-teal-6)" />}
+            unit="wins"
+            items={top(stats, "wins")}
+          />
+        </div>
       </Stack>
     </Container>
   );
