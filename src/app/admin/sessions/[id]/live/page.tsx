@@ -39,13 +39,21 @@ export default async function LiveMatchPage({
     id: match.homeTeam.id,
     name: match.homeTeam.name,
     color: match.homeTeam.color,
-    players: match.homeTeam.players.map((tp) => ({ id: tp.player.id, name: tp.player.name })),
+    players: match.homeTeam.players.map((tp) => ({
+      id: tp.player.id,
+      name: tp.player.name,
+      isKeeper: tp.isKeeper,
+    })),
   };
   const awayTeam = {
     id: match.awayTeam.id,
     name: match.awayTeam.name,
     color: match.awayTeam.color,
-    players: match.awayTeam.players.map((tp) => ({ id: tp.player.id, name: tp.player.name })),
+    players: match.awayTeam.players.map((tp) => ({
+      id: tp.player.id,
+      name: tp.player.name,
+      isKeeper: tp.isKeeper,
+    })),
   };
 
   return (

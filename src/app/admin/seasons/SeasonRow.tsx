@@ -103,13 +103,15 @@ export function SeasonRow({
           <input type="hidden" name="seasonId" value={season.id} />
           <input type="hidden" name="playerId" value={mvpChoice ?? ""} />
           <Group gap={4} wrap="nowrap">
+            {/* The awards page derives season MVP from match-by-match picks;
+                setting one here overrides that count. */}
             <Select
-              placeholder="Pick MVP"
+              placeholder="Auto (most MVPs)"
               size="xs"
               data={playerOptions}
               value={mvpChoice}
               onChange={setMvpChoice}
-              w={140}
+              w={150}
               searchable
             />
             <Button

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { Box, Container, Group, Stack, Text } from "@mantine/core";
 import { prisma } from "@/lib/prisma";
 import { computeScore } from "@/lib/matchScore";
+import { KEEPER_GLYPH } from "@/lib/keeperPref";
 import { NavLink } from "@/components/NavLink";
 import { ArrowLeft } from "@/components/icons";
 
@@ -40,6 +41,7 @@ export default async function PublicSessionDetailPage({
         include: {
           homeTeam: true,
           awayTeam: true,
+          mvpPlayer: true,
           goalEvents: { include: { scorer: true, assist: true }, orderBy: { seq: "asc" } },
         },
         orderBy: { seq: "asc" },
@@ -98,11 +100,14 @@ export default async function PublicSessionDetailPage({
                     {team.name}
                   </Text>
                   <Stack gap={2} mt={8}>
-                    {team.players.map((tp) => (
-                      <Text key={tp.player.id} fz={13} fw={500}>
-                        {tp.player.name}
-                      </Text>
-                    ))}
+                    {[...team.players]
+                      .sort((a, b) => Number(b.isKeeper) - Number(a.isKeeper))
+                      .map((tp) => (
+                        <Text key={tp.player.id} fz={13} fw={tp.isKeeper ? 700 : 500}>
+                          {tp.player.name}
+                          {tp.isKeeper ? ` ${KEEPER_GLYPH}` : ""}
+                        </Text>
+                      ))}
                   </Stack>
                 </Box>
               ))}
@@ -152,6 +157,22 @@ export default async function PublicSessionDetailPage({
                   <Text fz={11} fw={700} mt={8} style={{ color: "var(--team-yellow)" }}>
                     ● LIVE
                   </Text>
+                )}
+                {m.mvpPlayer && (
+                  <Group gap={6} mt={10} wrap="nowrap">
+                    <Text fz={11} fw={800} style={{ color: "var(--volt)" }}>
+                      🏆 MVP
+                    </Text>
+                    <NavLink
+                      href={`/players/${m.mvpPlayer.id}`}
+                      fz={13}
+                      fw={600}
+                      c="inherit"
+                      underline="hover"
+                    >
+                      {m.mvpPlayer.name}
+                    </NavLink>
+                  </Group>
                 )}
                 {m.goalEvents.length > 0 && (
                   <Stack gap={3} mt={12} pt={12} style={{ borderTop: "1px solid var(--hairline)" }}>

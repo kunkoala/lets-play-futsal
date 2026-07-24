@@ -2,11 +2,13 @@
 
 import { useActionState, useState } from "react";
 import { Box, Button, Group, Text } from "@mantine/core";
+import { keeperPrefBadge } from "@/lib/keeperPref";
+import type { KeeperPref } from "@/lib/shuffle";
 import { saveAttendance, type SessionFormState } from "../actions";
 
 const initialState: SessionFormState = undefined;
 
-type Player = { id: number; name: string };
+type Player = { id: number; name: string; keeperPref: KeeperPref };
 
 export function AttendanceChecklist({
   sessionId,
@@ -61,13 +63,7 @@ export function AttendanceChecklist({
           No active players — add some on the Players page first.
         </Text>
       ) : (
-        <Box
-          style={{
-            display: "grid",
-            gap: 8,
-            gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
-          }}
-        >
+        <Box className="checkin-grid">
           {players.map((player) => {
             const on = checked.has(player.id);
             return (
@@ -112,6 +108,17 @@ export function AttendanceChecklist({
                 <Text fz={14} fw={600} c="var(--mantine-color-text)" truncate>
                   {player.name}
                 </Text>
+                {/* Keeper marker, so coverage is visible while checking people in */}
+                {keeperPrefBadge(player.keeperPref) && (
+                  <Text
+                    fz={10}
+                    fw={800}
+                    c="dimmed"
+                    style={{ marginLeft: "auto", flexShrink: 0, whiteSpace: "nowrap" }}
+                  >
+                    {keeperPrefBadge(player.keeperPref)}
+                  </Text>
+                )}
               </button>
             );
           })}

@@ -1,7 +1,7 @@
 import { Box, Container, Group } from "@mantine/core";
 import { verifySession } from "@/lib/auth";
 import { NavLink } from "@/components/NavLink";
-import { SoccerBall } from "@/components/icons";
+import { SoccerBallIcon } from "@/components/icons";
 
 export async function Navbar() {
   const isAdmin = await verifySession();
@@ -34,7 +34,7 @@ export async function Navbar() {
                   flexShrink: 0,
                 }}
               >
-                <SoccerBall size={19} weight="fill" color="#0D0F14" />
+                <SoccerBallIcon size={19} weight="fill" color="#0D0F14" />
               </Box>
               <span
                 className="display-face"

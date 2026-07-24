@@ -1,16 +1,20 @@
 "use client";
 
 import { useActionState } from "react";
-import { Box, Button, Group, TableTd, TableTr, TextInput } from "@mantine/core";
+import { Box, Button, Group, Select, TableTd, TableTr, TextInput } from "@mantine/core";
+import { KEEPER_PREF_OPTIONS } from "@/lib/keeperPref";
+import type { KeeperPref } from "@/lib/shuffle";
 import {
-  renamePlayer,
   togglePlayerActive,
+  updatePlayer,
   type PlayerFormState,
 } from "./actions";
 
 const initialState: PlayerFormState = undefined;
 
-type Player = { id: number; name: string; isActive: boolean };
+const POSITION_DATA = KEEPER_PREF_OPTIONS.map((o) => ({ value: o.value, label: o.label }));
+
+type Player = { id: number; name: string; isActive: boolean; keeperPref: KeeperPref };
 
 function StatusPill({ active }: { active: boolean }) {
   return (
@@ -33,11 +37,8 @@ function StatusPill({ active }: { active: boolean }) {
 }
 
 export function PlayerRow({ player }: { player: Player }) {
-  const [state, formAction, pending] = useActionState(
-    renamePlayer,
-    initialState,
-  );
-  const formId = `rename-player-${player.id}`;
+  const [state, formAction, pending] = useActionState(updatePlayer, initialState);
+  const formId = `update-player-${player.id}`;
 
   return (
     <TableTr>
@@ -55,6 +56,18 @@ export function PlayerRow({ player }: { player: Player }) {
             size="sm"
           />
         </form>
+      </TableTd>
+      <TableTd style={{ minWidth: 180 }}>
+        {/* Submits with the name via `form={formId}` — one Save button for the row. */}
+        <Select
+          key={player.keeperPref}
+          form={formId}
+          name="keeperPref"
+          data={POSITION_DATA}
+          defaultValue={player.keeperPref}
+          allowDeselect={false}
+          size="sm"
+        />
       </TableTd>
       <TableTd>
         <StatusPill active={player.isActive} />

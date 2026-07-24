@@ -14,10 +14,15 @@ import {
   TableTr,
   Text,
 } from "@mantine/core";
-import { getPlayerProfile, type PlayerStatsTotals } from "@/lib/playerProfile";
+import { getPlayerProfile } from "@/lib/playerProfile";
+import { getActiveSeason, getSeasonLeaderboard } from "@/lib/leaderboard";
+import { RatingBreakdown } from "@/components/RatingBreakdown";
+import { formatPlusMinus, formatRate, type PlayerStats } from "@/lib/stats";
+import { keeperPrefBadge, keeperPrefLabel, KEEPER_GLYPH } from "@/lib/keeperPref";
 import { prisma } from "@/lib/prisma";
 import { NavLink } from "@/components/NavLink";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
+import { FormGuide } from "@/components/FormGuide";
 import { ArrowLeft } from "@/components/icons";
 
 function Eyebrow({ children }: { children: React.ReactNode }) {
@@ -67,6 +72,49 @@ function StatTile({
       <Text fw={700} fz={10} c="dimmed" mt={6} style={{ letterSpacing: "0.12em" }}>
         {label}
       </Text>
+    </Box>
+  );
+}
+
+/** Label + value on one line — the compact rows under the headline tiles. */
+function StatLine({
+  label,
+  value,
+  hint,
+}: {
+  label: string;
+  value: React.ReactNode;
+  hint?: string;
+}) {
+  return (
+    <Group justify="space-between" wrap="nowrap" gap="sm">
+      <Text fz={12} c="dimmed" fw={600}>
+        {label}
+        {hint && (
+          <Text span fz={11} c="dimmed" fw={400}>
+            {" "}
+            {hint}
+          </Text>
+        )}
+      </Text>
+      <Text className="tabular-nums" fz={13} fw={700} style={{ flexShrink: 0 }}>
+        {value}
+      </Text>
+    </Group>
+  );
+}
+
+function Card({ children }: { children: React.ReactNode }) {
+  return (
+    <Box
+      style={{
+        border: "1px solid var(--hairline)",
+        borderRadius: 14,
+        background: "var(--panel)",
+        padding: "14px 16px",
+      }}
+    >
+      {children}
     </Box>
   );
 }
@@ -121,11 +169,21 @@ export default async function PlayerProfilePage({
     include: { season: true },
   });
 
-  const totals: PlayerStatsTotals = profile.activeSeason ?? profile.allTime;
-  const winRate =
-    totals.matchesPlayed > 0 ? Math.round((totals.wins / totals.matchesPlayed) * 100) : 0;
+  // Ratings only mean something relative to a field, so they're read back from
+  // the active season's leaderboard rather than recomputed from this player alone.
+  const activeSeason = await getActiveSeason();
+  const seasonStats = activeSeason ? await getSeasonLeaderboard(activeSeason.id) : [];
+  const ranked = seasonStats
+    .filter((s) => s.matchesPlayed > 0)
+    .sort((a, b) => b.rating - a.rating);
+  const rankIndex = ranked.findIndex((s) => s.playerId === id);
+  const seasonEntry = rankIndex >= 0 ? ranked[rankIndex] : null;
+
+  const totals: PlayerStats = profile.activeSeason ?? profile.allTime;
+  const winRate = Math.round(totals.winRate * 100);
   const usual = usualTeam(profile.sessionHistory);
   const at = profile.allTime;
+  const keeperBadge = keeperPrefBadge(profile.player.keeperPref);
 
   return (
     <Container size="lg" py={{ base: 20, sm: 32 }} pb={64}>
@@ -163,9 +221,14 @@ export default async function PlayerProfilePage({
                     {usual && <TeamDot color={usual.color} />}
                     <Text c="dimmed" fz={13} truncate>
                       {usual ? `Usually ${usual.name} · ` : ""}
-                      {at.gamesPlayed} games
+                      {at.gamesPlayed} matchdays
                     </Text>
                   </Group>
+                  {keeperBadge && (
+                    <Text fz={11} fw={700} c="dimmed" mt={4} title={keeperPrefLabel(profile.player.keeperPref)}>
+                      {keeperBadge} · {keeperPrefLabel(profile.player.keeperPref)}
+                    </Text>
+                  )}
                   {!profile.player.isActive && (
                     <Text c="dimmed" fz={11} mt={4}>
                       Inactive
@@ -195,12 +258,88 @@ export default async function PlayerProfilePage({
               </Group>
             </Box>
 
+            {seasonEntry && (
+              <RatingBreakdown
+                rating={seasonEntry.rating}
+                components={seasonEntry.ratingComponents}
+                rank={rankIndex + 1}
+                fieldSize={ranked.length}
+              />
+            )}
+
             <Eyebrow>{profile.activeSeason ? profile.activeSeasonName : "All-time"}</Eyebrow>
             <Group gap={10} wrap="nowrap">
               <StatTile label="GOALS" value={totals.goals} accent />
               <StatTile label="ASSISTS" value={totals.assists} />
-              <StatTile label="WINS" value={totals.wins} />
+              <StatTile label="G+A" value={totals.goalContributions} />
             </Group>
+            <Group gap={10} wrap="nowrap">
+              <StatTile label="POINTS" value={totals.points} />
+              <StatTile label="WINS" value={totals.wins} />
+              <StatTile label="MVP" value={totals.mvps} />
+            </Group>
+
+            <Card>
+              <Stack gap={9}>
+                <Group justify="space-between" wrap="nowrap" gap="sm">
+                  <Text fz={12} c="dimmed" fw={600}>
+                    Form
+                  </Text>
+                  <FormGuide form={totals.form} size={18} />
+                </Group>
+                <StatLine
+                  label="Goals"
+                  hint="per match"
+                  value={formatRate(totals.goalsPerMatch)}
+                />
+                <StatLine
+                  label="Assists"
+                  hint="per match"
+                  value={formatRate(totals.assistsPerMatch)}
+                />
+                <StatLine
+                  label="G+A"
+                  hint="per match"
+                  value={formatRate(totals.contributionsPerMatch)}
+                />
+                <StatLine
+                  label="Points"
+                  hint="per match"
+                  value={formatRate(totals.pointsPerMatch)}
+                />
+                <StatLine label="Goal difference" value={formatPlusMinus(totals.plusMinus)} />
+                <StatLine label="Clean sheets" value={totals.cleanSheets} />
+                <StatLine
+                  label="Record"
+                  value={`${totals.wins}W ${totals.draws}D ${totals.losses}L · ${winRate}%`}
+                />
+                {(totals.braces > 0 || totals.hatTricks > 0) && (
+                  <StatLine
+                    label="Multi-goal games"
+                    value={`${totals.braces} brace${totals.braces === 1 ? "" : "s"} · ${totals.hatTricks} hat-trick${totals.hatTricks === 1 ? "" : "s"}`}
+                  />
+                )}
+              </Stack>
+            </Card>
+
+            {/* Keeper card — only for someone who has actually gone in goal. */}
+            {totals.keeperMatches > 0 && (
+              <Card>
+                <Stack gap={9}>
+                  <Eyebrow>
+                    {KEEPER_GLYPH} In goal
+                  </Eyebrow>
+                  <StatLine label="Matches kept" value={totals.keeperMatches} />
+                  <StatLine label="Goals conceded" value={totals.keeperConceded} />
+                  <StatLine
+                    label="Conceded"
+                    hint="per match"
+                    value={formatRate(totals.concededPerKeeperMatch)}
+                  />
+                  <StatLine label="Clean sheets" value={totals.keeperCleanSheets} />
+                </Stack>
+              </Card>
+            )}
 
             <Box
               style={{
@@ -214,10 +353,16 @@ export default async function PlayerProfilePage({
                 <Eyebrow>All-time</Eyebrow>
                 <Text className="tabular-nums" fw={700} fz={13}>
                   {at.goals} G · {at.assists} A · {at.wins} W · {at.gamesPlayed} games
-                  {totals.matchesPlayed > 0 && (
+                  {at.matchesPlayed > 0 && (
                     <Text span c="dimmed" fw={500}>
                       {" "}
-                      · {winRate}% win
+                      · {Math.round(at.winRate * 100)}% win
+                    </Text>
+                  )}
+                  {at.mvps > 0 && (
+                    <Text span c="dimmed" fw={500}>
+                      {" "}
+                      · {at.mvps} MVP
                     </Text>
                   )}
                 </Text>
@@ -246,6 +391,7 @@ export default async function PlayerProfilePage({
                     <Th align="left">Team</Th>
                     <Th>G</Th>
                     <Th>A</Th>
+                    <Th>🏆</Th>
                   </TableTr>
                 </TableThead>
                 <TableTbody>
@@ -269,6 +415,11 @@ export default async function PlayerProfilePage({
                             <Text fz={13} fw={600}>
                               {row.team.name}
                             </Text>
+                            {row.keeper && (
+                              <Text fz={11} title="Kept goal that day">
+                                {KEEPER_GLYPH}
+                              </Text>
+                            )}
                           </Group>
                         ) : (
                           <Text c="dimmed">—</Text>
@@ -276,11 +427,12 @@ export default async function PlayerProfilePage({
                       </TableTd>
                       <Td accent={row.goals > 0}>{row.goals}</Td>
                       <Td>{row.assists}</Td>
+                      <Td accent={row.mvps > 0}>{row.mvps > 0 ? row.mvps : "—"}</Td>
                     </TableTr>
                   ))}
                   {profile.sessionHistory.length === 0 && (
                     <TableTr>
-                      <TableTd colSpan={4}>
+                      <TableTd colSpan={5}>
                         <Text c="dimmed" py="md" ta="center" fz={14}>
                           No completed sessions yet.
                         </Text>

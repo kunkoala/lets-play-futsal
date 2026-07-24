@@ -371,3 +371,73 @@ diverge, then leave them alone until Phase 8 actually deploys.
   show finished matches only; websockets not needed for a single admin device).
 - Photos/avatars, payments/fees tracking, notifications, i18n.
 - Multiple admins, roles, audit logs, rate limiting.
+
+---
+
+## 11. Post-v1 additions
+
+Two features added after the v1 walkthrough. Everything below stays inside the original
+"derive it, don't store it" rule from §3 — with two deliberate exceptions, noted as such.
+
+### 11a. Match MVP and extended stats
+
+- **Man of the match** is picked by the admin on the way out of a match: the "End match?"
+  confirmation on the live console lists both rosters as chips, one tap selects, tapping
+  again clears, and skipping is fine. `match.mvp_player_id` (nullable FK to player) stores
+  it. It can be set or cleared afterwards from the session page's match list.
+  This *is* stored state — a human decision, not something goal events can reconstruct.
+- **Season MVP** is now derived from the overall rating (§11c). The existing `award` row still
+  exists and, when set, overrides the derived winner — the `/admin/seasons` picker is
+  relabelled "MVP override".
+- **Extended stats**, all derived from the same goal events plus the MVP column, live in
+  `src/lib/stats.ts` and are shared by the leaderboard and the player profile so the two
+  can't disagree: G+A, per-match rates (G/M, A/M, G+A/M, PTS/M), points (3/1/0), last-5
+  form guide, clean sheets, plus/minus, braces, hat-tricks, MVP count and MVP rate.
+- Vocabulary: **matchday** = a session attended (`gamesPlayed`); **match** = one game within
+  it (`matchesPlayed`). Per-match rates divide by the latter.
+
+### 11b. Goalkeepers in the shuffle
+
+- `player.keeper_pref` is one of `outfield` / `flexible` / `goalkeeper`, set when adding or
+  editing a player on `/admin/players`.
+- The shuffle (`shuffleIntoTeamsWithKeepers`) seeds keepers before dealing anyone else:
+  dedicated keepers go one per team, teams still without one are covered by a `flexible`
+  player, and everybody left — including surplus keepers, who just play out that day — is
+  Fisher–Yates shuffled into the remaining slots. With no keepers in the mix it degrades to
+  the original random split. Team sizes are unchanged either way.
+- `team_player.is_keeper` records who actually went in goal for that team on that day — the
+  second deliberate exception to §3, and what the clean-sheet / goals-conceded stats key off.
+  A player's preference is a standing choice; this is what happened on the night.
+- The check-in list shows keeper markers, and the shuffle panel previews coverage
+  ("2 dedicated · 1 team without") before you commit.
+
+### 11c. Overall player rating
+
+`src/lib/rating.ts` blends the stats into one 0-100 number, used to sort the leaderboard by
+default and to decide the season MVP. Three things it has to get right:
+
+- **Different units.** Every metric is normalised against the season's best, so each one
+  contributes 0..1 of its weight and the category leader scores full marks for it.
+- **Volume vs. rate.** Counting stats (goals, points, matchdays) and per-match rates are both
+  included, so neither the ever-present plodder nor the one-game hotshot runs away with it.
+- **Small samples.** Rate metrics are shrunk toward the league average with a prior worth
+  `PRIOR_MATCHES` (3) matches, so 2 goals in a single appearance can't top the table.
+
+Weights sum to 100. Match MVPs carry the most, being the only input that comes from people
+who watched the game rather than from arithmetic on the scoresheet:
+
+| Metric | Weight | Metric | Weight |
+|---|---|---|---|
+| Match MVPs | 20 | Goals | 10 |
+| Goals + assists | 14 | Assists per match | 9 |
+| Win % | 13 | Wins | 6 |
+| Points | 12 | Matchdays | 5 |
+| Goals per match | 11 | | |
+
+Players with no finished matches are rated 0 and shown as "—". The rating is never presented
+bare: `/` gets an `RTG` column, `/players/[id]` gets a per-metric breakdown with bars, and the
+`/awards` MVP banner lists its top contributors — a blended score invites "why am I below
+him?", so the answer ships alongside it.
+
+Every leaderboard column also carries a hover/tap tooltip (`StatTooltip`, with `touch: true`
+so it works on phones) explaining what that column measures.

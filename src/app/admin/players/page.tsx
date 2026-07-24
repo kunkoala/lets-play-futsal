@@ -29,7 +29,7 @@ export default async function PlayersPage() {
   const players = await prisma.player.findMany({ orderBy: { name: "asc" } });
 
   return (
-    <Container size="md" py={{ base: 20, sm: 32 }} pb={64}>
+    <Container size="lg" py={{ base: 20, sm: 32 }} pb={64}>
       <Stack gap="lg">
         <div>
           <NavLink href="/admin" c="dimmed" fz={13} underline="never">
@@ -74,6 +74,7 @@ export default async function PlayersPage() {
               <TableThead>
                 <TableTr style={{ borderBottom: "1px solid var(--hairline)" }}>
                   <Th>Name</Th>
+                  <Th>Position</Th>
                   <Th>Status</Th>
                   <Th align="right">Actions</Th>
                 </TableTr>
@@ -84,7 +85,7 @@ export default async function PlayersPage() {
                 ))}
                 {players.length === 0 && (
                   <TableTr>
-                    <TableTd colSpan={3}>
+                    <TableTd colSpan={4}>
                       <Text c="dimmed" fz={14} py="sm">
                         No players yet — add the first one above.
                       </Text>

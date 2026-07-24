@@ -33,23 +33,29 @@ const TEAM_COLORS = {
   Green: "#22c55e",
 } as const;
 
-const PLAYER_NAMES = [
-  "Fikri Ramadhan",
-  "Raka Pratama",
-  "Dimas Aditya",
-  "Bagus Saputra",
-  "Yoga Firmansyah",
-  "Rizky Maulana",
-  "Aditya Nugroho",
-  "Reza Pahlevi",
-  "Fajar Sidik",
-  "Hafiz Rahman",
-  "Ilham Kurniawan",
-  "Gilang Ramadhan",
-  "Wahyu Setiawan",
-  "Andika Putra",
-  "Nanda Prasetyo",
-  "Surya Wijaya",
+/**
+ * Order matters: sessions roster players by slicing this list, and the keeper
+ * preferences are spread so each of the three teams ends up with someone who
+ * can go in goal — including one `flexible` player covering Green, to exercise
+ * the shuffle's fallback path.
+ */
+const PLAYERS: { name: string; keeperPref: "outfield" | "flexible" | "goalkeeper" }[] = [
+  { name: "Fikri Ramadhan", keeperPref: "outfield" },
+  { name: "Raka Pratama", keeperPref: "outfield" },
+  { name: "Dimas Aditya", keeperPref: "outfield" },
+  { name: "Bagus Saputra", keeperPref: "outfield" },
+  { name: "Yoga Firmansyah", keeperPref: "goalkeeper" },
+  { name: "Rizky Maulana", keeperPref: "outfield" },
+  { name: "Aditya Nugroho", keeperPref: "goalkeeper" },
+  { name: "Reza Pahlevi", keeperPref: "outfield" },
+  { name: "Fajar Sidik", keeperPref: "outfield" },
+  { name: "Hafiz Rahman", keeperPref: "outfield" },
+  { name: "Ilham Kurniawan", keeperPref: "outfield" },
+  { name: "Gilang Ramadhan", keeperPref: "outfield" },
+  { name: "Wahyu Setiawan", keeperPref: "flexible" },
+  { name: "Andika Putra", keeperPref: "outfield" },
+  { name: "Nanda Prasetyo", keeperPref: "outfield" },
+  { name: "Surya Wijaya", keeperPref: "flexible" },
 ];
 
 async function resetSeason() {
@@ -68,11 +74,11 @@ async function resetSeason() {
 
 async function upsertPlayers() {
   const players = [];
-  for (const name of PLAYER_NAMES) {
+  for (const { name, keeperPref } of PLAYERS) {
     const player = await prisma.player.upsert({
       where: { name },
-      update: { isActive: true },
-      create: { name, isActive: true },
+      update: { isActive: true, keeperPref },
+      create: { name, isActive: true, keeperPref },
     });
     players.push(player);
   }
@@ -112,6 +118,8 @@ async function createSession(params: {
   matchResults: {
     home: "Red" | "Blue" | "Green";
     away: "Red" | "Blue" | "Green";
+    /** Man of the match, from either roster. */
+    mvp: Player;
     events: {
       side: "home" | "away";
       scorer: Player | null;
@@ -150,8 +158,18 @@ async function createSession(params: {
       data: { sessionId: session.id, name, color },
     });
     teams[name] = team;
+    // Same precedence the shuffle uses: a dedicated keeper if the roster has
+    // one, otherwise whoever is willing to cover.
+    const keeper =
+      rosters[name].find((p) => p.keeperPref === "goalkeeper") ??
+      rosters[name].find((p) => p.keeperPref === "flexible") ??
+      null;
     await prisma.teamPlayer.createMany({
-      data: rosters[name].map((p) => ({ teamId: team.id, playerId: p.id })),
+      data: rosters[name].map((p) => ({
+        teamId: team.id,
+        playerId: p.id,
+        isKeeper: p.id === keeper?.id,
+      })),
     });
   }
 
@@ -168,6 +186,7 @@ async function createSession(params: {
         status: "finished",
         startedAt: new Date(params.date),
         endedAt: new Date(params.date),
+        mvpPlayerId: result.mvp.id,
       },
     });
 
@@ -211,6 +230,7 @@ async function main() {
         // Red 3 - 2 Blue
         home: "Red",
         away: "Blue",
+        mvp: byName("Raka Pratama"), // a goal and an assist
         events: [
           { side: "home", scorer: byName("Fikri Ramadhan"), assist: byName("Raka Pratama") },
           { side: "home", scorer: byName("Dimas Aditya"), assist: null },
@@ -223,6 +243,7 @@ async function main() {
         // Green 1 - 1 Red (draw)
         home: "Green",
         away: "Red",
+        mvp: byName("Wahyu Setiawan"), // assist, and kept goal for Green
         events: [
           { side: "home", scorer: byName("Ilham Kurniawan"), assist: byName("Gilang Ramadhan") },
           { side: "away", scorer: byName("Bagus Saputra"), assist: null },
@@ -232,6 +253,7 @@ async function main() {
         // Green 0 - 2 Blue (includes one own goal benefiting Blue)
         home: "Green",
         away: "Blue",
+        mvp: byName("Aditya Nugroho"), // Blue's keeper, clean sheet
         events: [
           { side: "away", scorer: byName("Fajar Sidik"), assist: byName("Hafiz Rahman") },
           { side: "away", scorer: null, assist: null }, // own goal, unattributed
@@ -251,6 +273,7 @@ async function main() {
         // Red 2 - 2 Green (draw)
         home: "Red",
         away: "Green",
+        mvp: byName("Gilang Ramadhan"), // a goal and an assist
         events: [
           { side: "home", scorer: byName("Raka Pratama"), assist: byName("Dimas Aditya") },
           { side: "home", scorer: byName("Bagus Saputra"), assist: null },
@@ -262,6 +285,7 @@ async function main() {
         // Blue 3 - 1 Red
         home: "Blue",
         away: "Red",
+        mvp: byName("Reza Pahlevi"), // a goal and an assist
         events: [
           { side: "home", scorer: byName("Reza Pahlevi"), assist: byName("Fajar Sidik") },
           { side: "home", scorer: byName("Hafiz Rahman"), assist: null },
@@ -273,6 +297,7 @@ async function main() {
         // Blue 1 - 2 Green
         home: "Blue",
         away: "Green",
+        mvp: byName("Surya Wijaya"), // a goal and an assist
         events: [
           { side: "away", scorer: byName("Nanda Prasetyo"), assist: byName("Surya Wijaya") },
           { side: "away", scorer: byName("Surya Wijaya"), assist: null },

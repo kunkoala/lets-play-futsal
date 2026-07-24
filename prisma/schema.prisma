@@ -23,7 +23,12 @@ datasource db {
 //   so illegal values are impossible at the DB layer.
 // - Deliberately NOT modeled here (per PLAN.md "Rules and derivations"):
 //   no stored match score, no stored win/draw/loss, no `stat`/leaderboard
-//   table. All of that is derived from `GoalEvent` rows at query time.
+//   table. All of that is derived from `GoalEvent` rows at query time. The
+//   extended stats (G+A, per-match rates, points, form, clean sheets, +/-,
+//   braces/hat-tricks, MVP counts) are derivations too — see src/lib/stats.ts.
+//   `Match.mvpPlayerId` and `TeamPlayer.isKeeper` are the exceptions that must
+//   be stored: they record human decisions (who was picked, who went in goal),
+//   which no amount of goal-event arithmetic can recover.
 // - Referential actions: rows that only make sense as children of a
 //   session/team/match (Attendance, Team, TeamPlayer, Match, GoalEvent) use
 //   onDelete: Cascade on that parent link — including Match.homeTeam/
@@ -65,6 +70,19 @@ enum AwardType {
   @@map("award_type")
 }
 
+/// How willing a player is to go in goal, used by the shuffle to seed one
+/// keeper per team before dealing the outfield remainder (see src/lib/shuffle.ts):
+/// `goalkeeper` = dedicated (always placed in goal if a slot exists),
+/// `flexible` = will keep only to fill a team that has no dedicated keeper,
+/// `outfield` = never auto-assigned.
+enum KeeperPref {
+  outfield
+  flexible
+  goalkeeper
+
+  @@map("keeper_pref")
+}
+
 model Season {
   id       Int      @id @default(autoincrement())
   name     String
@@ -79,16 +97,18 @@ model Season {
 }
 
 model Player {
-  id        Int      @id @default(autoincrement())
-  name      String   @unique
-  isActive  Boolean  @default(true) @map("is_active")
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  id         Int        @id @default(autoincrement())
+  name       String     @unique
+  isActive   Boolean    @default(true) @map("is_active")
+  keeperPref KeeperPref @default(outfield) @map("keeper_pref")
+  createdAt  DateTime   @default(now()) @map("created_at") @db.Timestamptz
 
   attendances     Attendance[]
   teamMemberships TeamPlayer[]
   goalsScored     GoalEvent[]  @relation("GoalEventScorer")
   assistsGiven    GoalEvent[]  @relation("GoalEventAssist")
   awards          Award[]
+  matchMvps       Match[]      @relation("MatchMvp")
 
   @@map("player")
 }
@@ -137,8 +157,12 @@ model Team {
 }
 
 model TeamPlayer {
-  teamId   Int @map("team_id")
-  playerId Int @map("player_id")
+  teamId   Int     @map("team_id")
+  playerId Int     @map("player_id")
+  // Set by the shuffle, not by the player's own preference: it records who
+  // actually went in goal for this team on this day, which is what the
+  // clean-sheet / goals-conceded stats are derived from.
+  isKeeper Boolean @default(false) @map("is_keeper")
 
   team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
   player Player @relation(fields: [playerId], references: [id])
@@ -156,8 +180,13 @@ model Match {
   status     MatchStatus @default(in_progress)
   startedAt  DateTime    @default(now()) @map("started_at") @db.Timestamptz
   endedAt    DateTime?   @map("ended_at") @db.Timestamptz
+  // Man of the match, chosen from either roster when the admin ends the
+  // match. Optional — a match may finish without anyone being picked. Left at
+  // the Prisma default for an optional FK (SET NULL), like scorer/assist.
+  mvpPlayerId Int?       @map("mvp_player_id")
 
   session    Session     @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  mvpPlayer  Player?     @relation("MatchMvp", fields: [mvpPlayerId], references: [id])
   // homeTeam/awayTeam cascade too: Team only ever exists as a child of the
   // same Session (never deleted independently), so when a Session is torn
   // down, Postgres's cascade from Session -> Team and Session -> Match fire
@@ -171,6 +200,7 @@ model Match {
   @@index([sessionId])
   @@index([homeTeamId])
   @@index([awayTeamId])
+  @@index([mvpPlayerId])
   @@map("match")
 }
 

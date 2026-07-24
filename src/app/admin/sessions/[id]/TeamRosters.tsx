@@ -1,15 +1,17 @@
 import { Box, Group, Stack, Text } from "@mantine/core";
+import { KEEPER_GLYPH } from "@/lib/keeperPref";
 
 type Team = {
   id: number;
   name: string;
   color: string;
-  players: { player: { id: number; name: string } }[];
+  players: { isKeeper: boolean; player: { id: number; name: string } }[];
 };
 
 /**
  * Team cards with a color left-border. `reveal` staggers the roster names in
  * with the popIn keyframe — the tail of the shuffle reveal (handoff §8).
+ * Whoever the shuffle put in goal is listed first, with a glove.
  */
 export function TeamRosters({ teams, reveal }: { teams: Team[]; reveal?: boolean }) {
   if (teams.length === 0) {
@@ -23,42 +25,54 @@ export function TeamRosters({ teams, reveal }: { teams: Team[]; reveal?: boolean
   let popIndex = 0;
   return (
     <Group align="stretch" gap={12} wrap="wrap">
-      {teams.map((team) => (
-        <Box
-          key={team.id}
-          style={{
-            flex: "1 1 150px",
-            minWidth: 150,
-            border: "1px solid var(--hairline)",
-            borderLeft: `3px solid ${team.color}`,
-            borderRadius: 14,
-            background: "var(--panel)",
-            padding: "14px 16px",
-          }}
-        >
-          <Group justify="space-between" align="center" mb={8}>
-            <Text fw={800} fz={14} style={{ color: team.color }}>
-              {team.name}
-            </Text>
-            <Text className="tabular-nums" fz={11} fw={700} c="dimmed">
-              {team.players.length}
-            </Text>
-          </Group>
-          <Stack gap={3}>
-            {team.players.map((tp) => (
-              <Text
-                key={tp.player.id}
-                fz={13}
-                fw={500}
-                className={reveal ? "pop-in" : undefined}
-                style={reveal ? { animationDelay: `${popIndex++ * 45}ms` } : undefined}
-              >
-                {tp.player.name}
+      {teams.map((team) => {
+        const roster = [...team.players].sort(
+          (a, b) => Number(b.isKeeper) - Number(a.isKeeper),
+        );
+        return (
+          <Box
+            key={team.id}
+            style={{
+              flex: "1 1 150px",
+              minWidth: 150,
+              border: "1px solid var(--hairline)",
+              borderLeft: `3px solid ${team.color}`,
+              borderRadius: 14,
+              background: "var(--panel)",
+              padding: "14px 16px",
+            }}
+          >
+            <Group justify="space-between" align="center" mb={8}>
+              <Text fw={800} fz={14} style={{ color: team.color }}>
+                {team.name}
               </Text>
-            ))}
-          </Stack>
-        </Box>
-      ))}
+              <Text className="tabular-nums" fz={11} fw={700} c="dimmed">
+                {team.players.length}
+              </Text>
+            </Group>
+            <Stack gap={3}>
+              {roster.map((tp) => (
+                <Group
+                  key={tp.player.id}
+                  gap={6}
+                  wrap="nowrap"
+                  className={reveal ? "pop-in" : undefined}
+                  style={reveal ? { animationDelay: `${popIndex++ * 45}ms` } : undefined}
+                >
+                  <Text fz={13} fw={tp.isKeeper ? 700 : 500} truncate>
+                    {tp.player.name}
+                  </Text>
+                  {tp.isKeeper && (
+                    <Text fz={11} title="Goalkeeper" style={{ flexShrink: 0 }}>
+                      {KEEPER_GLYPH}
+                    </Text>
+                  )}
+                </Group>
+              ))}
+            </Stack>
+          </Box>
+        );
+      })}
     </Group>
   );
 }

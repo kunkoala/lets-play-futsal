@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useOptimistic } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Group, Modal, Stack, Text } from "@mantine/core";
+import { KEEPER_GLYPH } from "@/lib/keeperPref";
 import { gradientDarkFor } from "@/lib/teamPalette";
 import {
   attachAssist,
@@ -14,7 +15,7 @@ import {
   undoLastEvent,
 } from "./actions";
 
-type Player = { id: number; name: string };
+type Player = { id: number; name: string; isKeeper: boolean };
 type TeamInfo = { id: number; name: string; color: string; players: Player[] };
 type GoalEventT = {
   id: number;
@@ -51,6 +52,7 @@ export function LiveConsole({
     { eventId: number; teamId: number; scorerName: string } | null
   >(null);
   const [confirmEnd, setConfirmEnd] = useState(false);
+  const [mvpId, setMvpId] = useState<number | null>(null);
   const [showFeed, setShowFeed] = useState(false);
   const [cooldownIds, setCooldownIds] = useState<Set<number>>(new Set());
 
@@ -157,6 +159,9 @@ export function LiveConsole({
     startTransition(async () => {
       const fd = new FormData();
       fd.set("matchId", String(matchId));
+      // Omitted entirely when nobody was picked — the admin can still set an
+      // MVP later from the session page.
+      if (mvpId !== null) fd.set("mvpPlayerId", String(mvpId));
       await endMatch(undefined, fd); // redirects back to the session page on success
     });
   }
@@ -309,17 +314,87 @@ export function LiveConsole({
               {awayTeam.name}
             </Text>
           </Text>
+
+          <MvpPicker
+            homeTeam={homeTeam}
+            awayTeam={awayTeam}
+            goalsFor={goalsFor}
+            selectedId={mvpId}
+            onSelect={(id) => setMvpId((current) => (current === id ? null : id))}
+          />
+
           <Group justify="flex-end">
             <Button variant="default" onClick={() => setConfirmEnd(false)}>
               Cancel
             </Button>
             <Button loading={isPending} onClick={handleEndMatch}>
-              Confirm
+              {mvpId === null ? "End match" : `End match · MVP ${playersById.get(mvpId)?.name}`}
             </Button>
           </Group>
         </Stack>
       </Modal>
     </div>
+  );
+}
+
+/**
+ * Man of the match: one player across both rosters, tapped on the way out.
+ * Optional by design — skipping just leaves the match without an MVP, and it
+ * can be set later from the session page. Each chip carries its team color and
+ * that player's goal count, which is usually all the reminder needed.
+ */
+function MvpPicker({
+  homeTeam,
+  awayTeam,
+  goalsFor,
+  selectedId,
+  onSelect,
+}: {
+  homeTeam: TeamInfo;
+  awayTeam: TeamInfo;
+  goalsFor: (playerId: number) => number;
+  selectedId: number | null;
+  onSelect: (playerId: number) => void;
+}) {
+  return (
+    <Stack gap={8}>
+      <Text fw={700} fz={11} c="dimmed" style={{ letterSpacing: "0.12em" }}>
+        MAN OF THE MATCH — OPTIONAL
+      </Text>
+      {[homeTeam, awayTeam].map((team) => (
+        <Group key={team.id} gap={6}>
+          {team.players.map((p) => {
+            const selected = p.id === selectedId;
+            const goals = goalsFor(p.id);
+            return (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => onSelect(p.id)}
+                aria-pressed={selected}
+                style={{
+                  border: `1px solid ${selected ? "var(--volt)" : team.color}`,
+                  background: selected ? "var(--volt)" : "transparent",
+                  color: selected ? "#0D0F14" : "var(--text)",
+                  borderRadius: 20,
+                  padding: "6px 12px",
+                  fontSize: 13,
+                  fontWeight: selected ? 800 : 600,
+                  cursor: "pointer",
+                }}
+              >
+                {p.isKeeper ? `${KEEPER_GLYPH} ` : ""}
+                {p.name}
+                {goals > 0 ? ` ${goals}⚽` : ""}
+              </button>
+            );
+          })}
+        </Group>
+      ))}
+      <Text fz={11} c="dimmed">
+        Tap again to clear. You can also set this later from the session page.
+      </Text>
+    </Stack>
   );
 }
 
@@ -380,7 +455,10 @@ function TeamHalf({
               disabled={cooldownIds.has(p.id)}
               onClick={() => onScore(p)}
             >
-              <span style={{ textAlign: "center", lineHeight: 1.1 }}>{p.name}</span>
+              <span style={{ textAlign: "center", lineHeight: 1.1 }}>
+                {p.isKeeper ? `${KEEPER_GLYPH} ` : ""}
+                {p.name}
+              </span>
               <span
                 className="tabular-nums"
                 style={{ fontSize: 12, fontWeight: 800, color: "rgba(255,255,255,.72)" }}

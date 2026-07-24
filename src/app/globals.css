@@ -51,29 +51,37 @@ body {
 }
 
 /* Leaderboard: spotlight over table on phone, side-by-side (≈380px 1fr) on desktop. */
-.lb-grid {
+/* Leaderboard: highlight cards sit in a full-width band above the standings at
+ * every size. They used to be a 360px side column from 62em up, which on an
+ * iPad (landscape is only ~1024px) left the table barely 590px to fit a dozen
+ * numeric columns into. Full width for both beats a squeezed two-up. */
+.lb-cards {
   display: grid;
-  gap: 16px;
-  grid-template-columns: 1fr;
-}
-@media (min-width: 62em) {
-  .lb-grid {
-    grid-template-columns: 360px 1fr;
-    gap: 24px;
-    align-items: start;
-  }
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
 }
 
-/* Left column: stacked highlight cards; sticks alongside the table on desktop. */
-.lb-left {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-@media (min-width: 62em) {
-  .lb-left {
-    position: sticky;
-    top: 84px;
+/* On phones the five cards would stack into five rows and push the standings
+ * off the first screen, so below 48em they become one swipeable strip instead
+ * — the table stays reachable without hiding the cards behind a tab. */
+@media (max-width: 47.99em) {
+  .lb-cards {
+    grid-auto-flow: column;
+    grid-auto-columns: 74%;
+    grid-template-columns: none;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    /* Bleed to the container edges so the strip reads as scrollable. */
+    margin-inline: -16px;
+    padding-inline: 16px;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+  .lb-cards::-webkit-scrollbar {
+    display: none;
+  }
+  .lb-cards > * {
+    scroll-snap-align: start;
   }
 }
 
@@ -92,7 +100,29 @@ body {
   }
 }
 
-/* Awards: three cards reflow phone(1) -> iPad(2-3) -> desktop(3). */
+/* Check-in: as many name tiles per row as fit. The tiles are short and the
+ * squad is ~16 people, so a narrow floor turns a long single-column scroll
+ * into two or three rows that fit on one screen. */
+.checkin-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+}
+
+/* Footer: identity | join | links. Stacks on phone, three-up from iPad. */
+.footer-grid {
+  display: grid;
+  gap: 28px;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 48em) {
+  .footer-grid {
+    grid-template-columns: 1.4fr 1fr 0.7fr;
+    gap: 40px;
+  }
+}
+
+/* Awards: cards reflow phone(1) -> iPad(2-3) -> desktop(3+). */
 .awards-grid {
   display: grid;
   gap: 14px;

@@ -14,6 +14,14 @@ const nameSchema = z
   .min(1, "Name is required.")
   .max(100, "Name is too long.");
 
+/** Mirrors the `KeeperPref` enum in prisma/schema.prisma. */
+const keeperPrefSchema = z.enum(["outfield", "flexible", "goalkeeper"]);
+
+/** Missing/blank falls back to `outfield` so an older form post still works. */
+function parseKeeperPref(value: FormDataEntryValue | null) {
+  return keeperPrefSchema.catch("outfield").parse(value);
+}
+
 function isUniqueNameViolation(err: unknown): boolean {
   return (
     err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002"
@@ -32,7 +40,9 @@ export async function addPlayer(
   }
 
   try {
-    await prisma.player.create({ data: { name: parsed.data } });
+    await prisma.player.create({
+      data: { name: parsed.data, keeperPref: parseKeeperPref(formData.get("keeperPref")) },
+    });
   } catch (err) {
     if (isUniqueNameViolation(err)) {
       return { error: "A player with that name already exists." };
@@ -43,7 +53,8 @@ export async function addPlayer(
   revalidatePath("/admin/players");
 }
 
-export async function renamePlayer(
+/** Saves a player's name and goalkeeper preference together, from one row form. */
+export async function updatePlayer(
   _prevState: PlayerFormState,
   formData: FormData,
 ): Promise<PlayerFormState> {
@@ -62,7 +73,7 @@ export async function renamePlayer(
   try {
     await prisma.player.update({
       where: { id },
-      data: { name: parsed.data },
+      data: { name: parsed.data, keeperPref: parseKeeperPref(formData.get("keeperPref")) },
     });
   } catch (err) {
     if (isUniqueNameViolation(err)) {

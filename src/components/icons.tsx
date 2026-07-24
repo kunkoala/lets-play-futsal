@@ -8,13 +8,15 @@
  * them straight into an async Server Component (our Navbar and public pages)
  * would throw "useContext only works in a Client Component". Routing every
  * icon through this one "use client" module draws the client boundary here,
- * so Server Components can render `<SoccerBall />` etc. like plain markup.
+ * so Server Components can render `<SoccerBallIcon />` etc. like plain markup.
  *
  * It also keeps the app's icon vocabulary in one place — swap a glyph here
  * and every page updates.
  */
 export {
-  SoccerBall,
+  // Phosphor deprecated the bare names in favour of `*Icon`; import the new
+  // name directly rather than aliasing the deprecated one.
+  SoccerBallIcon,
   Trophy,
   Target,
   Fire,

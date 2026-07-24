@@ -69,7 +69,7 @@ export default async function SessionDetailPage({
         orderBy: { id: "asc" },
       },
       matches: {
-        include: { homeTeam: true, awayTeam: true, goalEvents: true },
+        include: { homeTeam: true, awayTeam: true, goalEvents: true, mvpPlayer: true },
         orderBy: { seq: "asc" },
       },
     },
@@ -81,9 +81,9 @@ export default async function SessionDetailPage({
     orderBy: { name: "asc" },
   });
   const attendingIds = session.attendances.map((a) => a.playerId);
-  const attendingNames = activePlayers
-    .filter((p) => attendingIds.includes(p.id))
-    .map((p) => p.name);
+  const attending = activePlayers.filter((p) => attendingIds.includes(p.id));
+  const attendingNames = attending.map((p) => p.name);
+  const attendingCandidates = attending.map((p) => ({ id: p.id, keeperPref: p.keeperPref }));
   const inProgressMatch = session.matches.find((m) => m.status === "in_progress");
   const finishedMatches = session.matches
     .filter((m) => m.status === "finished")
@@ -129,9 +129,12 @@ export default async function SessionDetailPage({
         </Box>
       </Group>
 
-      {/* Stage 1 — check-in + shuffle */}
+      {/* Stage 1 — check-in + shuffle. Full-width rows rather than a side
+          column: check-in is the bulk of game-day tapping, and squeezed into
+          a `1fr` next to the 340px shuffle panel its name tiles collapsed to a
+          single long scrolling column. */}
       {session.status === "draft" && (
-        <div className="session-grid">
+        <Stack gap={16}>
           <Panel>
             <AttendanceChecklist
               sessionId={session.id}
@@ -140,29 +143,27 @@ export default async function SessionDetailPage({
             />
           </Panel>
 
-          <Stack gap={16}>
-            <Panel>
-              <Eyebrow>Shuffle into teams</Eyebrow>
-              <Box mt={14}>
-                <ShuffleControls
-                  sessionId={session.id}
-                  attendingCount={attendingIds.length}
-                  attendingNames={attendingNames}
-                />
-              </Box>
-            </Panel>
+          <Panel>
+            <Eyebrow>Shuffle into teams</Eyebrow>
+            <Box mt={14}>
+              <ShuffleControls
+                sessionId={session.id}
+                attendingNames={attendingNames}
+                attendingCandidates={attendingCandidates}
+              />
+            </Box>
+          </Panel>
 
-            {session.teams.length > 0 && (
-              <Panel>
-                <Group justify="space-between" align="center" mb={14}>
-                  <Eyebrow>Teams</Eyebrow>
-                  <LockTeamsButton sessionId={session.id} />
-                </Group>
-                <TeamRosters teams={session.teams} reveal />
-              </Panel>
-            )}
-          </Stack>
-        </div>
+          {session.teams.length > 0 && (
+            <Panel>
+              <Group justify="space-between" align="center" mb={14}>
+                <Eyebrow>Teams</Eyebrow>
+                <LockTeamsButton sessionId={session.id} />
+              </Group>
+              <TeamRosters teams={session.teams} reveal />
+            </Panel>
+          )}
+        </Stack>
       )}
 
       {/* Stage 2 — teams locked + next match */}
@@ -179,7 +180,11 @@ export default async function SessionDetailPage({
             <Panel>
               <Eyebrow>Matches so far</Eyebrow>
               <Box mt={12}>
-                <MatchesSoFar sessionId={session.id} matches={session.matches} />
+                <MatchesSoFar
+                  sessionId={session.id}
+                  matches={session.matches}
+                  rosters={session.teams}
+                />
               </Box>
             </Panel>
             <CompleteSessionButton sessionId={session.id} disabled={Boolean(inProgressMatch)} />
@@ -220,7 +225,11 @@ export default async function SessionDetailPage({
           <Panel>
             <Eyebrow>Matches</Eyebrow>
             <Box mt={12}>
-              <MatchesSoFar sessionId={session.id} matches={session.matches} />
+              <MatchesSoFar
+                sessionId={session.id}
+                matches={session.matches}
+                rosters={session.teams}
+              />
             </Box>
           </Panel>
           <ReopenSessionButton sessionId={session.id} />

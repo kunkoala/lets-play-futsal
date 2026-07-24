@@ -1,9 +1,8 @@
-import { Box, Button, Container, Group, Stack, Text } from "@mantine/core";
+import { Box, Container, Group, Text } from "@mantine/core";
 import { requireAdmin } from "@/lib/auth";
 import { getActiveSeason, getSeasonLeaderboard } from "@/lib/leaderboard";
 import { prisma } from "@/lib/prisma";
 import { NavButton, NavLink } from "@/components/NavLink";
-import { logout } from "./actions";
 
 function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
@@ -84,48 +83,18 @@ export default async function AdminPage() {
 
   return (
     <Container size="lg" py={{ base: 20, sm: 32 }} pb={64}>
-      {/* Admin top bar */}
-      <Group justify="space-between" align="center" mb={24} wrap="wrap" gap="sm">
-        <Group gap={10} align="center" wrap="nowrap">
-          <Box
-            style={{
-              width: 34,
-              height: 34,
-              borderRadius: 10,
-              background: "linear-gradient(135deg, var(--volt), var(--volt-end))",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 18,
-            }}
-          >
-            ⚽
-          </Box>
-          <Text className="display-face" fw={800} fz={20} style={{ letterSpacing: "-0.01em" }}>
-            Matchday HQ
-          </Text>
-          {activeSeason && (
-            <Box
-              component="span"
-              style={{
-                fontSize: 11,
-                fontWeight: 700,
-                color: "var(--volt)",
-                background: "rgba(200,255,47,.12)",
-                borderRadius: 20,
-                padding: "3px 10px",
-              }}
-            >
-              {activeSeason.name}
-            </Box>
-          )}
-        </Group>
-        <form action={logout}>
-          <Button type="submit" variant="default" size="xs">
-            Log out
-          </Button>
-        </form>
-      </Group>
+      {/* Wordmark, season badge and log-out now live in the shared admin bar
+          (src/app/admin/layout.tsx), so this page opens straight into content. */}
+      <Text
+        component="h1"
+        className="display-face"
+        fw={900}
+        fz={{ base: 26, sm: 32 }}
+        mb={20}
+        style={{ letterSpacing: "-0.02em", lineHeight: 1 }}
+      >
+        DASHBOARD
+      </Text>
 
       <Box
         style={{

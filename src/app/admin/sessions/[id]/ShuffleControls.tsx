@@ -2,7 +2,8 @@
 
 import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { Box, Button, Group, Text } from "@mantine/core";
-import { shuffleIntoTeams } from "@/lib/shuffle";
+import { computeTeamSizes, keeperCoverage, type ShuffleCandidate } from "@/lib/shuffle";
+import { KEEPER_GLYPH } from "@/lib/keeperPref";
 import { paletteFor } from "@/lib/teamPalette";
 import { shuffleTeams, type SessionFormState } from "../actions";
 
@@ -25,12 +26,13 @@ function pick<T>(arr: T[], n: number): T[] {
 
 export function ShuffleControls({
   sessionId,
-  attendingCount,
   attendingNames,
+  attendingCandidates,
 }: {
   sessionId: number;
-  attendingCount: number;
   attendingNames: string[];
+  /** Attendees with their goalkeeper preference — drives the coverage preview. */
+  attendingCandidates: ShuffleCandidate[];
 }) {
   const [state, formAction, pending] = useActionState(shuffleTeams, initialState);
   const [teamSize, setTeamSize] = useState(5);
@@ -38,15 +40,25 @@ export function ShuffleControls({
   const [tick, setTick] = useState(0);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  const attendingCount = attendingCandidates.length;
+
   const sizes = useMemo(() => {
-    if (attendingCount < 4) return null;
     try {
-      const ids = Array.from({ length: attendingCount }, (_, i) => i);
-      return shuffleIntoTeams(ids, teamSize).map((t) => t.length);
+      return computeTeamSizes(attendingCount, teamSize);
     } catch {
       return null;
     }
   }, [attendingCount, teamSize]);
+
+  // Same arithmetic the server-side shuffle will use, so what's previewed here
+  // is exactly what gets committed.
+  const coverage = useMemo(() => {
+    try {
+      return keeperCoverage(attendingCandidates, teamSize);
+    } catch {
+      return null;
+    }
+  }, [attendingCandidates, teamSize]);
 
   useEffect(() => {
     return () => {
@@ -141,6 +153,30 @@ export function ShuffleControls({
         )}
       </Group>
 
+      {/* Keeper coverage — how many teams get someone in goal */}
+      {coverage && (
+        <Group gap={8} mt={12} wrap="wrap" align="center">
+          <Text fz={12} fw={600} c="dimmed">
+            {KEEPER_GLYPH} Keepers
+          </Text>
+          {coverage.dedicated > 0 && (
+            <CoveragePill color="var(--team-green)">
+              {coverage.dedicated} dedicated
+            </CoveragePill>
+          )}
+          {coverage.flexible > 0 && (
+            <CoveragePill color="var(--team-blue)">
+              {coverage.flexible} covering
+            </CoveragePill>
+          )}
+          {coverage.uncovered > 0 && (
+            <CoveragePill color="var(--team-yellow)">
+              {coverage.uncovered} team{coverage.uncovered === 1 ? "" : "s"} without
+            </CoveragePill>
+          )}
+        </Group>
+      )}
+
       {/* Rolling reveal */}
       {rolling && cols.length > 0 && (
         <Group gap={8} mt={16} align="stretch">
@@ -193,6 +229,25 @@ export function ShuffleControls({
           {state.error}
         </Text>
       )}
+    </Box>
+  );
+}
+
+function CoveragePill({ children, color }: { children: React.ReactNode; color: string }) {
+  return (
+    <Box
+      component="span"
+      style={{
+        fontSize: 11,
+        fontWeight: 800,
+        color,
+        border: `1px solid ${color}`,
+        borderRadius: 20,
+        padding: "3px 10px",
+        whiteSpace: "nowrap",
+      }}
+    >
+      {children}
     </Box>
   );
 }

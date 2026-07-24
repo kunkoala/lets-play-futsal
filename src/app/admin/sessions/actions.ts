@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { shuffleIntoTeams } from "@/lib/shuffle";
+import { shuffleIntoTeamsWithKeepers, type ShuffledTeam } from "@/lib/shuffle";
 import { paletteFor } from "@/lib/teamPalette";
 
 export type SessionFormState = { error: string } | undefined;
@@ -113,13 +113,13 @@ export async function shuffleTeams(
 
   const attendance = await prisma.attendance.findMany({
     where: { sessionId },
-    select: { playerId: true },
+    select: { player: { select: { id: true, keeperPref: true } } },
   });
 
-  let teams: number[][];
+  let teams: ShuffledTeam[];
   try {
-    teams = shuffleIntoTeams(
-      attendance.map((a) => a.playerId),
+    teams = shuffleIntoTeamsWithKeepers(
+      attendance.map((a) => a.player),
       teamSize,
     );
   } catch (err) {
@@ -134,7 +134,11 @@ export async function shuffleTeams(
       const { name, color } = paletteFor(index);
       const team = await tx.team.create({ data: { sessionId, name, color } });
       await tx.teamPlayer.createMany({
-        data: roster.map((playerId) => ({ teamId: team.id, playerId })),
+        data: roster.playerIds.map((playerId) => ({
+          teamId: team.id,
+          playerId,
+          isKeeper: playerId === roster.keeperId,
+        })),
       });
     }
   });

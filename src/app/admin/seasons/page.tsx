@@ -86,7 +86,7 @@ export default async function SeasonsPage() {
                   <Th>Starts</Th>
                   <Th>Ends</Th>
                   <Th>Status</Th>
-                  <Th>MVP</Th>
+                  <Th>MVP override</Th>
                   <Th />
                 </TableTr>
               </TableThead>
