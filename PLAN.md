@@ -441,3 +441,55 @@ him?", so the answer ships alongside it.
 
 Every leaderboard column also carries a hover/tap tooltip (`StatTooltip`, with `touch: true`
 so it works on phones) explaining what that column measures.
+
+### 11d. Demo mode
+
+`/demo` mirrors the public pages against a synthetic season, for showing the app
+off without real names attached to made-up results.
+
+- `src/lib/demoData.ts` generates the whole season in memory from a fixed seed
+  (mulberry32), so it is identical on every request and every deploy. Nothing is
+  written to the database and no fake player can reach the real player list, a
+  real check-in sheet, or the real all-time stats. IDs are offset (90 000+ for
+  players, 80 000+ for sessions) so a demo id pasted into a real URL misses
+  rather than collides.
+- It runs through the production code paths on purpose: teams come from the real
+  `shuffleIntoTeamsWithKeepers`, standings from the real `aggregateSeason`. The
+  demo shows what the app does rather than a mock-up of it.
+- `src/lib/seasonAggregate.ts` was split out of `leaderboard.ts` for this — the
+  aggregation is now source-agnostic, taking structurally-typed rows that both
+  the Prisma results and the generated objects satisfy.
+- Each public screen is a view component under `src/components/views/` rendered
+  by two thin routes, one fetching from the database and one from the generator.
+  A `basePath` prop ("" or "/demo") prefixes every link, so browsing the demo
+  never silently drops you into real data.
+- A non-dismissable banner tops every demo page, and the layout sets
+  `robots: noindex, nofollow` so sample standings never surface in a search for
+  the club.
+
+### 11e. Installable (PWA)
+
+`/manifest.webmanifest` plus HTTPS is all a browser needs to offer "install" —
+per the Next.js PWA guide, an install prompt does **not** require offline
+support. The point is the courtside iPad: added to the home screen the app runs
+without Safari chrome, which is worth real screen space on the live console.
+
+- `src/app/manifest.ts`: standalone display, dark `#0D0F14` background and theme
+  colour so the splash and status bar blend into the app rather than flashing
+  white, plus long-press shortcuts to Matchday HQ and the leaderboard.
+- Icons are generated from the same Phosphor `SoccerBall` path the navbar uses,
+  on the volt gradient: 192, 512, and a separate maskable 512 whose ball sits
+  inside the 80% safe zone Android crops to. `src/app/apple-icon.png` (180px)
+  covers iOS home screens.
+- `viewport` export sets the theme colour and `viewport-fit: cover`. Zoom is
+  deliberately left enabled — pinch-to-zoom is an accessibility feature and
+  costs nothing here.
+- Next emits the standardised `mobile-web-app-capable`; the layout adds the
+  Apple-prefixed spelling too, for iPads older than iOS 16.4.
+
+**There is deliberately no service worker.** Every meaningful action in this app
+is a server write — logging a goal, shuffling teams, ending a match — so offline
+mode would need a write queue and conflict resolution, and a cache serving stale
+JS mid-match would cost more than offline reading is worth. If offline reading of
+past results is ever wanted, Serwist is the route, and it currently needs webpack
+config (this project builds with Turbopack).

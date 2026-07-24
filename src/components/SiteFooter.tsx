@@ -5,7 +5,7 @@ import { SoccerBallIcon } from "@/components/icons";
 const CONTACT_EMAIL = "ppibraunschweig@gmail.com";
 /** Pre-fills the subject so an enquiry doesn't land in the inbox untitled. */
 const JOIN_MAILTO = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(
-  "Joining PPI BS Futsal",
+  "Joining Liga Minggu",
 )}`;
 
 function FooterHeading({ children }: { children: React.ReactNode }) {
@@ -31,7 +31,8 @@ function FooterLink({ href, children }: { href: string; children: React.ReactNod
   );
 }
 
-export function SiteFooter() {
+/** `basePath` keeps the Explore links inside the demo when rendered there. */
+export function SiteFooter({ basePath = "" }: { basePath?: string }) {
   // Rendered on the server at request time, so the notice never goes stale.
   const year = new Date().getFullYear();
 
@@ -64,7 +65,7 @@ export function SiteFooter() {
                 <SoccerBallIcon size={16} weight="fill" color="#0D0F14" />
               </Box>
               <Text className="display-face" fw={800} fz={15} style={{ letterSpacing: "-0.01em" }}>
-                PPI BS Futsal
+                Liga Minggu
               </Text>
             </Group>
             <Text c="dimmed" fz={13} style={{ maxWidth: 320, lineHeight: 1.55 }}>
@@ -105,9 +106,10 @@ export function SiteFooter() {
           {/* Everything else on the site */}
           <Stack gap={7}>
             <FooterHeading>Explore</FooterHeading>
-            <FooterLink href="/">Leaderboard</FooterLink>
-            <FooterLink href="/sessions">Sessions</FooterLink>
-            <FooterLink href="/awards">Season awards</FooterLink>
+            <FooterLink href={basePath || "/"}>Leaderboard</FooterLink>
+            <FooterLink href={`${basePath}/sessions`}>Sessions</FooterLink>
+            <FooterLink href={`${basePath}/awards`}>Season awards</FooterLink>
+            {basePath === "" && <FooterLink href="/demo">Demo with sample data</FooterLink>}
             <FooterLink href="/login">Admin login</FooterLink>
           </Stack>
         </div>
@@ -122,7 +124,7 @@ export function SiteFooter() {
           style={{ borderTop: "1px solid var(--hairline)" }}
         >
           <Text c="dimmed" fz={12}>
-            © {year} PPI BS Futsal. Built by Azhar Rahadian.
+            © {year} Liga Minggu. Built by Azhar Rahadian.
           </Text>
           <Text c="dimmed" fz={12}>
             Stats update once a matchday is marked complete.

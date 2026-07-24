@@ -18,6 +18,7 @@ export function MvpSpotlight({
   subtitle,
   runnerUp,
   breakdown,
+  basePath = "",
 }: {
   mvp: { id: number; name: string };
   seasonName: string;
@@ -27,6 +28,7 @@ export function MvpSpotlight({
   runnerUp?: { name: string; value: string } | null;
   /** Where the rating came from — the top few contributors are listed. */
   breakdown?: RatingComponent[] | null;
+  basePath?: string;
 }) {
   // Only the metrics that actually moved the needle; the tail is noise.
   const topContributors = [...(breakdown ?? [])]
@@ -107,7 +109,7 @@ export function MvpSpotlight({
           </Group>
         )}
         <NavLink
-          href={`/players/${mvp.id}`}
+          href={`${basePath}/players/${mvp.id}`}
           fw={700}
           fz={13}
           underline="never"

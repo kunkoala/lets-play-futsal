@@ -14,12 +14,14 @@ export function Podium({
   unit,
   items,
   accent,
+  basePath = "",
 }: {
   title: string;
   glyph: string;
   unit: string;
   items: Item[];
   accent: string;
+  basePath?: string;
 }) {
   return (
     <Box
@@ -74,7 +76,7 @@ export function Podium({
                 </Text>
                 <PlayerAvatar name={item.name} size={30} ringColor={i === 0 ? accent : undefined} />
                 <NavLink
-                  href={`/players/${item.playerId}`}
+                  href={`${basePath}/players/${item.playerId}`}
                   fw={600}
                   fz={14}
                   c="inherit"
