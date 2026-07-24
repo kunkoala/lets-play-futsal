@@ -20,7 +20,7 @@ export function CompleteSessionButton({
   return (
     <form action={formAction}>
       <input type="hidden" name="sessionId" value={sessionId} />
-      <Button type="submit" loading={pending} disabled={disabled} color="teal">
+      <Button type="submit" loading={pending} disabled={disabled} variant="default">
         Complete session
       </Button>
       {state?.error && (

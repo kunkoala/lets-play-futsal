@@ -1,13 +1,50 @@
 "use client";
 
 import { useActionState, useMemo, useState } from "react";
-import { Badge, Button, Group, Select, Stack, Text } from "@mantine/core";
+import { Box, Button, Group, Select, Stack, Text } from "@mantine/core";
 import { proposeNext, type PlayedMatch } from "@/lib/matchmaker";
 import { startMatch, type SessionFormState } from "../actions";
 
 type Team = { id: number; name: string; color: string };
 
 const initialState: SessionFormState = undefined;
+
+function Eyebrow({ children }: { children: React.ReactNode }) {
+  return (
+    <Text
+      component="div"
+      fw={700}
+      fz={10}
+      c="dimmed"
+      style={{ letterSpacing: "0.14em", textTransform: "uppercase" }}
+    >
+      {children}
+    </Text>
+  );
+}
+
+/** Team tile for the RED vs GREEN proposal, with its played-count for fairness. */
+function TeamTile({ team, played }: { team: Team; played: number }) {
+  return (
+    <Box
+      style={{
+        flex: 1,
+        borderRadius: 14,
+        padding: "16px 14px",
+        textAlign: "center",
+        color: "#fff",
+        background: team.color,
+      }}
+    >
+      <Text className="display-face" fw={900} fz={18} style={{ letterSpacing: "0.04em" }}>
+        {team.name.toUpperCase()}
+      </Text>
+      <Text fz={11} fw={600} mt={4} style={{ opacity: 0.85 }}>
+        {played} played
+      </Text>
+    </Box>
+  );
+}
 
 export function NextMatchCard({
   sessionId,
@@ -50,40 +87,28 @@ export function NextMatchCard({
   }));
 
   return (
-    <Stack gap="sm">
-      <Text fw={500}>Played so far</Text>
-      <Group gap="xs">
-        {teams.map((t) => (
-          <Badge key={t.id} variant="filled" style={{ backgroundColor: t.color, color: "white" }}>
-            {t.name}: {playedCount.get(t.id) ?? 0}
-          </Badge>
-        ))}
-      </Group>
+    <Stack gap={14}>
+      <Eyebrow>Matchmaker says · Match {finishedMatches.length + 1}</Eyebrow>
 
       {proposal && !showOverride && (
         <form action={formAction}>
           <input type="hidden" name="sessionId" value={sessionId} />
           <input type="hidden" name="homeTeamId" value={proposal.home.id} />
           <input type="hidden" name="awayTeamId" value={proposal.away.id} />
-          <Stack gap="xs">
-            <Text>
-              Next match:{" "}
-              <Text span fw={700} style={{ color: proposal.home.color }}>
-                {proposal.home.name}
-              </Text>{" "}
-              vs{" "}
-              <Text span fw={700} style={{ color: proposal.away.color }}>
-                {proposal.away.name}
+          <Stack gap={14}>
+            <Group gap={12} align="center" wrap="nowrap">
+              <TeamTile team={proposal.home} played={playedCount.get(proposal.home.id) ?? 0} />
+              <Text fw={800} c="dimmed" fz={13}>
+                VS
               </Text>
-            </Text>
-            <Group>
-              <Button type="submit" loading={pending}>
-                Start this match
-              </Button>
-              <Button variant="subtle" type="button" onClick={() => setShowOverride(true)}>
-                Pick different teams
-              </Button>
+              <TeamTile team={proposal.away} played={playedCount.get(proposal.away.id) ?? 0} />
             </Group>
+            <Button type="submit" loading={pending} size="md" fw={800}>
+              ▶ Start this match
+            </Button>
+            <Button variant="subtle" color="gray" type="button" onClick={() => setShowOverride(true)}>
+              Pick different teams
+            </Button>
           </Stack>
         </form>
       )}
@@ -93,8 +118,8 @@ export function NextMatchCard({
           <input type="hidden" name="sessionId" value={sessionId} />
           <input type="hidden" name="homeTeamId" value={overrideHome ?? ""} />
           <input type="hidden" name="awayTeamId" value={overrideAway ?? ""} />
-          <Stack gap="xs">
-            <Group>
+          <Stack gap="sm">
+            <Group grow>
               <Select
                 label="Home team"
                 data={teamOptions}
@@ -113,10 +138,11 @@ export function NextMatchCard({
                 type="submit"
                 loading={pending}
                 disabled={!overrideHome || !overrideAway || overrideHome === overrideAway}
+                fw={700}
               >
                 Start this match
               </Button>
-              <Button variant="subtle" type="button" onClick={() => setShowOverride(false)}>
+              <Button variant="subtle" color="gray" type="button" onClick={() => setShowOverride(false)}>
                 Cancel
               </Button>
             </Group>
@@ -125,7 +151,7 @@ export function NextMatchCard({
       )}
 
       {state?.error && (
-        <Text c="red" size="sm">
+        <Text c="var(--loss-red)" fz={13}>
           {state.error}
         </Text>
       )}

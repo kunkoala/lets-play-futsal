@@ -1,29 +1,53 @@
 import { createTheme, type MantineColorsTuple } from "@mantine/core";
 
 /**
- * Team badge colors (§6 of PLAN.md). These exact hex values are referenced by
- * later phases (shuffle assigns teams these colors in this order: Red, Blue,
- * Green, Yellow, Purple), so every shade in each tuple is pinned to the same
- * hex rather than a generated 10-step palette — whichever shade index a
- * component ends up using, it renders as the exact brand hex.
+ * Team badge colors — the design handoff **refines** PLAN.md §6's raw values to
+ * brighter tones that read on the dark base (Red #FF4D57, Blue #4D8BFF, …). The
+ * shuffle assigns teams these colors in order (Red, Blue, Green, Yellow, Purple)
+ * and stores the hex per team, so every shade in each tuple is pinned to the same
+ * hex rather than a generated ramp — whichever shade index a component uses, it
+ * renders as the exact brand hex. See src/lib/teamPalette.ts for the source list.
  *
- * These are registered under distinct names (teamRed, teamBlue, ...) rather
- * than overriding Mantine's built-in `red`/`blue`/etc, so Mantine's own
- * semantic colors (error states, info states, etc.) are left untouched.
+ * Registered under distinct names (teamRed, …) rather than overriding Mantine's
+ * built-in red/blue/etc, so Mantine's semantic colors are left untouched.
  */
 function solid(hex: string): MantineColorsTuple {
   return [hex, hex, hex, hex, hex, hex, hex, hex, hex, hex];
 }
 
-const teamRed = solid("#ef4444");
-const teamBlue = solid("#3b82f6");
-const teamGreen = solid("#22c55e");
-const teamYellow = solid("#eab308");
-const teamPurple = solid("#a855f7");
+const teamRed = solid("#FF4D57");
+const teamBlue = solid("#4D8BFF");
+const teamGreen = solid("#2FD06A");
+const teamYellow = solid("#FFCB2B");
+const teamPurple = solid("#B06BFF");
 
-// Real (non-flat) 10-shade ramps for the awards/leaderboard "trophy" palette,
-// so light/filled/outline Mantine variants all look correct — unlike the
-// flat team colors above, these need genuine light-to-dark gradation.
+/**
+ * Volt — the single brand accent (#C8FF2F): primary CTA, active tab, highlights,
+ * top-scorer. It's a light color, so filled variants pair it with dark text via
+ * `autoContrast`. Shade 5 is the on-brand base; darker shades ride toward the
+ * gradient partner #8FDC12 for hovers/CTA gradients.
+ */
+const volt: MantineColorsTuple = [
+  "#f9ffe6", "#f0ffc4", "#e4ff97", "#d8ff66",
+  "#cfff41", "#C8FF2F", "#b4e820", "#8FDC12",
+  "#77b80f", "#5f9309",
+];
+
+/**
+ * Dark surface ramp — remapped so Mantine's dark-scheme variables land on the
+ * handoff's exact tokens:
+ *   text  = dark[0] #F4F5F7   body    = dark[7] #12141A (court night)
+ *   dimmed= dark[2]           default = dark[6] #1B1E26 (panel / cards)
+ *   border= dark[4] (hairline)  hover  = dark[5] #232732 (raised)
+ *   deep chrome = dark[8] #0D0F14 / dark[9] #0A0B0E
+ */
+const dark: MantineColorsTuple = [
+  "#F4F5F7", "#E3E4E8", "#9A9CA5", "#5C5F6B",
+  "#2A2D36", "#232732", "#1B1E26", "#12141A",
+  "#0D0F14", "#0A0B0E",
+];
+
+// Real 10-shade ramps for the awards "trophy" palette (need genuine gradation).
 const gold: MantineColorsTuple = [
   "#fff9e0", "#fff0bf", "#ffe28a", "#ffd452",
   "#ffc824", "#ffbf00", "#f2ad00", "#d69600",
@@ -41,14 +65,26 @@ const bronze: MantineColorsTuple = [
 ];
 
 export const theme = createTheme({
-  primaryColor: "teal",
-  fontFamily: "var(--font-geist-sans), sans-serif",
+  primaryColor: "volt",
+  primaryShade: { light: 5, dark: 5 },
+  autoContrast: true,
+  fontFamily: "var(--font-archivo), sans-serif",
   headings: {
-    fontFamily: "var(--font-geist-sans), sans-serif",
+    fontFamily: "var(--font-archivo-expanded), var(--font-archivo), sans-serif",
     fontWeight: "800",
   },
   defaultRadius: "md",
+  // chips/rows 12 · cards 16 · frames/large cards 22 · pills use radius="xl"
+  radius: {
+    xs: "6px",
+    sm: "10px",
+    md: "12px",
+    lg: "16px",
+    xl: "22px",
+  },
   colors: {
+    dark,
+    volt,
     teamRed,
     teamBlue,
     teamGreen,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { Badge, Button, Group, Select, TextInput } from "@mantine/core";
+import { Box, Button, Group, Select, TableTd, TableTr, TextInput } from "@mantine/core";
 import { setActiveSeason, setMvp, updateSeason, type SeasonFormState } from "./actions";
 
 const initialState: SeasonFormState = undefined;
@@ -45,8 +45,8 @@ export function SeasonRow({
   const playerOptions = players.map((p) => ({ value: String(p.id), label: p.name }));
 
   return (
-    <tr>
-      <td>
+    <TableTr>
+      <TableTd style={{ minWidth: 160 }}>
         <form action={formAction} id={formId}>
           <input type="hidden" name="id" value={season.id} />
           {/* Keyed by the current values so a successful edit (which
@@ -59,8 +59,8 @@ export function SeasonRow({
             error={state?.error}
           />
         </form>
-      </td>
-      <td>
+      </TableTd>
+      <TableTd>
         <TextInput
           key={startsOnValue}
           type="date"
@@ -69,8 +69,8 @@ export function SeasonRow({
           defaultValue={startsOnValue}
           size="sm"
         />
-      </td>
-      <td>
+      </TableTd>
+      <TableTd>
         <TextInput
           key={endsOnValue}
           type="date"
@@ -79,19 +79,26 @@ export function SeasonRow({
           defaultValue={endsOnValue}
           size="sm"
         />
-      </td>
-      <td>
-        {season.isActive ? (
-          <Badge color="teal" variant="filled">
-            Active
-          </Badge>
-        ) : (
-          <Badge color="gray" variant="light">
-            Inactive
-          </Badge>
-        )}
-      </td>
-      <td>
+      </TableTd>
+      <TableTd>
+        <Box
+          component="span"
+          style={{
+            display: "inline-block",
+            padding: "3px 10px",
+            borderRadius: 20,
+            fontWeight: 800,
+            fontSize: 10,
+            letterSpacing: "0.08em",
+            whiteSpace: "nowrap",
+            color: season.isActive ? "var(--volt)" : "var(--text-muted)",
+            background: season.isActive ? "rgba(200,255,47,.12)" : "rgba(255,255,255,.06)",
+          }}
+        >
+          {season.isActive ? "ACTIVE" : "INACTIVE"}
+        </Box>
+      </TableTd>
+      <TableTd>
         <form action={mvpFormAction}>
           <input type="hidden" name="seasonId" value={season.id} />
           <input type="hidden" name="playerId" value={mvpChoice ?? ""} />
@@ -116,13 +123,13 @@ export function SeasonRow({
             </Button>
           </Group>
           {mvpState?.error && (
-            <span style={{ color: "var(--mantine-color-red-6)", fontSize: "var(--mantine-font-size-xs)" }}>
+            <span style={{ color: "var(--loss-red)", fontSize: "var(--mantine-font-size-xs)" }}>
               {mvpState.error}
             </span>
           )}
         </form>
-      </td>
-      <td>
+      </TableTd>
+      <TableTd>
         <Group gap="xs" wrap="nowrap">
           <Button
             type="submit"
@@ -136,13 +143,13 @@ export function SeasonRow({
           {!season.isActive && (
             <form action={setActiveSeason}>
               <input type="hidden" name="id" value={season.id} />
-              <Button type="submit" size="xs" variant="subtle" color="teal">
+              <Button type="submit" size="xs" variant="subtle" color="gray">
                 Set active
               </Button>
             </form>
           )}
         </Group>
-      </td>
-    </tr>
+      </TableTd>
+    </TableTr>
   );
 }

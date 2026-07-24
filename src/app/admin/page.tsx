@@ -1,39 +1,222 @@
-import { Button, Card, Container, Group, Stack, Text, Title } from "@mantine/core";
+import { Box, Button, Container, Group, Stack, Text } from "@mantine/core";
 import { requireAdmin } from "@/lib/auth";
-import { NavLink } from "@/components/NavLink";
+import { getActiveSeason, getSeasonLeaderboard } from "@/lib/leaderboard";
+import { prisma } from "@/lib/prisma";
+import { NavButton, NavLink } from "@/components/NavLink";
 import { logout } from "./actions";
 
-// Quick-links dashboard. The fuller version (active season summary, next
-// session shortcut per PLAN.md §5) is a nice-to-have polish item, not core.
+function Eyebrow({ children }: { children: React.ReactNode }) {
+  return (
+    <Text
+      component="div"
+      fw={700}
+      fz={10}
+      c="dimmed"
+      style={{ letterSpacing: "0.14em", textTransform: "uppercase" }}
+    >
+      {children}
+    </Text>
+  );
+}
+
+function Panel({
+  children,
+  span2,
+  style,
+}: {
+  children: React.ReactNode;
+  span2?: boolean;
+  style?: React.CSSProperties;
+}) {
+  return (
+    <Box
+      style={{
+        border: "1px solid var(--hairline)",
+        borderRadius: 18,
+        background: "var(--panel)",
+        padding: "20px 22px",
+        gridColumn: span2 ? "span 2" : undefined,
+        ...style,
+      }}
+    >
+      {children}
+    </Box>
+  );
+}
+
+function SnapshotStat({ label, value }: { label: string; value: string | number }) {
+  return (
+    <Box style={{ flex: 1, minWidth: 0 }}>
+      <Text className="display-face tabular-nums" fw={900} fz={28} style={{ lineHeight: 1 }}>
+        {value}
+      </Text>
+      <Text fw={700} fz={10} c="dimmed" mt={5} style={{ letterSpacing: "0.1em" }}>
+        {label}
+      </Text>
+    </Box>
+  );
+}
+
+const QUICK_LINKS = [
+  { href: "/admin/players", label: "Players", glyph: "👤" },
+  { href: "/admin/sessions", label: "Sessions", glyph: "📅" },
+  { href: "/admin/seasons", label: "Seasons", glyph: "🗓" },
+  { href: "/awards", label: "Awards", glyph: "🏆" },
+];
+
 export default async function AdminPage() {
-  // Belt-and-suspenders with proxy.ts: every admin page/action independently
-  // re-verifies the session (see requireAdmin()'s doc comment in
-  // src/lib/auth.ts) rather than trusting the route guard alone.
   await requireAdmin();
 
+  const activeSeason = await getActiveSeason();
+  const sessions = activeSeason
+    ? await prisma.session.findMany({
+        where: { seasonId: activeSeason.id },
+        orderBy: { date: "desc" },
+        include: { _count: { select: { attendances: true } } },
+      })
+    : [];
+  const resumable = sessions.find((s) => s.status !== "completed") ?? null;
+  const completedCount = sessions.filter((s) => s.status === "completed").length;
+
+  const stats = activeSeason ? await getSeasonLeaderboard(activeSeason.id) : [];
+  const totalGoals = stats.reduce((sum, s) => sum + s.goals, 0);
+  const topScorer = [...stats].sort((a, b) => b.goals - a.goals).find((s) => s.goals > 0) ?? null;
+
   return (
-    <Container size="sm" py="xl">
-      <Stack gap="lg">
-        <Title order={1}>Admin dashboard</Title>
-        <Card shadow="sm" padding="lg" radius="md" withBorder>
-          <Stack gap="md">
-            <Group>
-              <NavLink href="/admin/players">Players</NavLink>
-              <NavLink href="/admin/seasons">Seasons</NavLink>
-              <NavLink href="/admin/sessions">Sessions</NavLink>
-            </Group>
-            <Text size="sm" c="dimmed">
-              Open a session to check in players, shuffle teams, and run the
-              live match console.
-            </Text>
-            <form action={logout}>
-              <Button type="submit" color="red" variant="light">
-                Log out
-              </Button>
-            </form>
-          </Stack>
-        </Card>
-      </Stack>
+    <Container size="lg" py={{ base: 20, sm: 32 }} pb={64}>
+      {/* Admin top bar */}
+      <Group justify="space-between" align="center" mb={24} wrap="wrap" gap="sm">
+        <Group gap={10} align="center" wrap="nowrap">
+          <Box
+            style={{
+              width: 34,
+              height: 34,
+              borderRadius: 10,
+              background: "linear-gradient(135deg, var(--volt), var(--volt-end))",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 18,
+            }}
+          >
+            ⚽
+          </Box>
+          <Text className="display-face" fw={800} fz={20} style={{ letterSpacing: "-0.01em" }}>
+            Matchday HQ
+          </Text>
+          {activeSeason && (
+            <Box
+              component="span"
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                color: "var(--volt)",
+                background: "rgba(200,255,47,.12)",
+                borderRadius: 20,
+                padding: "3px 10px",
+              }}
+            >
+              {activeSeason.name}
+            </Box>
+          )}
+        </Group>
+        <form action={logout}>
+          <Button type="submit" variant="default" size="xs">
+            Log out
+          </Button>
+        </form>
+      </Group>
+
+      <Box
+        style={{
+          display: "grid",
+          gap: 14,
+          gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))",
+        }}
+      >
+        {/* Resume session — spans two columns where space allows */}
+        <Panel span2>
+          <Eyebrow>Game day</Eyebrow>
+          {resumable ? (
+            <>
+              <Text className="display-face" fw={800} fz={22} mt={8} style={{ letterSpacing: "-0.01em" }}>
+                {resumable.date.toISOString().slice(0, 10)}
+              </Text>
+              <Text c="dimmed" fz={13} mt={4}>
+                {resumable._count.attendances} checked in ·{" "}
+                {resumable.status === "teams_set" ? "teams locked" : "teams not locked"}
+              </Text>
+              <Group gap={10} mt={16}>
+                <NavButton href={`/admin/sessions/${resumable.id}`} fw={700}>
+                  Resume session
+                </NavButton>
+                <NavButton href="/admin/sessions" variant="default">
+                  New session
+                </NavButton>
+              </Group>
+            </>
+          ) : (
+            <>
+              <Text fw={700} fz={18} mt={8}>
+                No open session
+              </Text>
+              <Text c="dimmed" fz={13} mt={4}>
+                Start a new match day when the crew shows up.
+              </Text>
+              <NavButton href="/admin/sessions" fw={700} mt={16}>
+                New session
+              </NavButton>
+            </>
+          )}
+        </Panel>
+
+        {/* Season snapshot */}
+        <Panel>
+          <Eyebrow>Season snapshot</Eyebrow>
+          <Group gap="md" mt={14} wrap="nowrap">
+            <SnapshotStat label="SESSIONS" value={completedCount} />
+            <SnapshotStat label="GOALS" value={totalGoals} />
+          </Group>
+          <Box mt={16} pt={14} style={{ borderTop: "1px solid var(--hairline)" }}>
+            <Eyebrow>Top scorer</Eyebrow>
+            {topScorer ? (
+              <Text fw={700} fz={15} mt={4}>
+                {topScorer.name}
+                <Text span c="dimmed" fw={600} className="tabular-nums">
+                  {" "}
+                  · {topScorer.goals}
+                </Text>
+              </Text>
+            ) : (
+              <Text c="dimmed" fz={13} mt={4}>
+                No goals yet
+              </Text>
+            )}
+          </Box>
+        </Panel>
+
+        {/* Quick links */}
+        {QUICK_LINKS.map((link) => (
+          <NavLink key={link.href} href={link.href} underline="never" c="inherit">
+            <Panel
+              style={{
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                minHeight: 76,
+              }}
+            >
+              <Text fz={22} component="span">
+                {link.glyph}
+              </Text>
+              <Text fw={700} fz={15}>
+                {link.label}
+              </Text>
+            </Panel>
+          </NavLink>
+        ))}
+      </Box>
     </Container>
   );
 }

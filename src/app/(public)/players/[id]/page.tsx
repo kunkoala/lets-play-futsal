@@ -1,52 +1,107 @@
 import { notFound } from "next/navigation";
-import { Badge, Card, Container, Group, SimpleGrid, Stack, Table, Text, Title } from "@mantine/core";
+// Named cell components (Table.Thead/… statics don't survive the Server
+// Component boundary — see the leaderboard page for the same fix).
+import {
+  Box,
+  Container,
+  Group,
+  Stack,
+  Table,
+  TableTbody,
+  TableTd,
+  TableTh,
+  TableThead,
+  TableTr,
+  Text,
+} from "@mantine/core";
 import { getPlayerProfile, type PlayerStatsTotals } from "@/lib/playerProfile";
 import { prisma } from "@/lib/prisma";
 import { NavLink } from "@/components/NavLink";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
-import {
-  SoccerBall,
-  Target,
-  ListChecks,
-  TrendUp,
-  CalendarBlank,
-  Trophy,
-  ArrowLeft,
-  type Icon,
-} from "@/components/icons";
+import { ArrowLeft } from "@/components/icons";
 
-function StatTile({ icon: Icon, label, value }: { icon: Icon; label: string; value: string | number }) {
+function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
-    <Stack gap={2} align="center">
-      <Icon size={22} weight="fill" color="var(--mantine-color-teal-6)" />
-      <Text fz={22} fw={800}>
-        {value}
-      </Text>
-      <Text size="xs" c="dimmed">
-        {label}
-      </Text>
-    </Stack>
+    <Text
+      component="div"
+      fw={700}
+      fz={10}
+      c="dimmed"
+      style={{ letterSpacing: "0.14em", textTransform: "uppercase" }}
+    >
+      {children}
+    </Text>
   );
 }
 
-function StatBlock({ title, totals }: { title: string; totals: PlayerStatsTotals }) {
-  const winRate = totals.matchesPlayed > 0 ? Math.round((totals.wins / totals.matchesPlayed) * 100) : 0;
+/** One of the three headline stat tiles (GOALS is volt-accented per handoff). */
+function StatTile({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: number | string;
+  accent?: boolean;
+}) {
   return (
-    <Card withBorder radius="lg" padding="lg" className="fs-card-hover">
-      <Stack gap="sm">
-        <Text fw={600} size="sm" c="dimmed">
-          {title}
-        </Text>
-        <Group justify="space-between" gap="xs">
-          <StatTile icon={SoccerBall} label="Goals" value={totals.goals} />
-          <StatTile icon={Target} label="Assists" value={totals.assists} />
-          <StatTile icon={ListChecks} label="W-D-L" value={`${totals.wins}-${totals.draws}-${totals.losses}`} />
-          <StatTile icon={TrendUp} label="Win rate" value={`${winRate}%`} />
-          <StatTile icon={CalendarBlank} label="Games" value={totals.gamesPlayed} />
-        </Group>
-      </Stack>
-    </Card>
+    <Box
+      style={{
+        flex: 1,
+        minWidth: 0,
+        border: "1px solid var(--hairline)",
+        borderRadius: 14,
+        background: "var(--panel)",
+        padding: "14px 12px",
+        textAlign: "center",
+      }}
+    >
+      <Text
+        className="display-face tabular-nums"
+        fw={900}
+        fz={30}
+        style={{ lineHeight: 1, color: accent ? "var(--volt)" : "var(--text)" }}
+      >
+        {value}
+      </Text>
+      <Text fw={700} fz={10} c="dimmed" mt={6} style={{ letterSpacing: "0.12em" }}>
+        {label}
+      </Text>
+    </Box>
   );
+}
+
+function TeamDot({ color }: { color: string }) {
+  return (
+    <Box
+      component="span"
+      style={{
+        display: "inline-block",
+        width: 9,
+        height: 9,
+        borderRadius: "50%",
+        background: color,
+        flexShrink: 0,
+      }}
+    />
+  );
+}
+
+/** Most-frequently-played team across the player's history ("Usually Red"). */
+function usualTeam(
+  history: { team: { name: string; color: string } | null }[],
+): { name: string; color: string } | null {
+  const counts = new Map<string, { name: string; color: string; n: number }>();
+  for (const row of history) {
+    if (!row.team) continue;
+    const key = row.team.name;
+    const hit = counts.get(key);
+    if (hit) hit.n += 1;
+    else counts.set(key, { name: row.team.name, color: row.team.color, n: 1 });
+  }
+  let best: { name: string; color: string; n: number } | null = null;
+  for (const c of counts.values()) if (!best || c.n > best.n) best = c;
+  return best ? { name: best.name, color: best.color } : null;
 }
 
 export default async function PlayerProfilePage({
@@ -66,107 +121,210 @@ export default async function PlayerProfilePage({
     include: { season: true },
   });
 
+  const totals: PlayerStatsTotals = profile.activeSeason ?? profile.allTime;
+  const winRate =
+    totals.matchesPlayed > 0 ? Math.round((totals.wins / totals.matchesPlayed) * 100) : 0;
+  const usual = usualTeam(profile.sessionHistory);
+  const at = profile.allTime;
+
   return (
-    <Container size="md" py="xl">
-      <Stack gap="lg">
-        <NavLink href="/" size="sm" c="dimmed">
-          <Group gap={4} wrap="nowrap" component="span">
-            <ArrowLeft size={15} weight="bold" />
-            <span>Back to leaderboard</span>
-          </Group>
-        </NavLink>
+    <Container size="lg" py={{ base: 20, sm: 32 }} pb={64}>
+      <NavLink href="/" c="dimmed" fz={13} underline="never" mb={16} display="inline-block">
+        <Group gap={5} wrap="nowrap" component="span" align="center">
+          <ArrowLeft size={14} weight="bold" />
+          <span>Leaderboard</span>
+        </Group>
+      </NavLink>
 
-          <Card withBorder radius="lg" padding="lg" className="fs-fade-up">
-            <Group wrap="nowrap">
-              <PlayerAvatar name={profile.player.name} size={72} />
-              <Stack gap={4}>
-                <Group gap="xs">
-                  <Title order={1} fz={{ base: 24, sm: 30 }}>
+      <div className="profile-grid">
+        {/* Aside — identity + headline stats */}
+        <div className="profile-aside">
+          <Stack gap={14} className="fs-fade-up">
+            <Box
+              style={{
+                border: "1px solid var(--hairline)",
+                borderRadius: 18,
+                background: "var(--panel)",
+                padding: "22px 20px",
+              }}
+            >
+              <Group wrap="nowrap" gap={16} align="center">
+                <PlayerAvatar name={profile.player.name} size={68} ringColor={usual?.color} />
+                <Box style={{ minWidth: 0 }}>
+                  <Text
+                    className="display-face"
+                    fw={800}
+                    fz={26}
+                    style={{ letterSpacing: "-0.02em", lineHeight: 1.05 }}
+                  >
                     {profile.player.name}
-                  </Title>
-                  {!profile.player.isActive && (
-                    <Badge color="gray" variant="light">
-                      Inactive
-                    </Badge>
-                  )}
-                </Group>
-                {mvpAwards.length > 0 && (
-                  <Group gap={6}>
-                    {mvpAwards.map((a) => (
-                      <Badge
-                        key={a.id}
-                        color="gold"
-                        variant="light"
-                        leftSection={<Trophy size={12} weight="fill" />}
-                      >
-                        MVP — {a.season.name}
-                      </Badge>
-                    ))}
+                  </Text>
+                  <Group gap={7} mt={6} wrap="nowrap">
+                    {usual && <TeamDot color={usual.color} />}
+                    <Text c="dimmed" fz={13} truncate>
+                      {usual ? `Usually ${usual.name} · ` : ""}
+                      {at.gamesPlayed} games
+                    </Text>
                   </Group>
-                )}
-              </Stack>
+                  {!profile.player.isActive && (
+                    <Text c="dimmed" fz={11} mt={4}>
+                      Inactive
+                    </Text>
+                  )}
+                  {mvpAwards.length > 0 && (
+                    <Group gap={6} mt={8}>
+                      {mvpAwards.map((a) => (
+                        <Box
+                          key={a.id}
+                          component="span"
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 700,
+                            color: "var(--volt)",
+                            background: "rgba(200,255,47,.12)",
+                            borderRadius: 6,
+                            padding: "3px 8px",
+                          }}
+                        >
+                          🏆 MVP · {a.season.name}
+                        </Box>
+                      ))}
+                    </Group>
+                  )}
+                </Box>
+              </Group>
+            </Box>
+
+            <Eyebrow>{profile.activeSeason ? profile.activeSeasonName : "All-time"}</Eyebrow>
+            <Group gap={10} wrap="nowrap">
+              <StatTile label="GOALS" value={totals.goals} accent />
+              <StatTile label="ASSISTS" value={totals.assists} />
+              <StatTile label="WINS" value={totals.wins} />
             </Group>
-          </Card>
 
-          <SimpleGrid cols={{ base: 1, sm: 2 }}>
-            {profile.activeSeason && (
-              <StatBlock
-                title={`This season — ${profile.activeSeasonName}`}
-                totals={profile.activeSeason}
-              />
-            )}
-            <StatBlock title="All-time" totals={profile.allTime} />
-          </SimpleGrid>
-
-          <Stack gap="sm">
-            <Text fw={600}>Session history</Text>
-            <Card withBorder radius="lg" p={0}>
-              <div style={{ overflowX: "auto" }}>
-                <Table verticalSpacing="md" horizontalSpacing="lg" miw={420} highlightOnHover w="100%">
-                  <thead>
-                    <tr>
-                      <th style={{ textAlign: "left" }}>Date</th>
-                      <th style={{ textAlign: "left" }}>Team</th>
-                      <th>Goals</th>
-                      <th>Assists</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {profile.sessionHistory.map((row) => (
-                      <tr key={row.sessionId}>
-                        <td>
-                          <NavLink href={`/sessions/${row.sessionId}`} c="inherit" underline="hover" fw={600}>
-                            {row.date.toISOString().slice(0, 10)}
-                          </NavLink>
-                        </td>
-                        <td>
-                          {row.team ? (
-                            <Badge variant="filled" radius="sm" style={{ backgroundColor: row.team.color, color: "white" }}>
-                              {row.team.name}
-                            </Badge>
-                          ) : (
-                            "—"
-                          )}
-                        </td>
-                        <td>{row.goals}</td>
-                        <td>{row.assists}</td>
-                      </tr>
-                    ))}
-                    {profile.sessionHistory.length === 0 && (
-                      <tr>
-                        <td colSpan={4}>
-                          <Text c="dimmed" py="md" ta="center">
-                            No completed sessions yet.
-                          </Text>
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </Table>
-              </div>
-            </Card>
+            <Box
+              style={{
+                border: "1px solid var(--hairline)",
+                borderRadius: 14,
+                background: "var(--deep-panel)",
+                padding: "12px 16px",
+              }}
+            >
+              <Group justify="space-between" wrap="wrap" gap={8}>
+                <Eyebrow>All-time</Eyebrow>
+                <Text className="tabular-nums" fw={700} fz={13}>
+                  {at.goals} G · {at.assists} A · {at.wins} W · {at.gamesPlayed} games
+                  {totals.matchesPlayed > 0 && (
+                    <Text span c="dimmed" fw={500}>
+                      {" "}
+                      · {winRate}% win
+                    </Text>
+                  )}
+                </Text>
+              </Group>
+            </Box>
           </Stack>
-      </Stack>
+        </div>
+
+        {/* History */}
+        <div>
+          <Eyebrow>Session history</Eyebrow>
+          <Box
+            mt={10}
+            style={{
+              border: "1px solid var(--hairline)",
+              borderRadius: 16,
+              overflow: "hidden",
+              background: "var(--panel)",
+            }}
+          >
+            <div style={{ overflowX: "auto" }}>
+              <Table verticalSpacing={12} horizontalSpacing="lg" highlightOnHover w="100%">
+                <TableThead>
+                  <TableTr style={{ borderBottom: "1px solid var(--hairline)" }}>
+                    <Th align="left">Matchday</Th>
+                    <Th align="left">Team</Th>
+                    <Th>G</Th>
+                    <Th>A</Th>
+                  </TableTr>
+                </TableThead>
+                <TableTbody>
+                  {profile.sessionHistory.map((row) => (
+                    <TableTr key={row.sessionId}>
+                      <TableTd>
+                        <NavLink
+                          href={`/sessions/${row.sessionId}`}
+                          c="inherit"
+                          underline="hover"
+                          fw={600}
+                          fz={14}
+                        >
+                          {row.date.toISOString().slice(0, 10)}
+                        </NavLink>
+                      </TableTd>
+                      <TableTd>
+                        {row.team ? (
+                          <Group gap={7} wrap="nowrap">
+                            <TeamDot color={row.team.color} />
+                            <Text fz={13} fw={600}>
+                              {row.team.name}
+                            </Text>
+                          </Group>
+                        ) : (
+                          <Text c="dimmed">—</Text>
+                        )}
+                      </TableTd>
+                      <Td accent={row.goals > 0}>{row.goals}</Td>
+                      <Td>{row.assists}</Td>
+                    </TableTr>
+                  ))}
+                  {profile.sessionHistory.length === 0 && (
+                    <TableTr>
+                      <TableTd colSpan={4}>
+                        <Text c="dimmed" py="md" ta="center" fz={14}>
+                          No completed sessions yet.
+                        </Text>
+                      </TableTd>
+                    </TableTr>
+                  )}
+                </TableTbody>
+              </Table>
+            </div>
+          </Box>
+        </div>
+      </div>
     </Container>
+  );
+}
+
+function Th({ children, align = "center" }: { children: React.ReactNode; align?: "left" | "center" }) {
+  return (
+    <TableTh
+      style={{
+        textAlign: align,
+        fontWeight: 700,
+        fontSize: 10,
+        letterSpacing: "0.12em",
+        textTransform: "uppercase",
+        color: "var(--text-muted)",
+      }}
+    >
+      {children}
+    </TableTh>
+  );
+}
+
+function Td({ children, accent }: { children: React.ReactNode; accent?: boolean }) {
+  return (
+    <TableTd style={{ textAlign: "center" }}>
+      <Text
+        className="tabular-nums"
+        fw={accent ? 800 : 500}
+        fz={14}
+        style={accent ? { color: "var(--volt)" } : undefined}
+      >
+        {children}
+      </Text>
+    </TableTd>
   );
 }

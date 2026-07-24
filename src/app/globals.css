@@ -1,27 +1,256 @@
 @import "tailwindcss";
 
+:root {
+  --font-archivo: "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-archivo-expanded: "Archivo Expanded", "Archivo", system-ui, sans-serif;
+}
+
 @theme inline {
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-archivo);
+  --font-display: var(--font-archivo-expanded);
 }
 
 /*
- * Mantine owns the color scheme (light/dark, following the OS via
- * defaultColorScheme="auto" in layout.tsx). The page surface and text defer
- * to Mantine's variables so Tailwind and Mantine never disagree about which
- * mode is active — otherwise you get a black page with light-mode white cards
- * and near-invisible text.
+ * Design tokens from the handoff (design_handoff_futsal_manager/README.md).
+ * Mantine's theme (src/theme.ts) owns the component-facing colors; these raw
+ * custom props are for one-off surfaces (gradients, split-court halves,
+ * watermarks) that read a token directly rather than through a Mantine variant.
+ */
+:root {
+  --court-night: #12141a;
+  --deep-panel: #0d0f14;
+  --deep-panel-2: #0a0b0e;
+  --panel: #1b1e26;
+  --panel-raised: #232732;
+  --hairline: rgba(255, 255, 255, 0.08);
+  --text: #f4f5f7;
+  --text-muted: rgba(244, 245, 247, 0.55);
+
+  --volt: #c8ff2f;
+  --volt-end: #8fdc12;
+  --loss-red: #ff8a8a;
+
+  /* team base + darker gradient partner (split-court halves) */
+  --team-red: #ff4d57;
+  --team-red-dark: #c41f2b;
+  --team-blue: #4d8bff;
+  --team-blue-dark: #1e56c9;
+  --team-green: #2fd06a;
+  --team-green-dark: #149b47;
+  --team-yellow: #ffcb2b;
+  --team-purple: #b06bff;
+}
+
+/*
+ * Mantine owns the color scheme (forced dark in layout.tsx). Page surface and
+ * text defer to Mantine's variables so Tailwind and Mantine never disagree.
  */
 body {
   background: var(--mantine-color-body);
   color: var(--mantine-color-text);
 }
 
+/* Leaderboard: spotlight over table on phone, side-by-side (≈380px 1fr) on desktop. */
+.lb-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 62em) {
+  .lb-grid {
+    grid-template-columns: 360px 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+}
+
+/* Left column: stacked highlight cards; sticks alongside the table on desktop. */
+.lb-left {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+@media (min-width: 62em) {
+  .lb-left {
+    position: sticky;
+    top: 84px;
+  }
+}
+
+/* Game-day session pages: stacked on phone/iPad portrait, two-column on
+ * landscape/desktop (check-in | shuffle, or teams | matchmaker). */
+.session-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr;
+  align-items: start;
+}
+@media (min-width: 62em) {
+  .session-grid {
+    grid-template-columns: 1fr 340px;
+    gap: 20px;
+  }
+}
+
+/* Awards: three cards reflow phone(1) -> iPad(2-3) -> desktop(3). */
+.awards-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+/* Profile: card left, history right on desktop; stacked on phone/iPad portrait. */
+.profile-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 62em) {
+  .profile-grid {
+    grid-template-columns: 340px 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+  .profile-grid > .profile-aside {
+    position: sticky;
+    top: 84px;
+  }
+}
+
+/* ---------------------------------------------------------------------
+ * Live console — split court. Full-bleed, two team-colored halves. iPad-first:
+ * halves stack in portrait, sit side-by-side in landscape. Tap targets ≥70px.
+ * ------------------------------------------------------------------- */
+.lc-root {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--deep-panel-2);
+  touch-action: manipulation;
+}
+@media (orientation: landscape) {
+  .lc-root {
+    flex-direction: row;
+  }
+}
+.lc-half {
+  flex: 1 1 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  padding: 16px 16px 18px;
+}
+/* radial dark vignette per half for numeral/tile legibility */
+.lc-half::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(115% 75% at 50% 38%, transparent 42%, rgba(0, 0, 0, 0.55));
+  pointer-events: none;
+}
+.lc-half > * {
+  position: relative;
+  z-index: 1;
+}
+.lc-score {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-archivo-expanded), sans-serif;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  line-height: 0.72;
+  font-size: clamp(72px, 16vh, 128px);
+  color: #fff;
+  text-shadow: 0 6px 30px rgba(0, 0, 0, 0.4);
+}
+.lc-tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.lc-tile {
+  min-height: 72px;
+  border: none;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 8px 6px;
+  font-family: var(--font-archivo), sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  transition: transform 0.08s ease, background 0.12s ease, opacity 0.12s ease;
+}
+.lc-tile:active {
+  transform: scale(0.96);
+}
+.lc-tile:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.lc-tile-og {
+  background: rgba(0, 0, 0, 0.22);
+  grid-column: 1 / -1;
+  min-height: 52px;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.82);
+}
+@media (prefers-reduced-motion: reduce) {
+  .lc-tile:active {
+    transform: none;
+  }
+}
+.lc-chip {
+  border: 1px solid var(--hairline);
+  border-radius: 18px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  background: var(--panel-raised);
+  color: var(--text);
+}
+.lc-chip:active {
+  transform: scale(0.96);
+}
+.lc-chip-muted {
+  background: transparent;
+  color: var(--text-muted);
+}
+.lc-chip-danger {
+  background: rgba(255, 77, 87, 0.14);
+  border-color: transparent;
+  color: var(--loss-red);
+}
+
+/* Archivo Expanded + tabular-nums for every scoreboard/big-number numeral. */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+.display-face {
+  font-family: var(--font-archivo-expanded), var(--font-archivo), sans-serif;
+}
+
 /* ---------------------------------------------------------------------
  * "Feel special" motion system for the public site (awards, leaderboard,
- * player profiles). The admin console deliberately does NOT use these —
- * it stays plain/fast for courtside use. All animations are disabled
- * under prefers-reduced-motion.
+ * player profiles). The admin console stays plain/fast for courtside use.
+ * All animations are disabled under prefers-reduced-motion.
  * ------------------------------------------------------------------- */
 
 @keyframes fs-fade-up {
@@ -33,6 +262,12 @@ body {
   0% { opacity: 0; transform: scale(0.85); }
   60% { opacity: 1; transform: scale(1.04); }
   100% { opacity: 1; transform: scale(1); }
+}
+
+/* Shuffle reveal (handoff §8): staggered pop of the final Fisher–Yates names. */
+@keyframes popIn {
+  0% { opacity: 0; transform: translateY(8px) scale(0.9); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 @keyframes fs-confetti-fall {
@@ -48,14 +283,16 @@ body {
   animation: fs-pop-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
+.pop-in {
+  animation: popIn 0.34s cubic-bezier(0.2, 0.8, 0.3, 1.4) both;
+}
+
 /*
- * The one signature gradient in the app (teal -> cyan), reused as a static
- * text fill wherever a heading/name needs a bit of visual weight. Not
- * animated — deliberately a single reusable recipe instead of a shimmer
- * effect or per-component gradient choices.
+ * The signature accent gradient (volt -> #8FDC12), reused as a static text fill
+ * wherever a heading/name needs weight.
  */
 .fs-gradient-text {
-  background: linear-gradient(135deg, var(--mantine-color-teal-6), var(--mantine-color-cyan-5));
+  background: linear-gradient(135deg, var(--volt), var(--volt-end));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -91,6 +328,7 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .fs-fade-up,
   .fs-pop-in,
+  .pop-in,
   .fs-confetti-piece {
     animation: none !important;
   }

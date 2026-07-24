@@ -1,9 +1,23 @@
 import { notFound } from "next/navigation";
-import { Badge, Card, Container, Group, Stack, Text, Title } from "@mantine/core";
+import { Box, Container, Group, Stack, Text } from "@mantine/core";
 import { prisma } from "@/lib/prisma";
 import { computeScore } from "@/lib/matchScore";
 import { NavLink } from "@/components/NavLink";
-import { ArrowLeft, SoccerBall, Target } from "@/components/icons";
+import { ArrowLeft } from "@/components/icons";
+
+function Eyebrow({ children }: { children: React.ReactNode }) {
+  return (
+    <Text
+      component="div"
+      fw={700}
+      fz={10}
+      c="dimmed"
+      style={{ letterSpacing: "0.14em", textTransform: "uppercase" }}
+    >
+      {children}
+    </Text>
+  );
+}
 
 export default async function PublicSessionDetailPage({
   params,
@@ -35,98 +49,124 @@ export default async function PublicSessionDetailPage({
   if (!session) notFound();
 
   return (
-    <Container size="md" py="xl">
-      <Stack gap="lg">
+    <Container size="md" py={{ base: 20, sm: 32 }} pb={64}>
+      <Stack gap="xl">
         <div className="fs-fade-up">
-          <NavLink href="/sessions" size="sm" c="dimmed">
-            <Group gap={4} wrap="nowrap" component="span">
-              <ArrowLeft size={15} weight="bold" />
-              <span>Back to sessions</span>
+          <NavLink href="/sessions" c="dimmed" fz={13} underline="never">
+            <Group gap={5} wrap="nowrap" component="span" align="center">
+              <ArrowLeft size={14} weight="bold" />
+              <span>Sessions</span>
             </Group>
           </NavLink>
-          <Title order={1} fz={{ base: 24, sm: 30 }} mt="xs">
+          <Text
+            component="h1"
+            className="display-face tabular-nums"
+            fw={900}
+            fz={{ base: 26, sm: 34 }}
+            mt={10}
+            style={{ letterSpacing: "-0.02em", lineHeight: 1 }}
+          >
             {session.date.toISOString().slice(0, 10)}
-          </Title>
-          <Text c="dimmed" size="sm">
+          </Text>
+          <Text c="dimmed" fz={13} mt={4}>
             {session.season.name}
           </Text>
         </div>
 
-        <Stack gap="sm" className="fs-fade-up" style={{ animationDelay: "0.1s" }}>
-          <Text fw={600}>Teams</Text>
-          <Group align="flex-start" gap="md">
-            {session.teams.map((team) => (
-              <Card
-                key={team.id}
-                withBorder
-                radius="lg"
-                padding="md"
-                miw={150}
-                style={{ borderTop: `3px solid ${team.color}` }}
-                className="fs-card-hover"
-              >
-                <Stack gap={4}>
-                  <Badge variant="filled" style={{ backgroundColor: team.color, color: "white" }}>
+        <Stack gap={12} className="fs-fade-up" style={{ animationDelay: "0.05s" }}>
+          <Eyebrow>Teams</Eyebrow>
+          {session.teams.length === 0 ? (
+            <Text fz={14} c="dimmed">
+              Teams haven&apos;t been shuffled yet.
+            </Text>
+          ) : (
+            <Group align="stretch" gap={12} wrap="wrap">
+              {session.teams.map((team) => (
+                <Box
+                  key={team.id}
+                  style={{
+                    flex: "1 1 150px",
+                    minWidth: 150,
+                    border: "1px solid var(--hairline)",
+                    borderLeft: `3px solid ${team.color}`,
+                    borderRadius: 14,
+                    background: "var(--panel)",
+                    padding: "14px 16px",
+                  }}
+                >
+                  <Text fw={800} fz={14} style={{ color: team.color }}>
                     {team.name}
-                  </Badge>
-                  {team.players.map((tp) => (
-                    <Text key={tp.player.id} size="sm">
-                      {tp.player.name}
-                    </Text>
-                  ))}
-                </Stack>
-              </Card>
-            ))}
-            {session.teams.length === 0 && (
-              <Text size="sm" c="dimmed">
-                Teams haven&apos;t been shuffled yet.
-              </Text>
-            )}
-          </Group>
+                  </Text>
+                  <Stack gap={2} mt={8}>
+                    {team.players.map((tp) => (
+                      <Text key={tp.player.id} fz={13} fw={500}>
+                        {tp.player.name}
+                      </Text>
+                    ))}
+                  </Stack>
+                </Box>
+              ))}
+            </Group>
+          )}
         </Stack>
 
-        <Stack gap="sm" className="fs-fade-up" style={{ animationDelay: "0.2s" }}>
-          <Text fw={600}>Matches</Text>
+        <Stack gap={12} className="fs-fade-up" style={{ animationDelay: "0.1s" }}>
+          <Eyebrow>Matches</Eyebrow>
           {session.matches.length === 0 && (
-            <Text size="sm" c="dimmed">
+            <Text fz={14} c="dimmed">
               No matches yet.
             </Text>
           )}
           {session.matches.map((m) => {
             const score = computeScore(m.goalEvents, m.homeTeamId, m.awayTeamId);
             return (
-              <Card key={m.id} withBorder radius="lg" padding="md" className="fs-card-hover">
-                <Stack gap={6}>
-                  <Group justify="space-between">
-                    <Text fw={700} size="lg">
-                      <span style={{ color: m.homeTeam.color }}>{m.homeTeam.name}</span>{" "}
-                      {score.home} — {score.away}{" "}
-                      <span style={{ color: m.awayTeam.color }}>{m.awayTeam.name}</span>
+              <Box
+                key={m.id}
+                style={{
+                  border: "1px solid var(--hairline)",
+                  borderRadius: 16,
+                  background: "var(--panel)",
+                  padding: "16px 18px",
+                }}
+              >
+                <Group justify="space-between" align="center" wrap="nowrap">
+                  <Text fw={800} fz={16} style={{ color: m.homeTeam.color }}>
+                    {m.homeTeam.name}
+                  </Text>
+                  <Group gap={10} align="center" wrap="nowrap">
+                    <Text className="display-face tabular-nums" fw={900} fz={26}>
+                      {score.home}
                     </Text>
-                    {m.status === "in_progress" && (
-                      <Badge color="orange" variant="light">
-                        live
-                      </Badge>
-                    )}
+                    <Text c="dimmed" fw={700}>
+                      –
+                    </Text>
+                    <Text className="display-face tabular-nums" fw={900} fz={26}>
+                      {score.away}
+                    </Text>
                   </Group>
-                  {m.goalEvents.map((e) => (
-                    <Group key={e.id} gap={6} wrap="nowrap" ml="md">
-                      <SoccerBall size={14} weight="fill" color="var(--mantine-color-dimmed)" />
-                      <Text size="sm" c="dimmed">
-                        {e.scorer?.name ?? "Own goal"}
+                  <Text fw={800} fz={16} style={{ color: m.awayTeam.color, textAlign: "right" }}>
+                    {m.awayTeam.name}
+                  </Text>
+                </Group>
+                {m.status === "in_progress" && (
+                  <Text fz={11} fw={700} mt={8} style={{ color: "var(--team-yellow)" }}>
+                    ● LIVE
+                  </Text>
+                )}
+                {m.goalEvents.length > 0 && (
+                  <Stack gap={3} mt={12} pt={12} style={{ borderTop: "1px solid var(--hairline)" }}>
+                    {m.goalEvents.map((e) => (
+                      <Text key={e.id} fz={13} c="dimmed">
+                        <Text span fw={600} c="var(--mantine-color-text)">
+                          {e.scorer?.name ?? "Own goal"}
+                        </Text>{" "}
+                        ⚽
+                        {e.assist ? ` · ${e.assist.name} 🅰` : ""}
                       </Text>
-                      {e.assist && (
-                        <Group gap={3} wrap="nowrap">
-                          <Target size={13} weight="fill" color="var(--mantine-color-dimmed)" />
-                          <Text size="sm" c="dimmed">
-                            {e.assist.name}
-                          </Text>
-                        </Group>
-                      )}
-                    </Group>
-                  ))}
-                </Stack>
-              </Card>
+                    ))}
+                  </Stack>
+                )}
+              </Box>
             );
           })}
         </Stack>

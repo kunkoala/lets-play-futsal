@@ -1,8 +1,3 @@
-const AVATAR_COLORS = [
-  "#ef4444", "#f97316", "#eab308", "#22c55e",
-  "#14b8a6", "#3b82f6", "#8b5cf6", "#ec4899",
-];
-
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/);
   const first = parts[0]?.[0] ?? "";
@@ -10,20 +5,19 @@ function initials(name: string): string {
   return (first + last).toUpperCase();
 }
 
-function colorFor(name: string): string {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = (hash * 31 + name.charCodeAt(i)) | 0;
-  }
-  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
-}
-
+/**
+ * Mono initials avatar (design handoff §Assets: no photos in v1). Optional
+ * `ringColor` draws a 2px team-colored ring — used on the player profile hero
+ * ("Usually Red") and anywhere a player's team identity is known.
+ */
 export function PlayerAvatar({
   name,
   size = 40,
+  ringColor,
 }: {
   name: string;
   size?: number;
+  ringColor?: string;
 }) {
   return (
     <div
@@ -31,13 +25,15 @@ export function PlayerAvatar({
         width: size,
         height: size,
         borderRadius: "50%",
-        background: `linear-gradient(135deg, ${colorFor(name)}, ${colorFor(name)}cc)`,
-        color: "white",
+        background: "var(--panel-raised)",
+        color: "var(--text)",
+        border: ringColor ? `2px solid ${ringColor}` : "1px solid var(--hairline)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         fontWeight: 700,
         fontSize: size * 0.38,
+        letterSpacing: "0.01em",
         flexShrink: 0,
       }}
     >

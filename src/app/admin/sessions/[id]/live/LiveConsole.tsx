@@ -3,7 +3,8 @@
 import { useState, useTransition } from "react";
 import { useOptimistic } from "react";
 import { useRouter } from "next/navigation";
-import { Badge, Button, Group, Modal, Paper, ScrollArea, SimpleGrid, Stack, Text } from "@mantine/core";
+import { Button, Group, Modal, Stack, Text } from "@mantine/core";
+import { gradientDarkFor } from "@/lib/teamPalette";
 import {
   attachAssist,
   deleteEvent,
@@ -27,6 +28,7 @@ let optimisticIdCounter = -1;
 
 export function LiveConsole({
   matchId,
+  sessionId,
   homeTeam,
   awayTeam,
   events,
@@ -49,6 +51,7 @@ export function LiveConsole({
     { eventId: number; teamId: number; scorerName: string } | null
   >(null);
   const [confirmEnd, setConfirmEnd] = useState(false);
+  const [showFeed, setShowFeed] = useState(false);
   const [cooldownIds, setCooldownIds] = useState<Set<number>>(new Set());
 
   const playersById = new Map<number, Player>();
@@ -56,6 +59,10 @@ export function LiveConsole({
 
   const homeScore = optimisticEvents.filter((e) => e.teamId === homeTeam.id).length;
   const awayScore = optimisticEvents.filter((e) => e.teamId === awayTeam.id).length;
+
+  function goalsFor(playerId: number): number {
+    return optimisticEvents.filter((e) => e.scorerId === playerId).length;
+  }
 
   function withCooldown(playerId: number, fn: () => void) {
     if (cooldownIds.has(playerId) || isFinished) return;
@@ -164,196 +171,361 @@ export function LiveConsole({
     : [];
 
   return (
-    <Stack gap="lg" style={{ touchAction: "manipulation" }}>
-      <Paper withBorder p="md" radius="md">
-        <Group justify="center" gap="xl">
-          <Stack gap={0} align="center">
-            <Badge size="lg" style={{ backgroundColor: homeTeam.color, color: "white" }}>
-              {homeTeam.name}
-            </Badge>
-            <Text fw={700} fz={48}>
-              {homeScore}
-            </Text>
-          </Stack>
-          <Text fz={32} c="dimmed">
-            —
-          </Text>
-          <Stack gap={0} align="center">
-            <Badge size="lg" style={{ backgroundColor: awayTeam.color, color: "white" }}>
-              {awayTeam.name}
-            </Badge>
-            <Text fw={700} fz={48}>
-              {awayScore}
-            </Text>
-          </Stack>
-        </Group>
-        {isFinished && (
-          <Text ta="center" size="sm" c="dimmed" mt="xs">
-            Match finished
-          </Text>
-        )}
-      </Paper>
-
-      {pendingAssist && (
-        <Paper withBorder p="md" radius="md" bg="yellow.0">
-          <Stack gap="xs">
-            <Text fw={500}>Assist for {pendingAssist.scorerName}&apos;s goal?</Text>
-            <Group>
-              {assistCandidates.map((p) => (
-                <Button key={p.id} size="xs" variant="light" onClick={() => handleAssist(p.id)}>
-                  {p.name}
-                </Button>
-              ))}
-              <Button size="xs" variant="subtle" color="gray" onClick={() => handleAssist(null)}>
-                No assist
-              </Button>
-            </Group>
-          </Stack>
-        </Paper>
-      )}
-
-      {!isFinished && (
-        <SimpleGrid cols={2} spacing="lg">
-          <TeamPad
-            team={homeTeam}
-            onScore={(p) => handleScore(homeTeam, p)}
-            onOwnGoal={() => handleOwnGoal(awayTeam)}
-            cooldownIds={cooldownIds}
-          />
-          <TeamPad
-            team={awayTeam}
-            onScore={(p) => handleScore(awayTeam, p)}
-            onOwnGoal={() => handleOwnGoal(homeTeam)}
-            cooldownIds={cooldownIds}
-          />
-        </SimpleGrid>
-      )}
-
-      <Group>
-        <Button
-          variant="default"
-          onClick={handleUndo}
-          disabled={optimisticEvents.length === 0 || isFinished}
-        >
-          Undo last
-        </Button>
-        {!isFinished && (
-          <Button color="teal" onClick={() => setConfirmEnd(true)}>
-            End match
-          </Button>
-        )}
-      </Group>
-
-      <EventFeed
-        events={optimisticEvents}
-        playersById={playersById}
-        homeTeam={homeTeam}
-        awayTeam={awayTeam}
-        onDelete={handleDeleteEvent}
+    <div className="lc-root">
+      <TeamHalf
+        team={homeTeam}
+        score={homeScore}
+        align="start"
+        isFinished={isFinished}
+        goalsFor={goalsFor}
+        cooldownIds={cooldownIds}
+        onScore={(p) => handleScore(homeTeam, p)}
+        onOwnGoal={() => handleOwnGoal(awayTeam)}
+      />
+      <TeamHalf
+        team={awayTeam}
+        score={awayScore}
+        align="end"
+        isFinished={isFinished}
+        goalsFor={goalsFor}
+        cooldownIds={cooldownIds}
+        onScore={(p) => handleScore(awayTeam, p)}
+        onOwnGoal={() => handleOwnGoal(homeTeam)}
       />
 
-      <Modal opened={confirmEnd} onClose={() => setConfirmEnd(false)} title="End match?">
+      {/* Floating control pill — top-center */}
+      <div
+        style={{
+          position: "absolute",
+          top: 12,
+          left: "50%",
+          transform: "translateX(-50%)",
+          zIndex: 20,
+          display: "flex",
+          alignItems: "center",
+          gap: 4,
+          padding: 4,
+          borderRadius: 24,
+          background: "rgba(10,11,14,0.86)",
+          border: "1px solid var(--hairline)",
+          backdropFilter: "blur(8px)",
+          boxShadow: "0 10px 30px -12px rgba(0,0,0,.7)",
+        }}
+      >
+        <PillButton onClick={() => router.push(`/admin/sessions/${sessionId}`)}>Exit</PillButton>
+        <PillDivider />
+        <PillButton onClick={handleUndo} disabled={optimisticEvents.length === 0 || isFinished}>
+          ↺ Undo
+        </PillButton>
+        <PillButton onClick={() => setShowFeed(true)}>Feed</PillButton>
+        {!isFinished && (
+          <>
+            <PillDivider />
+            <PillButton onClick={() => setConfirmEnd(true)} accent>
+              End match
+            </PillButton>
+          </>
+        )}
+      </div>
+
+      {isFinished && (
+        <div
+          style={{
+            position: "absolute",
+            top: 58,
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 20,
+            fontSize: 11,
+            fontWeight: 700,
+            letterSpacing: "0.14em",
+            color: "rgba(255,255,255,.7)",
+          }}
+        >
+          MATCH FINISHED
+        </div>
+      )}
+
+      {/* Assist follow-up strip — bottom-center overlay */}
+      {pendingAssist && (
+        <div
+          style={{
+            position: "absolute",
+            bottom: 16,
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 25,
+            width: "min(560px, calc(100% - 24px))",
+            padding: "12px 14px",
+            borderRadius: 18,
+            background: "rgba(10,11,14,0.94)",
+            border: "1px solid var(--hairline)",
+            boxShadow: "0 16px 40px -14px rgba(0,0,0,.8)",
+          }}
+        >
+          <Text fw={700} fz={13} c="dimmed" mb={8}>
+            Assist for {pendingAssist.scorerName}&apos;s goal?
+          </Text>
+          <Group gap={8}>
+            {assistCandidates.map((p) => (
+              <button key={p.id} className="lc-chip" onClick={() => handleAssist(p.id)}>
+                {p.name}
+              </button>
+            ))}
+            <button className="lc-chip lc-chip-muted" onClick={() => handleAssist(null)}>
+              No assist
+            </button>
+          </Group>
+        </div>
+      )}
+
+      {/* Event feed — slide-up panel */}
+      {showFeed && (
+        <FeedOverlay
+          events={optimisticEvents}
+          playersById={playersById}
+          homeTeam={homeTeam}
+          awayTeam={awayTeam}
+          onDelete={handleDeleteEvent}
+          onClose={() => setShowFeed(false)}
+        />
+      )}
+
+      <Modal
+        opened={confirmEnd}
+        onClose={() => setConfirmEnd(false)}
+        title="End match?"
+        centered
+        zIndex={300}
+      >
         <Stack>
           <Text>
-            Final score: {homeTeam.name} {homeScore} — {awayScore} {awayTeam.name}
+            Final score:{" "}
+            <Text span fw={700} style={{ color: homeTeam.color }}>
+              {homeTeam.name}
+            </Text>{" "}
+            {homeScore} — {awayScore}{" "}
+            <Text span fw={700} style={{ color: awayTeam.color }}>
+              {awayTeam.name}
+            </Text>
           </Text>
           <Group justify="flex-end">
             <Button variant="default" onClick={() => setConfirmEnd(false)}>
               Cancel
             </Button>
-            <Button color="teal" loading={isPending} onClick={handleEndMatch}>
+            <Button loading={isPending} onClick={handleEndMatch}>
               Confirm
             </Button>
           </Group>
         </Stack>
       </Modal>
-    </Stack>
+    </div>
   );
 }
 
-function TeamPad({
+function TeamHalf({
   team,
+  score,
+  align,
+  isFinished,
+  goalsFor,
+  cooldownIds,
   onScore,
   onOwnGoal,
-  cooldownIds,
 }: {
   team: TeamInfo;
+  score: number;
+  align: "start" | "end";
+  isFinished: boolean;
+  goalsFor: (playerId: number) => number;
+  cooldownIds: Set<number>;
   onScore: (p: Player) => void;
   onOwnGoal: () => void;
-  cooldownIds: Set<number>;
 }) {
   return (
-    <Paper withBorder p="md" radius="md">
-      <Stack gap="xs">
-        <Badge size="lg" fullWidth style={{ backgroundColor: team.color, color: "white" }}>
+    <div
+      className="lc-half"
+      style={{
+        background: `linear-gradient(160deg, ${team.color} 0%, ${gradientDarkFor(team.color)} 100%)`,
+      }}
+    >
+      <div style={{ display: "flex", justifyContent: align === "start" ? "flex-start" : "flex-end" }}>
+        <span
+          className="display-face"
+          style={{
+            fontWeight: 900,
+            fontSize: 15,
+            letterSpacing: "0.12em",
+            textTransform: "uppercase",
+            color: "#fff",
+            textShadow: "0 2px 12px rgba(0,0,0,.4)",
+          }}
+        >
           {team.name}
-        </Badge>
-        {team.players.map((p) => (
-          <Button
-            key={p.id}
-            size="lg"
-            h={64}
-            variant="light"
-            disabled={cooldownIds.has(p.id)}
-            onClick={() => onScore(p)}
-          >
-            {p.name}
-          </Button>
-        ))}
-        <Button size="sm" variant="subtle" color="gray" onClick={onOwnGoal}>
-          Own goal / unknown scorer +1
-        </Button>
-      </Stack>
-    </Paper>
+        </span>
+      </div>
+
+      <div className="lc-score">{score}</div>
+
+      {isFinished ? (
+        <div style={{ textAlign: "center", color: "rgba(255,255,255,.75)", fontWeight: 700, fontSize: 12 }}>
+          FINAL
+        </div>
+      ) : (
+        <div className="lc-tiles">
+          {team.players.map((p) => (
+            <button
+              key={p.id}
+              className="lc-tile"
+              disabled={cooldownIds.has(p.id)}
+              onClick={() => onScore(p)}
+            >
+              <span style={{ textAlign: "center", lineHeight: 1.1 }}>{p.name}</span>
+              <span
+                className="tabular-nums"
+                style={{ fontSize: 12, fontWeight: 800, color: "rgba(255,255,255,.72)" }}
+              >
+                {goalsFor(p.id)} ⚽
+              </span>
+            </button>
+          ))}
+          <button className="lc-tile lc-tile-og" onClick={onOwnGoal}>
+            Own goal +1
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 
-function EventFeed({
+function PillButton({
+  children,
+  onClick,
+  disabled,
+  accent,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  disabled?: boolean;
+  accent?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        border: "none",
+        borderRadius: 20,
+        padding: "9px 14px",
+        fontSize: 13,
+        fontWeight: 700,
+        cursor: disabled ? "default" : "pointer",
+        opacity: disabled ? 0.4 : 1,
+        background: accent ? "var(--volt)" : "transparent",
+        color: accent ? "#0D0F14" : "#fff",
+        whiteSpace: "nowrap",
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+function PillDivider() {
+  return <span style={{ width: 1, height: 20, background: "var(--hairline)" }} />;
+}
+
+function FeedOverlay({
   events,
   playersById,
   homeTeam,
   awayTeam,
   onDelete,
+  onClose,
 }: {
   events: GoalEventT[];
   playersById: Map<number, Player>;
   homeTeam: TeamInfo;
   awayTeam: TeamInfo;
   onDelete: (id: number) => void;
+  onClose: () => void;
 }) {
-  const sorted = [...events].sort((a, b) => a.seq - b.seq);
+  const sorted = [...events].sort((a, b) => b.seq - a.seq);
   return (
-    <Stack gap={4}>
-      <Text fw={500} size="sm">
-        Events
-      </Text>
-      <ScrollArea.Autosize mah={240}>
-        <Stack gap={4}>
+    <div
+      onClick={onClose}
+      style={{
+        position: "absolute",
+        inset: 0,
+        zIndex: 30,
+        background: "rgba(0,0,0,0.5)",
+        display: "flex",
+        alignItems: "flex-end",
+        justifyContent: "center",
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: "min(560px, 100%)",
+          maxHeight: "70%",
+          display: "flex",
+          flexDirection: "column",
+          background: "var(--panel)",
+          borderTopLeftRadius: 20,
+          borderTopRightRadius: 20,
+          border: "1px solid var(--hairline)",
+          borderBottom: "none",
+        }}
+      >
+        <Group justify="space-between" p="md" style={{ borderBottom: "1px solid var(--hairline)" }}>
+          <Text fw={800} fz={13} style={{ letterSpacing: "0.1em", textTransform: "uppercase" }}>
+            Event feed
+          </Text>
+          <button className="lc-chip lc-chip-muted" onClick={onClose}>
+            Close
+          </button>
+        </Group>
+        <div style={{ overflowY: "auto", padding: "6px 12px 14px" }}>
+          {sorted.length === 0 && (
+            <Text c="dimmed" fz={14} ta="center" py="md">
+              No goals yet.
+            </Text>
+          )}
           {sorted.map((e) => {
             const team = e.teamId === homeTeam.id ? homeTeam : awayTeam;
             const scorer = e.scorerId ? (playersById.get(e.scorerId)?.name ?? "?") : "Own goal";
             const assist = e.assistId ? playersById.get(e.assistId)?.name : null;
             return (
-              <Group key={e.id} justify="space-between" wrap="nowrap">
-                <Text size="sm">
-                  {e.seq}. <span style={{ color: team.color }}>{team.name}</span> — {scorer}
-                  {assist ? ` (assist: ${assist})` : ""}
+              <Group
+                key={e.id}
+                justify="space-between"
+                wrap="nowrap"
+                style={{ padding: "9px 4px", borderBottom: "1px solid var(--hairline)" }}
+              >
+                <Text fz={14} style={{ minWidth: 0 }}>
+                  <Text span className="tabular-nums" c="dimmed" fw={700}>
+                    {e.seq}
+                  </Text>{" "}
+                  <Text span fw={800} style={{ color: team.color }}>
+                    {team.name}
+                  </Text>{" "}
+                  · {scorer} ⚽{assist ? ` (${assist} 🅰)` : ""}
                 </Text>
                 {e.id > 0 && (
-                  <Button size="xs" variant="subtle" color="red" onClick={() => onDelete(e.id)}>
+                  <button
+                    className="lc-chip lc-chip-danger"
+                    onClick={() => onDelete(e.id)}
+                    style={{ flexShrink: 0 }}
+                  >
                     Delete
-                  </Button>
+                  </button>
                 )}
               </Group>
             );
           })}
-          {sorted.length === 0 && (
-            <Text size="sm" c="dimmed">
-              No goals yet.
-            </Text>
-          )}
-        </Stack>
-      </ScrollArea.Autosize>
-    </Stack>
+        </div>
+      </div>
+    </div>
   );
 }
