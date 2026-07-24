@@ -1,6 +1,11 @@
 # syntax=docker/dockerfile:1
 
-FROM node:20-alpine AS base
+# Node 24 (current LTS), matching the version used for local development so the
+# build can't pass here and fail there. Node 20 reached end-of-life in April
+# 2026 — no more security patches — and also tripped an EBADENGINE warning from
+# `@prisma/streams-local` (a transitive dep of the Prisma CLI), which wants
+# >=22.
+FROM node:24-alpine AS base
 
 # ---- deps -------------------------------------------------------------
 FROM base AS deps
