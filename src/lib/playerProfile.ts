@@ -1,15 +1,9 @@
 import { prisma } from "@/lib/prisma";
-import { computeScore } from "@/lib/matchScore";
+import { applyMatch, emptyTotals, withRates, type PlayerStats, type PlayerTotals } from "@/lib/stats";
+import type { KeeperPref } from "@/lib/shuffle";
 
-export type PlayerStatsTotals = {
-  goals: number;
-  assists: number;
-  wins: number;
-  draws: number;
-  losses: number;
-  matchesPlayed: number;
-  gamesPlayed: number;
-};
+/** @deprecated Kept as an alias so older imports keep compiling — use `PlayerStats`. */
+export type PlayerStatsTotals = PlayerStats;
 
 export type PlayerSessionHistoryRow = {
   sessionId: number;
@@ -17,121 +11,125 @@ export type PlayerSessionHistoryRow = {
   seasonId: number;
   seasonName: string;
   team: { id: number; name: string; color: string } | null;
+  /** Whether the shuffle put this player in goal that day. */
+  keeper: boolean;
   goals: number;
   assists: number;
+  /** Man-of-the-match awards won across that day's matches. */
+  mvps: number;
 };
 
 export type PlayerProfile = {
-  player: { id: number; name: string; isActive: boolean };
-  allTime: PlayerStatsTotals;
-  activeSeason: PlayerStatsTotals | null;
+  player: { id: number; name: string; isActive: boolean; keeperPref: KeeperPref };
+  allTime: PlayerStats;
+  activeSeason: PlayerStats | null;
   activeSeasonName: string | null;
+  /** Newest matchday first. */
   sessionHistory: PlayerSessionHistoryRow[];
 };
 
-function emptyTotals(): PlayerStatsTotals {
-  return { goals: 0, assists: 0, wins: 0, draws: 0, losses: 0, matchesPlayed: 0, gamesPlayed: 0 };
-}
-
+/**
+ * Everything the public player page shows, derived in a single chronological
+ * walk over the completed sessions this player attended. Per-match arithmetic
+ * lives in `src/lib/stats.ts`, shared with the season leaderboard, so both
+ * pages agree on what a player's numbers are.
+ */
 export async function getPlayerProfile(playerId: number): Promise<PlayerProfile | null> {
   const player = await prisma.player.findUnique({ where: { id: playerId } });
   if (!player) return null;
 
   const activeSeason = await prisma.season.findFirst({ where: { isActive: true } });
 
+  // Oldest first: `applyMatch` keeps a rolling form window, so the most recent
+  // results have to be applied last.
   const attendances = await prisma.attendance.findMany({
     where: { playerId, session: { status: "completed" } },
-    include: { session: { include: { season: true } } },
-    orderBy: { session: { date: "desc" } },
-  });
-  const sessionIds = attendances.map((a) => a.sessionId);
-
-  const teamMemberships = await prisma.teamPlayer.findMany({
-    where: { playerId, team: { sessionId: { in: sessionIds } } },
-    include: { team: true },
-  });
-  const teamBySession = new Map<number, { id: number; name: string; color: string }>();
-  for (const tm of teamMemberships) {
-    teamBySession.set(tm.team.sessionId, { id: tm.team.id, name: tm.team.name, color: tm.team.color });
-  }
-
-  const events = await prisma.goalEvent.findMany({
-    where: {
-      OR: [{ scorerId: playerId }, { assistId: playerId }],
-      match: { status: "finished", sessionId: { in: sessionIds } },
-    },
-    include: { match: true },
-  });
-  const goalsBySession = new Map<number, number>();
-  const assistsBySession = new Map<number, number>();
-  for (const e of events) {
-    const sid = e.match.sessionId;
-    if (e.scorerId === playerId) goalsBySession.set(sid, (goalsBySession.get(sid) ?? 0) + 1);
-    if (e.assistId === playerId) assistsBySession.set(sid, (assistsBySession.get(sid) ?? 0) + 1);
-  }
-
-  const matches = await prisma.match.findMany({
-    where: { status: "finished", sessionId: { in: sessionIds } },
     include: {
-      goalEvents: true,
-      homeTeam: { include: { players: true } },
-      awayTeam: { include: { players: true } },
-      session: { select: { seasonId: true } },
+      session: {
+        include: {
+          season: true,
+          teams: { include: { players: true } },
+          matches: { include: { goalEvents: true }, orderBy: { seq: "asc" } },
+        },
+      },
     },
+    orderBy: { session: { date: "asc" } },
   });
 
   const allTime = emptyTotals();
   const thisSeason = emptyTotals();
-  allTime.gamesPlayed = attendances.length;
-  thisSeason.gamesPlayed = attendances.filter((a) => a.session.seasonId === activeSeason?.id).length;
-  for (const n of goalsBySession.values()) allTime.goals += n;
-  for (const n of assistsBySession.values()) allTime.assists += n;
-  for (const [sid, n] of goalsBySession) {
-    const a = attendances.find((att) => att.sessionId === sid);
-    if (a && a.session.seasonId === activeSeason?.id) thisSeason.goals += n;
-  }
-  for (const [sid, n] of assistsBySession) {
-    const a = attendances.find((att) => att.sessionId === sid);
-    if (a && a.session.seasonId === activeSeason?.id) thisSeason.assists += n;
-  }
+  const history: PlayerSessionHistoryRow[] = [];
 
-  for (const m of matches) {
-    const onHome = m.homeTeam.players.some((tp) => tp.playerId === playerId);
-    const onAway = m.awayTeam.players.some((tp) => tp.playerId === playerId);
-    if (!onHome && !onAway) continue;
+  for (const { session } of attendances) {
+    const inActiveSeason = activeSeason !== null && session.seasonId === activeSeason.id;
+    const accumulators: PlayerTotals[] = inActiveSeason ? [allTime, thisSeason] : [allTime];
 
-    const score = computeScore(m.goalEvents, m.homeTeamId, m.awayTeamId);
-    const isDraw = score.home === score.away;
-    const won = !isDraw && ((score.home > score.away && onHome) || (score.away > score.home && onAway));
+    allTime.gamesPlayed += 1;
+    if (inActiveSeason) thisSeason.gamesPlayed += 1;
 
-    allTime.matchesPlayed += 1;
-    if (isDraw) allTime.draws += 1;
-    else if (won) allTime.wins += 1;
-    else allTime.losses += 1;
+    // The team this player was shuffled onto — absent if the session was
+    // completed without them being rostered.
+    const team = session.teams.find((t) => t.players.some((tp) => tp.playerId === playerId)) ?? null;
+    const keeper = team?.players.find((tp) => tp.playerId === playerId)?.isKeeper ?? false;
 
-    if (m.session.seasonId === activeSeason?.id) {
-      thisSeason.matchesPlayed += 1;
-      if (isDraw) thisSeason.draws += 1;
-      else if (won) thisSeason.wins += 1;
-      else thisSeason.losses += 1;
+    const row: PlayerSessionHistoryRow = {
+      sessionId: session.id,
+      date: session.date,
+      seasonId: session.seasonId,
+      seasonName: session.season.name,
+      team: team ? { id: team.id, name: team.name, color: team.color } : null,
+      keeper,
+      goals: 0,
+      assists: 0,
+      mvps: 0,
+    };
+
+    for (const match of session.matches) {
+      if (match.status !== "finished") continue;
+      const onHome = team !== null && match.homeTeamId === team.id;
+      const onAway = team !== null && match.awayTeamId === team.id;
+      if (!onHome && !onAway) continue;
+
+      let home = 0;
+      let away = 0;
+      let playerGoals = 0;
+      let assists = 0;
+      for (const e of match.goalEvents) {
+        if (e.teamId === match.homeTeamId) home++;
+        else if (e.teamId === match.awayTeamId) away++;
+        if (e.scorerId === playerId) playerGoals += 1;
+        if (e.assistId === playerId) assists += 1;
+      }
+
+      const mvp = match.mvpPlayerId === playerId;
+      const contribution = {
+        goalsFor: onHome ? home : away,
+        goalsAgainst: onHome ? away : home,
+        playerGoals,
+        assists,
+        keeper,
+        mvp,
+      };
+      for (const totals of accumulators) applyMatch(totals, contribution);
+
+      row.goals += playerGoals;
+      row.assists += assists;
+      if (mvp) row.mvps += 1;
     }
-  }
 
-  const sessionHistory: PlayerSessionHistoryRow[] = attendances.map((a) => ({
-    sessionId: a.sessionId,
-    date: a.session.date,
-    seasonId: a.session.seasonId,
-    seasonName: a.session.season.name,
-    team: teamBySession.get(a.sessionId) ?? null,
-    goals: goalsBySession.get(a.sessionId) ?? 0,
-    assists: assistsBySession.get(a.sessionId) ?? 0,
-  }));
+    history.push(row);
+  }
 
   return {
-    player,
-    allTime,
-    activeSeason: activeSeason ? thisSeason : null,
+    player: {
+      id: player.id,
+      name: player.name,
+      isActive: player.isActive,
+      keeperPref: player.keeperPref,
+    },
+    allTime: withRates(allTime),
+    activeSeason: activeSeason ? withRates(thisSeason) : null,
     activeSeasonName: activeSeason?.name ?? null,
-    sessionHistory,
+    sessionHistory: history.reverse(),
   };
 }

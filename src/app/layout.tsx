@@ -4,20 +4,16 @@ import "@mantine/notifications/styles.css";
 import "./globals.css";
 
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import { ColorSchemeScript, MantineProvider } from "@mantine/core";
+import { MantineProvider } from "@mantine/core";
 import { Notifications } from "@mantine/notifications";
 import { theme } from "@/theme";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+// Archivo + Archivo Expanded per the design handoff (§Typography). Loaded via
+// Google Fonts rather than next/font because this Next build's bundled font
+// list ships Archivo but not the Expanded display face. The CSS vars
+// (--font-archivo / --font-archivo-expanded) are declared in globals.css.
+const FONT_HREF =
+  "https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Expanded:wght@600;700;800;900&display=swap";
 
 export const metadata: Metadata = {
   title: "Let's Play Futsal",
@@ -30,16 +26,22 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
+    // Dark-only app: set the Mantine scheme statically so there's no client
+    // color-scheme script to hydrate (and no flash), and force it in the provider.
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className="h-full antialiased"
+      data-mantine-color-scheme="dark"
       suppressHydrationWarning
     >
       <head>
-        <ColorSchemeScript />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="stylesheet" href={FONT_HREF} />
       </head>
       <body className="min-h-full flex flex-col">
-        <MantineProvider theme={theme}>
+        {/* Design is dark-only (courtside). Force dark rather than following OS. */}
+        <MantineProvider theme={theme} forceColorScheme="dark">
           <Notifications />
           {children}
         </MantineProvider>

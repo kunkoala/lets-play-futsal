@@ -1,8 +1,6 @@
 import { notFound, redirect } from "next/navigation";
-import { Container, Stack, Title } from "@mantine/core";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { NavLink } from "@/components/NavLink";
 import { LiveConsole } from "./LiveConsole";
 
 export default async function LiveMatchPage({
@@ -41,33 +39,31 @@ export default async function LiveMatchPage({
     id: match.homeTeam.id,
     name: match.homeTeam.name,
     color: match.homeTeam.color,
-    players: match.homeTeam.players.map((tp) => ({ id: tp.player.id, name: tp.player.name })),
+    players: match.homeTeam.players.map((tp) => ({
+      id: tp.player.id,
+      name: tp.player.name,
+      isKeeper: tp.isKeeper,
+    })),
   };
   const awayTeam = {
     id: match.awayTeam.id,
     name: match.awayTeam.name,
     color: match.awayTeam.color,
-    players: match.awayTeam.players.map((tp) => ({ id: tp.player.id, name: tp.player.name })),
+    players: match.awayTeam.players.map((tp) => ({
+      id: tp.player.id,
+      name: tp.player.name,
+      isKeeper: tp.isKeeper,
+    })),
   };
 
   return (
-    <Container size="sm" py="xl">
-      <Stack gap="lg">
-        <div>
-          <NavLink href={`/admin/sessions/${sessionId}`} size="sm">
-            &larr; Back to session
-          </NavLink>
-          <Title order={1}>Live match</Title>
-        </div>
-        <LiveConsole
-          matchId={match.id}
-          sessionId={sessionId}
-          homeTeam={homeTeam}
-          awayTeam={awayTeam}
-          events={match.goalEvents}
-          isFinished={match.status === "finished"}
-        />
-      </Stack>
-    </Container>
+    <LiveConsole
+      matchId={match.id}
+      sessionId={sessionId}
+      homeTeam={homeTeam}
+      awayTeam={awayTeam}
+      events={match.goalEvents}
+      isFinished={match.status === "finished"}
+    />
   );
 }

@@ -1,9 +1,28 @@
-import { Container, Stack, Table, Title } from "@mantine/core";
+import { Box, Container, Group, Stack, Table, TableTbody, TableTd, TableTh, TableThead, TableTr, Text } from "@mantine/core";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NavLink } from "@/components/NavLink";
+import { ArrowLeft } from "@/components/icons";
 import { CreateSeasonForm } from "./CreateSeasonForm";
 import { SeasonRow } from "./SeasonRow";
+
+function Th({ children }: { children?: React.ReactNode }) {
+  return (
+    <TableTh
+      style={{
+        textAlign: "left",
+        fontWeight: 700,
+        fontSize: 10,
+        letterSpacing: "0.12em",
+        textTransform: "uppercase",
+        color: "var(--text-muted)",
+        whiteSpace: "nowrap",
+      }}
+    >
+      {children}
+    </TableTh>
+  );
+}
 
 export default async function SeasonsPage() {
   await requireAdmin(); // convention: see src/lib/auth.ts's requireAdmin() doc comment
@@ -19,46 +38,80 @@ export default async function SeasonsPage() {
   const mvpBySeasonId = new Map(mvpAwards.map((a) => [a.seasonId, a.player]));
 
   return (
-    <Container size="md" py="xl">
+    <Container size="lg" py={{ base: 20, sm: 32 }} pb={64}>
       <Stack gap="lg">
         <div>
-          <NavLink href="/admin" size="sm">
-            &larr; Back to dashboard
+          <NavLink href="/admin" c="dimmed" fz={13} underline="never">
+            <Group gap={5} wrap="nowrap" component="span" align="center">
+              <ArrowLeft size={14} weight="bold" />
+              <span>Dashboard</span>
+            </Group>
           </NavLink>
-          <Title order={1}>Seasons</Title>
+          <Text
+            component="h1"
+            className="display-face"
+            fw={900}
+            fz={{ base: 28, sm: 34 }}
+            mt={10}
+            style={{ letterSpacing: "-0.02em", lineHeight: 1 }}
+          >
+            SEASONS
+          </Text>
         </div>
 
-        <CreateSeasonForm key={seasons.length} />
+        <Box
+          style={{
+            border: "1px solid var(--hairline)",
+            borderRadius: 16,
+            background: "var(--panel)",
+            padding: "18px 20px",
+          }}
+        >
+          <CreateSeasonForm key={seasons.length} />
+        </Box>
 
-        <Table verticalSpacing="sm">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Starts on</th>
-              <th>Ends on</th>
-              <th>Status</th>
-              <th>MVP</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {seasons.map((season) => (
-              <SeasonRow
-                key={season.id}
-                season={season}
-                players={players}
-                mvp={mvpBySeasonId.get(season.id) ?? null}
-              />
-            ))}
-            {seasons.length === 0 && (
-              <tr>
-                <td colSpan={6}>
-                  No seasons yet — create the first one above.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </Table>
+        <Box
+          style={{
+            border: "1px solid var(--hairline)",
+            borderRadius: 16,
+            overflow: "hidden",
+            background: "var(--panel)",
+          }}
+        >
+          <div style={{ overflowX: "auto" }}>
+            <Table verticalSpacing={12} horizontalSpacing="md" w="100%">
+              <TableThead>
+                <TableTr style={{ borderBottom: "1px solid var(--hairline)" }}>
+                  <Th>Name</Th>
+                  <Th>Starts</Th>
+                  <Th>Ends</Th>
+                  <Th>Status</Th>
+                  <Th>MVP override</Th>
+                  <Th />
+                </TableTr>
+              </TableThead>
+              <TableTbody>
+                {seasons.map((season) => (
+                  <SeasonRow
+                    key={season.id}
+                    season={season}
+                    players={players}
+                    mvp={mvpBySeasonId.get(season.id) ?? null}
+                  />
+                ))}
+                {seasons.length === 0 && (
+                  <TableTr>
+                    <TableTd colSpan={6}>
+                      <Text c="dimmed" fz={14} py="sm">
+                        No seasons yet — create the first one above.
+                      </Text>
+                    </TableTd>
+                  </TableTr>
+                )}
+              </TableTbody>
+            </Table>
+          </div>
+        </Box>
       </Stack>
     </Container>
   );
