@@ -441,3 +441,28 @@ him?", so the answer ships alongside it.
 
 Every leaderboard column also carries a hover/tap tooltip (`StatTooltip`, with `touch: true`
 so it works on phones) explaining what that column measures.
+
+### 11d. Demo mode
+
+`/demo` mirrors the public pages against a synthetic season, for showing the app
+off without real names attached to made-up results.
+
+- `src/lib/demoData.ts` generates the whole season in memory from a fixed seed
+  (mulberry32), so it is identical on every request and every deploy. Nothing is
+  written to the database and no fake player can reach the real player list, a
+  real check-in sheet, or the real all-time stats. IDs are offset (90 000+ for
+  players, 80 000+ for sessions) so a demo id pasted into a real URL misses
+  rather than collides.
+- It runs through the production code paths on purpose: teams come from the real
+  `shuffleIntoTeamsWithKeepers`, standings from the real `aggregateSeason`. The
+  demo shows what the app does rather than a mock-up of it.
+- `src/lib/seasonAggregate.ts` was split out of `leaderboard.ts` for this — the
+  aggregation is now source-agnostic, taking structurally-typed rows that both
+  the Prisma results and the generated objects satisfy.
+- Each public screen is a view component under `src/components/views/` rendered
+  by two thin routes, one fetching from the database and one from the generator.
+  A `basePath` prop ("" or "/demo") prefixes every link, so browsing the demo
+  never silently drops you into real data.
+- A non-dismissable banner tops every demo page, and the layout sets
+  `robots: noindex, nofollow` so sample standings never surface in a search for
+  the club.

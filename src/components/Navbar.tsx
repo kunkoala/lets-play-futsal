@@ -3,7 +3,11 @@ import { verifySession } from "@/lib/auth";
 import { NavLink } from "@/components/NavLink";
 import { SoccerBallIcon } from "@/components/icons";
 
-export async function Navbar() {
+/**
+ * `basePath` is "" on the real site and "/demo" inside the demo, so every link
+ * keeps you in whichever one you're already looking at.
+ */
+export async function Navbar({ basePath = "" }: { basePath?: string }) {
   const isAdmin = await verifySession();
 
   return (
@@ -20,7 +24,7 @@ export async function Navbar() {
     >
       <Container size="lg" py={12}>
         <Group justify="space-between" wrap="nowrap">
-          <NavLink href="/" underline="never" c="inherit">
+          <NavLink href={basePath || "/"} underline="never" c="inherit">
             <Group gap={9} wrap="nowrap" component="span" align="center">
               <Box
                 style={{
@@ -50,9 +54,9 @@ export async function Navbar() {
           </NavLink>
 
           <Group gap={4} wrap="nowrap">
-            <NavItem href="/">Leaderboard</NavItem>
-            <NavItem href="/sessions">Sessions</NavItem>
-            <NavItem href="/awards">Awards</NavItem>
+            <NavItem href={basePath || "/"}>Leaderboard</NavItem>
+            <NavItem href={`${basePath}/sessions`}>Sessions</NavItem>
+            <NavItem href={`${basePath}/awards`}>Awards</NavItem>
             {isAdmin ? (
               <NavItem href="/admin">Admin</NavItem>
             ) : (

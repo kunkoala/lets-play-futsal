@@ -31,7 +31,8 @@ function FooterLink({ href, children }: { href: string; children: React.ReactNod
   );
 }
 
-export function SiteFooter() {
+/** `basePath` keeps the Explore links inside the demo when rendered there. */
+export function SiteFooter({ basePath = "" }: { basePath?: string }) {
   // Rendered on the server at request time, so the notice never goes stale.
   const year = new Date().getFullYear();
 
@@ -105,9 +106,10 @@ export function SiteFooter() {
           {/* Everything else on the site */}
           <Stack gap={7}>
             <FooterHeading>Explore</FooterHeading>
-            <FooterLink href="/">Leaderboard</FooterLink>
-            <FooterLink href="/sessions">Sessions</FooterLink>
-            <FooterLink href="/awards">Season awards</FooterLink>
+            <FooterLink href={basePath || "/"}>Leaderboard</FooterLink>
+            <FooterLink href={`${basePath}/sessions`}>Sessions</FooterLink>
+            <FooterLink href={`${basePath}/awards`}>Season awards</FooterLink>
+            {basePath === "" && <FooterLink href="/demo">Demo with sample data</FooterLink>}
             <FooterLink href="/login">Admin login</FooterLink>
           </Stack>
         </div>
