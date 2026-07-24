@@ -1,0 +1,215 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Domain model — see PLAN.md §3 for the source of truth.
+//
+// Modeling notes:
+// - Model names are PascalCase, fields are camelCase; underlying table/column
+//   names are snake_case via @@map/@map to match PLAN.md §3 exactly.
+// - Status/type string-unions from PLAN.md are modeled as native Postgres
+//   enums (mapped to snake_case enum type names) rather than plain strings,
+//   so illegal values are impossible at the DB layer.
+// - Deliberately NOT modeled here (per PLAN.md "Rules and derivations"):
+//   no stored match score, no stored win/draw/loss, no `stat`/leaderboard
+//   table. All of that is derived from `GoalEvent` rows at query time.
+// - Referential actions: rows that only make sense as children of a
+//   session/team/match (Attendance, Team, TeamPlayer, Match, GoalEvent) use
+//   onDelete: Cascade on that parent link — including Match.homeTeam/
+//   awayTeam and GoalEvent.team, which point at Team (a Session-owned child,
+//   never deleted independently): confirmed live that leaving those at the
+//   Prisma default (RESTRICT) makes deleting a Session fail intermittently,
+//   because Postgres resolves the sibling Session -> Team and Session ->
+//   Match cascades without guaranteeing Match/GoalEvent rows referencing a
+//   team are gone before that team's RESTRICT check runs. Links to Player
+//   are left at the DB default (RESTRICT for required FKs, SET NULL for the
+//   optional scorer/assist FKs), so a player with any Attendance/GoalEvent/
+//   TeamPlayer row cannot be deleted — matches "deactivate instead of
+//   delete" in PLAN.md §3. Season is never deleted by any v1 feature, so its
+//   Award/Session links are also left at the default RESTRICT.
+// - `@@unique([sessionId, seq])` on Match and `@@unique([matchId, seq])` on
+//   GoalEvent are additions beyond the letter of PLAN.md §3 (which only
+//   specifies seq as "order within the day/match"): they prevent duplicate
+//   ordering bugs and cost nothing later phases would rely on differently.
+// ---------------------------------------------------------------------------
+
+enum SessionStatus {
+  draft
+  teams_set
+  completed
+
+  @@map("session_status")
+}
+
+enum MatchStatus {
+  in_progress
+  finished
+
+  @@map("match_status")
+}
+
+enum AwardType {
+  mvp
+
+  @@map("award_type")
+}
+
+model Season {
+  id       Int      @id @default(autoincrement())
+  name     String
+  startsOn DateTime @map("starts_on") @db.Date
+  endsOn   DateTime @map("ends_on") @db.Date
+  isActive Boolean  @default(false) @map("is_active")
+
+  sessions Session[]
+  awards   Award[]
+
+  @@map("season")
+}
+
+model Player {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  attendances     Attendance[]
+  teamMemberships TeamPlayer[]
+  goalsScored     GoalEvent[]  @relation("GoalEventScorer")
+  assistsGiven    GoalEvent[]  @relation("GoalEventAssist")
+  awards          Award[]
+
+  @@map("player")
+}
+
+model Session {
+  id       Int           @id @default(autoincrement())
+  seasonId Int           @map("season_id")
+  date     DateTime      @db.Date
+  notes    String?
+  status   SessionStatus @default(draft)
+
+  season      Season       @relation(fields: [seasonId], references: [id])
+  attendances Attendance[]
+  teams       Team[]
+  matches     Match[]
+
+  @@index([seasonId])
+  @@map("session")
+}
+
+model Attendance {
+  sessionId Int @map("session_id")
+  playerId  Int @map("player_id")
+
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  player  Player  @relation(fields: [playerId], references: [id])
+
+  @@id([sessionId, playerId])
+  @@map("attendance")
+}
+
+model Team {
+  id        Int    @id @default(autoincrement())
+  sessionId Int    @map("session_id")
+  name      String
+  color     String
+
+  session     Session      @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  players     TeamPlayer[]
+  homeMatches Match[]      @relation("MatchHomeTeam")
+  awayMatches Match[]      @relation("MatchAwayTeam")
+  goalEvents  GoalEvent[]
+
+  @@index([sessionId])
+  @@map("team")
+}
+
+model TeamPlayer {
+  teamId   Int @map("team_id")
+  playerId Int @map("player_id")
+
+  team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  player Player @relation(fields: [playerId], references: [id])
+
+  @@id([teamId, playerId])
+  @@map("team_player")
+}
+
+model Match {
+  id         Int         @id @default(autoincrement())
+  sessionId  Int         @map("session_id")
+  seq        Int
+  homeTeamId Int         @map("home_team_id")
+  awayTeamId Int         @map("away_team_id")
+  status     MatchStatus @default(in_progress)
+  startedAt  DateTime    @default(now()) @map("started_at") @db.Timestamptz
+  endedAt    DateTime?   @map("ended_at") @db.Timestamptz
+
+  session    Session     @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  // homeTeam/awayTeam cascade too: Team only ever exists as a child of the
+  // same Session (never deleted independently), so when a Session is torn
+  // down, Postgres's cascade from Session -> Team and Session -> Match fire
+  // "in parallel" — a RESTRICT here would race against that and can reject
+  // the delete depending on cascade resolution order. See GoalEvent.team.
+  homeTeam   Team        @relation("MatchHomeTeam", fields: [homeTeamId], references: [id], onDelete: Cascade)
+  awayTeam   Team        @relation("MatchAwayTeam", fields: [awayTeamId], references: [id], onDelete: Cascade)
+  goalEvents GoalEvent[]
+
+  @@unique([sessionId, seq])
+  @@index([sessionId])
+  @@index([homeTeamId])
+  @@index([awayTeamId])
+  @@map("match")
+}
+
+model GoalEvent {
+  id        Int      @id @default(autoincrement())
+  matchId   Int      @map("match_id")
+  seq       Int
+  teamId    Int      @map("team_id")
+  scorerId  Int?     @map("scorer_id")
+  assistId  Int?     @map("assist_id")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  match  Match   @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  // Cascade from Team too, for the same reason as Match.homeTeam/awayTeam
+  // above: Team is a compositional child of Session, deleted only as part
+  // of tearing down the whole session subtree, and a RESTRICT here raced
+  // against the sibling Session -> Team cascade (observed via a real
+  // FK-violation error while re-running prisma/seed.ts against a live DB).
+  team   Team    @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  scorer Player? @relation("GoalEventScorer", fields: [scorerId], references: [id])
+  assist Player? @relation("GoalEventAssist", fields: [assistId], references: [id])
+
+  @@unique([matchId, seq])
+  @@index([matchId])
+  @@index([teamId])
+  @@index([scorerId])
+  @@index([assistId])
+  @@map("goal_event")
+}
+
+model Award {
+  id       Int       @id @default(autoincrement())
+  seasonId Int       @map("season_id")
+  type     AwardType
+  playerId Int       @map("player_id")
+
+  season Season @relation(fields: [seasonId], references: [id])
+  player Player @relation(fields: [playerId], references: [id])
+
+  @@unique([seasonId, type])
+  @@map("award")
+}
