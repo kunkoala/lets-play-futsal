@@ -4,7 +4,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { DemoBanner } from "@/components/DemoBanner";
 
 export const metadata: Metadata = {
-  title: "Demo · Let's Play Futsal",
+  title: "Demo · Liga Minggu",
   description: "The app running on a made-up season, for demonstration.",
   // Sample standings have no business turning up in a search for the club.
   robots: { index: false, follow: false },

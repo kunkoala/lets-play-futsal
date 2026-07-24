@@ -5,7 +5,7 @@ import { SoccerBallIcon } from "@/components/icons";
 const CONTACT_EMAIL = "ppibraunschweig@gmail.com";
 /** Pre-fills the subject so an enquiry doesn't land in the inbox untitled. */
 const JOIN_MAILTO = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(
-  "Joining PPI BS Futsal",
+  "Joining Liga Minggu",
 )}`;
 
 function FooterHeading({ children }: { children: React.ReactNode }) {
@@ -65,7 +65,7 @@ export function SiteFooter({ basePath = "" }: { basePath?: string }) {
                 <SoccerBallIcon size={16} weight="fill" color="#0D0F14" />
               </Box>
               <Text className="display-face" fw={800} fz={15} style={{ letterSpacing: "-0.01em" }}>
-                PPI BS Futsal
+                Liga Minggu
               </Text>
             </Group>
             <Text c="dimmed" fz={13} style={{ maxWidth: 320, lineHeight: 1.55 }}>
@@ -124,7 +124,7 @@ export function SiteFooter({ basePath = "" }: { basePath?: string }) {
           style={{ borderTop: "1px solid var(--hairline)" }}
         >
           <Text c="dimmed" fz={12}>
-            © {year} PPI BS Futsal. Built by Azhar Rahadian.
+            © {year} Liga Minggu. Built by Azhar Rahadian.
           </Text>
           <Text c="dimmed" fz={12}>
             Stats update once a matchday is marked complete.

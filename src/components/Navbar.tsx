@@ -48,7 +48,7 @@ export async function Navbar({ basePath = "" }: { basePath?: string }) {
                   letterSpacing: "-0.01em",
                 }}
               >
-                PPI BS Futsal
+                Liga Minggu
               </span>
             </Group>
           </NavLink>

@@ -1,5 +1,8 @@
 # Let's Play Futsal
 
+Ships as **Liga Minggu** — that's the name in the navbar, the browser tab, and
+on the home screen once installed. "Let's Play Futsal" is just the repo.
+
 A weekly futsal team manager for a student community. The public site shows
 registered players, session history, and a semester leaderboard (goals,
 assists, wins, games played). A single admin (predefined credentials, no
