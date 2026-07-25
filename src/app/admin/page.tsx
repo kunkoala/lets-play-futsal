@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import { Box, Container, Group, Text } from "@mantine/core";
 import { requireAdmin } from "@/lib/auth";
 import { getActiveSeason, getSeasonLeaderboard } from "@/lib/leaderboard";
@@ -64,15 +65,17 @@ const QUICK_LINKS = [
 ];
 
 export default async function AdminPage() {
+  await connection();
+
   await requireAdmin();
 
   const activeSeason = await getActiveSeason();
   const sessions = activeSeason
     ? await prisma.session.findMany({
-        where: { seasonId: activeSeason.id },
-        orderBy: { date: "desc" },
-        include: { _count: { select: { attendances: true } } },
-      })
+      where: { seasonId: activeSeason.id },
+      orderBy: { date: "desc" },
+      include: { _count: { select: { attendances: true } } },
+    })
     : [];
   const resumable = sessions.find((s) => s.status !== "completed") ?? null;
   const completedCount = sessions.filter((s) => s.status === "completed").length;
