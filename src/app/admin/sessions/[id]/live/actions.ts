@@ -135,6 +135,63 @@ export async function deleteEvent(formData: FormData): Promise<void> {
 }
 
 /**
+ * Stops the clock for the halfway water break.
+ *
+ * The client notices the midpoint and calls this; the server is what makes it
+ * stick, so a reload — or the other admin's iPad — sees the same paused clock.
+ * `breakTakenAt` is stamped here so resuming doesn't immediately trip the
+ * break again, and the whole thing is a no-op if the clock is already paused
+ * or the break was already taken (two devices can race to call it).
+ */
+export async function pauseForBreak(formData: FormData): Promise<void> {
+  await requireAdmin();
+
+  const matchId = Number(formData.get("matchId"));
+  if (!Number.isInteger(matchId)) return;
+
+  const match = await prisma.match.findUnique({ where: { id: matchId } });
+  if (!match) return;
+  if (match.status !== "in_progress") return;
+  if (match.pausedAt !== null || match.breakTakenAt !== null) return;
+
+  const now = new Date();
+  await prisma.match.update({
+    where: { id: matchId },
+    data: { pausedAt: now, breakTakenAt: now },
+  });
+
+  revalidatePath(`/admin/sessions/${match.sessionId}/live`);
+}
+
+/**
+ * Restarts the clock after the water break, folding however long the break
+ * actually ran into `pausedTotalSec` so the second half still gets its full
+ * share of the planned duration.
+ */
+export async function resumeMatch(formData: FormData): Promise<void> {
+  await requireAdmin();
+
+  const matchId = Number(formData.get("matchId"));
+  if (!Number.isInteger(matchId)) return;
+
+  const match = await prisma.match.findUnique({ where: { id: matchId } });
+  if (!match) return;
+  if (match.status !== "in_progress") return;
+  if (match.pausedAt === null) return; // already running
+
+  const pausedSec = Math.max(0, Math.floor((Date.now() - match.pausedAt.getTime()) / 1000));
+  await prisma.match.update({
+    where: { id: matchId },
+    data: {
+      pausedAt: null,
+      pausedTotalSec: match.pausedTotalSec + pausedSec,
+    },
+  });
+
+  revalidatePath(`/admin/sessions/${match.sessionId}/live`);
+}
+
+/**
  * Man of the match must have actually played in it — either roster is fair
  * game, since the pick is one player across both teams.
  */

@@ -180,6 +180,23 @@ model Match {
   status     MatchStatus @default(in_progress)
   startedAt  DateTime    @default(now()) @map("started_at") @db.Timestamptz
   endedAt    DateTime?   @map("ended_at") @db.Timestamptz
+  // --- Match clock (see src/lib/matchClock.ts for the arithmetic) ---
+  // The clock is derived from these timestamps rather than counted in the
+  // browser, so it survives a reload, a sleeping iPad, or a second admin
+  // opening the same match on another device.
+  //
+  // Planned length. Nullable because matches recorded before the timer
+  // existed have no agreed duration — those count up instead of down rather
+  // than being retro-fitted one.
+  durationSec    Int?      @map("duration_sec")
+  // Set while the clock is stopped for the water break, null while running.
+  pausedAt       DateTime? @map("paused_at") @db.Timestamptz
+  // Seconds already spent paused, excluded from elapsed time so the second
+  // half still gets its full share.
+  pausedTotalSec Int       @default(0) @map("paused_total_sec")
+  // Stamped when the halfway water break is taken, so resuming play doesn't
+  // immediately trip the break again.
+  breakTakenAt   DateTime? @map("break_taken_at") @db.Timestamptz
   // Man of the match, chosen from either roster when the admin ends the
   // match. Optional — a match may finish without anyone being picked. Left at
   // the Prisma default for an optional FK (SET NULL), like scorer/assist.

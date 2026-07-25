@@ -353,6 +353,113 @@ body {
   text-shadow: 0 6px 24px rgba(0, 0, 0, 0.42);
 }
 
+/* Match clock. Countdown when a duration was set, count-up when it wasn't;
+   colour carries the state so a glance at the numerals is enough. */
+.lcp-clock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin: 12px 0;
+}
+.lcp-clock-time {
+  font-family: var(--font-archivo-expanded), var(--font-archivo), sans-serif;
+  font-weight: 900;
+  font-size: 34px;
+  line-height: 1;
+  color: var(--text);
+}
+.lcp-clock-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.lcp-clock[data-state="break"] .lcp-clock-time,
+.lcp-clock[data-state="break"] .lcp-clock-label {
+  color: var(--team-blue);
+}
+.lcp-clock[data-state="full"] .lcp-clock-time,
+.lcp-clock[data-state="full"] .lcp-clock-label {
+  color: var(--volt);
+}
+
+/* Water break — full-bleed over whichever layout is showing. Below the
+   end-match Modal (z-index 300) but above the feed sheet. */
+.lc-break {
+  position: absolute;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 24px;
+  text-align: center;
+  background: rgba(10, 11, 14, 0.95);
+  backdrop-filter: blur(6px);
+}
+.lc-break-drop {
+  font-size: 44px;
+  line-height: 1;
+}
+.lc-break-title {
+  font-family: var(--font-archivo-expanded), var(--font-archivo), sans-serif;
+  font-weight: 900;
+  font-size: 26px;
+  letter-spacing: 0.1em;
+  color: var(--team-blue);
+}
+.lc-break-clock {
+  font-family: var(--font-archivo-expanded), var(--font-archivo), sans-serif;
+  font-weight: 900;
+  font-size: clamp(56px, 14vh, 96px);
+  line-height: 1;
+  color: #fff;
+}
+.lc-break-sub {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+.lc-break-resume {
+  min-width: min(300px, 80vw);
+  min-height: 62px;
+  border: none;
+  border-radius: 16px;
+  background: var(--volt);
+  color: #0d0f14;
+  font-family: inherit;
+  font-size: 18px;
+  font-weight: 900;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.lc-break-resume:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Full time: the End match button asks for attention without acting on its
+   own — a goal or an MVP pick may still be in flight. */
+@keyframes lc-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+.lc-pulse {
+  animation: lc-pulse 1.1s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lc-pulse {
+    animation: none;
+  }
+}
+
 .lcp-eyebrow {
   margin: 10px 0 12px;
   text-align: center;

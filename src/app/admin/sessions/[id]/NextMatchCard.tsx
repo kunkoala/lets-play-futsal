@@ -1,8 +1,16 @@
 "use client";
 
 import { useActionState, useMemo, useState } from "react";
-import { Box, Button, Group, Select, Stack, Text } from "@mantine/core";
+import { Box, Button, Group, NumberInput, Select, Stack, Text } from "@mantine/core";
 import { proposeNext, type PlayedMatch } from "@/lib/matchmaker";
+import {
+  breakAtSec,
+  DEFAULT_DURATION_MIN,
+  DURATION_PRESETS_MIN,
+  formatClock,
+  MAX_DURATION_MIN,
+  MIN_DURATION_MIN,
+} from "@/lib/matchClock";
 import { startMatch, type SessionFormState } from "../actions";
 
 type Team = { id: number; name: string; color: string };
@@ -20,6 +28,76 @@ function Eyebrow({ children }: { children: React.ReactNode }) {
     >
       {children}
     </Text>
+  );
+}
+
+/**
+ * Match length, chosen with the same tap that starts the match.
+ *
+ * The hint under the presets is the point of the whole control: anything over
+ * 10 minutes gets a water break at its midpoint, and this is where you find
+ * that out — before kick-off, not when the clock stops mid-game.
+ */
+function DurationPicker({
+  minutes,
+  onChange,
+}: {
+  minutes: number | null;
+  onChange: (m: number | null) => void;
+}) {
+  const isPreset = minutes !== null && (DURATION_PRESETS_MIN as readonly number[]).includes(minutes);
+  const breakAt = breakAtSec(minutes === null ? null : minutes * 60);
+
+  return (
+    <Box>
+      <Eyebrow>Match length</Eyebrow>
+      <Group gap={6} mt={8} wrap="wrap">
+        {DURATION_PRESETS_MIN.map((m) => {
+          const active = minutes === m;
+          return (
+            <button
+              key={m}
+              type="button"
+              onClick={() => onChange(m)}
+              aria-pressed={active}
+              style={{
+                border: `1px solid ${active ? "var(--volt)" : "var(--hairline)"}`,
+                background: active ? "var(--volt)" : "transparent",
+                color: active ? "#0D0F14" : "var(--text)",
+                borderRadius: 10,
+                padding: "8px 14px",
+                fontSize: 14,
+                fontWeight: active ? 800 : 600,
+                cursor: "pointer",
+                fontFamily: "inherit",
+              }}
+            >
+              {m}
+            </button>
+          );
+        })}
+        <NumberInput
+          aria-label="Custom match length in minutes"
+          placeholder="Custom"
+          size="xs"
+          w={92}
+          min={MIN_DURATION_MIN}
+          max={MAX_DURATION_MIN}
+          clampBehavior="strict"
+          hideControls
+          suffix=" min"
+          value={isPreset || minutes === null ? "" : minutes}
+          onChange={(v) => onChange(v === "" ? null : Number(v))}
+        />
+      </Group>
+      <Text fz={12} c="dimmed" mt={6}>
+        {minutes === null
+          ? "No timer — the clock will count up."
+          : breakAt === null
+            ? `${minutes} min straight through — no water break at or under 10.`
+            : `Water break at ${formatClock(breakAt)}.`}
+      </Text>
+    </Box>
   );
 }
 
@@ -59,6 +137,7 @@ export function NextMatchCard({
   const [overrideHome, setOverrideHome] = useState<string | null>(null);
   const [overrideAway, setOverrideAway] = useState<string | null>(null);
   const [showOverride, setShowOverride] = useState(false);
+  const [durationMin, setDurationMin] = useState<number | null>(DEFAULT_DURATION_MIN);
 
   const playedCount = useMemo(() => {
     const counts = new Map(teams.map((t) => [t.id, 0]));
@@ -95,6 +174,7 @@ export function NextMatchCard({
           <input type="hidden" name="sessionId" value={sessionId} />
           <input type="hidden" name="homeTeamId" value={proposal.home.id} />
           <input type="hidden" name="awayTeamId" value={proposal.away.id} />
+          <input type="hidden" name="durationMin" value={durationMin ?? ""} />
           <Stack gap={14}>
             <Group gap={12} align="center" wrap="nowrap">
               <TeamTile team={proposal.home} played={playedCount.get(proposal.home.id) ?? 0} />
@@ -103,6 +183,7 @@ export function NextMatchCard({
               </Text>
               <TeamTile team={proposal.away} played={playedCount.get(proposal.away.id) ?? 0} />
             </Group>
+            <DurationPicker minutes={durationMin} onChange={setDurationMin} />
             <Button type="submit" loading={pending} size="md" fw={800}>
               ▶ Start this match
             </Button>
@@ -118,6 +199,7 @@ export function NextMatchCard({
           <input type="hidden" name="sessionId" value={sessionId} />
           <input type="hidden" name="homeTeamId" value={overrideHome ?? ""} />
           <input type="hidden" name="awayTeamId" value={overrideAway ?? ""} />
+          <input type="hidden" name="durationMin" value={durationMin ?? ""} />
           <Stack gap="sm">
             <Group grow>
               <Select
@@ -133,6 +215,7 @@ export function NextMatchCard({
                 onChange={setOverrideAway}
               />
             </Group>
+            <DurationPicker minutes={durationMin} onChange={setDurationMin} />
             <Group>
               <Button
                 type="submit"

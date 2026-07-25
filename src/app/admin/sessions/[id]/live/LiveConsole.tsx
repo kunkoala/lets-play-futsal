@@ -1,17 +1,27 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useOptimistic } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Group, Modal, Stack, Text } from "@mantine/core";
 import { KEEPER_GLYPH } from "@/lib/keeperPref";
 import { gradientDarkFor } from "@/lib/teamPalette";
 import {
+  breakAtSec,
+  displaySec,
+  formatClock,
+  isBreakDue,
+  isFullTime,
+  type MatchClock,
+} from "@/lib/matchClock";
+import {
   attachAssist,
   deleteEvent,
   endMatch,
+  pauseForBreak,
   recordGoal,
   recordOwnGoal,
+  resumeMatch,
   undoLastEvent,
 } from "./actions";
 
@@ -35,6 +45,8 @@ export function LiveConsole({
   events,
   isFinished,
   matchLabel,
+  clock,
+  serverNow,
 }: {
   matchId: number;
   sessionId: number;
@@ -44,6 +56,10 @@ export function LiveConsole({
   isFinished: boolean;
   /** Eyebrow under the phone scoreboard, e.g. "Matchday 25 Jul · Match 4". */
   matchLabel: string;
+  clock: MatchClock;
+  /** Server's `Date.now()` at render, used as the first tick so SSR and the
+   *  first client render produce identical markup. */
+  serverNow: number;
 }) {
   const router = useRouter();
   const [optimisticEvents, addOptimisticEvent] = useOptimistic(
@@ -62,6 +78,44 @@ export function LiveConsole({
   // shows that roster or the event feed.
   const [phoneTeamId, setPhoneTeamId] = useState(homeTeam.id);
   const [phoneFeed, setPhoneFeed] = useState(false);
+
+  // One tick per second drives every clock readout. Seeded with the server's
+  // clock so the hydrated markup matches what was sent.
+  const [now, setNow] = useState(serverNow);
+  useEffect(() => {
+    setNow(Date.now());
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const onBreak = clock.pausedAt !== null && !isFinished;
+  const breakDue = !isFinished && isBreakDue(clock, now);
+  const fullTime = !isFinished && isFullTime(clock, now);
+  const clockText = formatClock(displaySec(clock, now));
+
+  // The midpoint is noticed here and committed on the server, so a reload —
+  // or the other admin's iPad — lands on the same paused clock. The ref keeps
+  // a slow round-trip from firing the action once per tick.
+  const breakRequested = useRef(false);
+  useEffect(() => {
+    if (!breakDue || onBreak || breakRequested.current) return;
+    breakRequested.current = true;
+    startTransition(async () => {
+      const fd = new FormData();
+      fd.set("matchId", String(matchId));
+      await pauseForBreak(fd);
+      router.refresh();
+    });
+  }, [breakDue, onBreak, matchId, router, startTransition]);
+
+  function handleResume() {
+    startTransition(async () => {
+      const fd = new FormData();
+      fd.set("matchId", String(matchId));
+      await resumeMatch(fd);
+      router.refresh();
+    });
+  }
 
   const playersById = new Map<number, Player>();
   for (const p of [...homeTeam.players, ...awayTeam.players]) playersById.set(p.id, p);
@@ -220,6 +274,9 @@ export function LiveConsole({
         awayScore={awayScore}
         matchLabel={matchLabel}
         isFinished={isFinished}
+        clockText={clockText}
+        fullTime={fullTime}
+        onBreak={onBreak}
         events={optimisticEvents}
         playersById={playersById}
         activeTeamId={phoneTeamId}
@@ -263,6 +320,18 @@ export function LiveConsole({
       >
         <PillButton onClick={() => router.push(`/admin/sessions/${sessionId}`)}>Exit</PillButton>
         <PillDivider />
+        <span
+          className={`tabular-nums${fullTime ? " lc-clock-full" : ""}`}
+          style={{
+            padding: "0 10px",
+            fontSize: 16,
+            fontWeight: 900,
+            color: fullTime ? "var(--volt)" : onBreak ? "var(--team-blue)" : "#fff",
+          }}
+        >
+          {clockText}
+        </span>
+        <PillDivider />
         <PillButton onClick={handleUndo} disabled={optimisticEvents.length === 0 || isFinished}>
           ↺ Undo
         </PillButton>
@@ -270,7 +339,7 @@ export function LiveConsole({
         {!isFinished && (
           <>
             <PillDivider />
-            <PillButton onClick={() => setConfirmEnd(true)} accent>
+            <PillButton onClick={() => setConfirmEnd(true)} accent pulse={fullTime}>
               End match
             </PillButton>
           </>
@@ -328,6 +397,24 @@ export function LiveConsole({
               No assist
             </button>
           </Group>
+        </div>
+      )}
+
+      {/* Water break — covers both layouts, so it is rendered once here rather
+          than inside either. Sits under the end-match Modal's z-index. */}
+      {onBreak && (
+        <div className="lc-break">
+          <div className="lc-break-drop">💧</div>
+          <div className="lc-break-title">WATER BREAK</div>
+          <div className="tabular-nums lc-break-clock">{clockText}</div>
+          <div className="lc-break-sub">
+            {breakAtSec(clock.durationSec) === null
+              ? "clock stopped"
+              : "half time reached · clock stopped"}
+          </div>
+          <button className="lc-break-resume" onClick={handleResume} disabled={isPending}>
+            ▶ Resume
+          </button>
         </div>
       )}
 
@@ -540,6 +627,9 @@ function PhoneConsole({
   awayScore,
   matchLabel,
   isFinished,
+  clockText,
+  fullTime,
+  onBreak,
   events,
   playersById,
   activeTeamId,
@@ -566,6 +656,9 @@ function PhoneConsole({
   awayScore: number;
   matchLabel: string;
   isFinished: boolean;
+  clockText: string;
+  fullTime: boolean;
+  onBreak: boolean;
   events: GoalEventT[];
   playersById: Map<number, Player>;
   activeTeamId: number;
@@ -611,7 +704,15 @@ function PhoneConsole({
           <BoardHalf team={awayTeam} score={awayScore} side="right" />
         </div>
 
-        <div className="lcp-eyebrow">{matchLabel}</div>
+        <div
+          className="lcp-clock"
+          data-state={fullTime ? "full" : onBreak ? "break" : "running"}
+        >
+          <span className="tabular-nums lcp-clock-time">{clockText}</span>
+          <span className="lcp-clock-label">
+            {fullTime ? "FULL TIME" : onBreak ? "WATER BREAK" : matchLabel}
+          </span>
+        </div>
 
         <div className="lcp-seg">
           {[homeTeam, awayTeam].map((team) => {
@@ -786,7 +887,10 @@ function PhoneConsole({
         >
           ↺ Undo
         </button>
-        <button className="lcp-bar-btn lcp-end" onClick={isFinished ? onExit : onEnd}>
+        <button
+          className={`lcp-bar-btn lcp-end${fullTime ? " lc-pulse" : ""}`}
+          onClick={isFinished ? onExit : onEnd}
+        >
           {isFinished ? "Back to session" : "End match"}
         </button>
       </div>
@@ -815,16 +919,19 @@ function PillButton({
   onClick,
   disabled,
   accent,
+  pulse,
 }: {
   children: React.ReactNode;
   onClick: () => void;
   disabled?: boolean;
   accent?: boolean;
+  pulse?: boolean;
 }) {
   return (
     <button
       onClick={onClick}
       disabled={disabled}
+      className={pulse ? "lc-pulse" : undefined}
       style={{
         border: "none",
         borderRadius: 20,

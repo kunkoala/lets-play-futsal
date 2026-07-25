@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { shuffleIntoTeamsWithKeepers, type ShuffledTeam } from "@/lib/shuffle";
+import { MAX_DURATION_MIN, MIN_DURATION_MIN } from "@/lib/matchClock";
 import { paletteFor } from "@/lib/teamPalette";
 
 export type SessionFormState = { error: string } | undefined;
@@ -216,6 +217,21 @@ export async function startMatch(
     return { error: "Pick two different teams." };
   }
 
+  // Optional: a blank field starts an untimed match, which counts up and
+  // never reaches full time. Anything present has to be a sane number of
+  // minutes — the client offers presets, but this is the actual gate.
+  const durationRaw = formData.get("durationMin");
+  let durationSec: number | null = null;
+  if (typeof durationRaw === "string" && durationRaw.trim() !== "") {
+    const minutes = Number(durationRaw);
+    if (!Number.isInteger(minutes) || minutes < MIN_DURATION_MIN || minutes > MAX_DURATION_MIN) {
+      return {
+        error: `Match length must be a whole number between ${MIN_DURATION_MIN} and ${MAX_DURATION_MIN} minutes.`,
+      };
+    }
+    durationSec = minutes * 60;
+  }
+
   const session = await prisma.session.findUnique({ where: { id: sessionId } });
   if (!session) return { error: "Session not found." };
   if (session.status !== "teams_set") {
@@ -242,7 +258,7 @@ export async function startMatch(
   const seq = (lastMatch?.seq ?? 0) + 1;
 
   const match = await prisma.match.create({
-    data: { sessionId, seq, homeTeamId, awayTeamId, status: "in_progress" },
+    data: { sessionId, seq, homeTeamId, awayTeamId, status: "in_progress", durationSec },
   });
 
   redirect(`/admin/sessions/${sessionId}/live?matchId=${match.id}`);

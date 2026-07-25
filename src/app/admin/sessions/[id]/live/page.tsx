@@ -71,6 +71,18 @@ export default async function LiveMatchPage({
       events={match.goalEvents}
       isFinished={match.status === "finished"}
       matchLabel={matchLabel}
+      // Timestamps as epoch milliseconds: the clock is derived arithmetic, and
+      // numbers cross the server/client boundary without a Date round-trip.
+      clock={{
+        startedAt: match.startedAt.getTime(),
+        durationSec: match.durationSec,
+        pausedAt: match.pausedAt?.getTime() ?? null,
+        pausedTotalSec: match.pausedTotalSec,
+        breakTakenAt: match.breakTakenAt?.getTime() ?? null,
+      }}
+      // The server's idea of "now" seeds the first client render too, so the
+      // hydrated markup matches what was sent instead of tripping a mismatch.
+      serverNow={Date.now()}
     />
   );
 }
