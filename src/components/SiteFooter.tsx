@@ -1,4 +1,5 @@
 import { Box, Container, Group, Stack, Text } from "@mantine/core";
+import { verifySession } from "@/lib/auth";
 import { NavLink } from "@/components/NavLink";
 import { GithubLogo, SoccerBallIcon } from "@/components/icons";
 
@@ -33,9 +34,13 @@ function FooterLink({ href, children }: { href: string; children: React.ReactNod
 }
 
 /** `basePath` keeps the Explore links inside the demo when rendered there. */
-export function SiteFooter({ basePath = "" }: { basePath?: string }) {
+export async function SiteFooter({ basePath = "" }: { basePath?: string }) {
   // Rendered on the server at request time, so the notice never goes stale.
   const year = new Date().getFullYear();
+  // Admin now lives here rather than the top nav (see Navbar.tsx) — same
+  // logged-in-vs-not swap the nav used to do, so an already-signed-in admin
+  // lands straight on the dashboard instead of a pointless login form.
+  const isAdmin = await verifySession();
 
   return (
     <Box
@@ -111,7 +116,11 @@ export function SiteFooter({ basePath = "" }: { basePath?: string }) {
             <FooterLink href={`${basePath}/sessions`}>Sessions</FooterLink>
             <FooterLink href={`${basePath}/awards`}>Season awards</FooterLink>
             {basePath === "" && <FooterLink href="/demo">Demo with sample data</FooterLink>}
-            <FooterLink href="/login">Admin login</FooterLink>
+            {isAdmin ? (
+              <FooterLink href="/admin">Admin</FooterLink>
+            ) : (
+              <FooterLink href="/login">Admin login</FooterLink>
+            )}
           </Stack>
         </div>
 

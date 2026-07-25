@@ -15,10 +15,14 @@ export async function Navbar({ basePath = "" }: { basePath?: string }) {
     { href: basePath || "/", label: "Leaderboard" },
     { href: `${basePath}/sessions`, label: "Sessions" },
     { href: `${basePath}/awards`, label: "Awards" },
-    isAdmin
-      ? { href: "/admin", label: "Admin", accent: true }
-      : { href: "/login", label: "Admin login", accent: true },
   ];
+  const adminLink = isAdmin
+    ? { href: "/admin", label: "Admin", accent: true }
+    : { href: "/login", label: "Admin login", accent: true };
+  // Admin now lives in the footer on desktop — reachable but out of the way.
+  // Kept in the mobile burger drawer too, since the footer is a much longer
+  // scroll to reach on a phone.
+  const mobileLinks = [...links, adminLink];
 
   return (
     <Box
@@ -77,7 +81,7 @@ export async function Navbar({ basePath = "" }: { basePath?: string }) {
             ))}
           </Group>
 
-          <MobileNav items={links} />
+          <MobileNav items={mobileLinks} />
         </Group>
       </Container>
     </Box>
