@@ -47,7 +47,11 @@ export function AdminMobileNav({ seasonName }: { seasonName: string | null }) {
         hiddenFrom="sm"
         zIndex={300}
         overlayProps={{ backgroundOpacity: 0.6, blur: 3 }}
-        styles={{ content: { background: "var(--deep-panel)" }, header: { background: "var(--deep-panel)" } }}
+        // Same Dynamic Island fix as the public MobileNav's drawer.
+        styles={{
+          content: { background: "var(--deep-panel)" },
+          header: { background: "var(--deep-panel)", paddingTop: "env(safe-area-inset-top)" },
+        }}
       >
         <Stack gap={4}>
           {seasonName && (

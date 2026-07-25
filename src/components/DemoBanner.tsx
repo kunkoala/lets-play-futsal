@@ -11,6 +11,10 @@ export function DemoBanner() {
       style={{
         background: "linear-gradient(135deg, var(--volt), var(--volt-end))",
         color: "#0D0F14",
+        // This banner sits above the sticky Navbar, so at the top of the page
+        // it — not the nav — is what's behind the Dynamic Island in a
+        // standalone PWA. Same fix as Navbar.tsx.
+        paddingTop: "env(safe-area-inset-top)",
       }}
     >
       <Container size="lg" py={9}>

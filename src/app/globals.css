@@ -195,6 +195,18 @@ body {
   overflow: hidden;
   background: var(--deep-panel-2);
   touch-action: manipulation;
+  /* Full-bleed background stays edge-to-edge; content backs off the safe
+   * area on whichever side actually needs it. Landscape on a notched/Dynamic
+   * Island iPhone puts the cutout on the LEFT or RIGHT edge, not the top —
+   * this is the one thing that forces the desktop split-court layout (see
+   * the `orientation: landscape` rule below) on a rotated phone, so every
+   * absolutely-positioned child (.lc-toppill, .lc-assist-float, .lc-phone,
+   * .lc-break) needs all four insets covered, not just top/bottom. Padding
+   * here — rather than on each child individually — works because they're
+   * all absolutely positioned against this element, so their offsets become
+   * relative to the padded content box for free. */
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+    env(safe-area-inset-left);
 }
 @media (orientation: landscape) {
   .lc-root {
@@ -314,7 +326,9 @@ body {
   min-height: 0;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding: calc(10px + env(safe-area-inset-top)) 14px 14px;
+  /* Top inset now comes from .lc-root's own safe-area padding (.lc-phone is
+   * absolutely positioned against it) — adding it here too would double it. */
+  padding: 10px 14px 14px;
 }
 
 .lcp-topline {
@@ -674,7 +688,9 @@ body {
   flex-shrink: 0;
   display: flex;
   gap: 10px;
-  padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+  /* Bottom inset now comes from .lc-root's own safe-area padding — see
+   * .lcp-scroll's comment on the matching top-padding change. */
+  padding: 10px 14px 14px;
   background: var(--deep-panel-2);
   border-top: 1px solid var(--hairline);
 }
