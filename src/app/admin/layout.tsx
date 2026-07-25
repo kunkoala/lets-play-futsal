@@ -39,6 +39,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           backdropFilter: "blur(10px)",
           backgroundColor: "color-mix(in srgb, var(--deep-panel) 82%, transparent)",
           borderBottom: "1px solid var(--hairline)",
+          // Same fix as the public Navbar — installed PWA runs under the
+          // Dynamic Island on iOS, so pad the bar down into the safe area.
+          paddingTop: "env(safe-area-inset-top)",
         }}
       >
         <Container size="lg" py={10} px={{ base: 16, sm: 24 }}>

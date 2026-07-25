@@ -30,6 +30,10 @@ export async function Navbar({ basePath = "" }: { basePath?: string }) {
         backdropFilter: "blur(10px)",
         backgroundColor: "color-mix(in srgb, var(--deep-panel) 82%, transparent)",
         borderBottom: "1px solid var(--hairline)",
+        // Standalone PWA on iOS runs content under the Dynamic Island
+        // (viewport-fit=cover in the root layout); without this the sticky
+        // bar sits under it and its links become untappable.
+        paddingTop: "env(safe-area-inset-top)",
       }}
     >
       <Container size="lg" py={12} px={{ base: 16, sm: 24 }}>
