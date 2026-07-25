@@ -17,6 +17,7 @@ export {
   // Phosphor deprecated the bare names in favour of `*Icon`; import the new
   // name directly rather than aliasing the deprecated one.
   SoccerBallIcon,
+  GithubLogo,
   Trophy,
   Target,
   Fire,

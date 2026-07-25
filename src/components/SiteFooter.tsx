@@ -1,7 +1,8 @@
 import { Box, Container, Group, Stack, Text } from "@mantine/core";
 import { NavLink } from "@/components/NavLink";
-import { SoccerBallIcon } from "@/components/icons";
+import { GithubLogo, SoccerBallIcon } from "@/components/icons";
 
+const REPO_URL = "https://github.com/kunkoala/lets-play-futsal";
 const CONTACT_EMAIL = "ppibraunschweig@gmail.com";
 /** Pre-fills the subject so an enquiry doesn't land in the inbox untitled. */
 const JOIN_MAILTO = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(
@@ -126,9 +127,22 @@ export function SiteFooter({ basePath = "" }: { basePath?: string }) {
           <Text c="dimmed" fz={12}>
             © {year} Liga Minggu. Built by Azhar Rahadian.
           </Text>
-          <Text c="dimmed" fz={12}>
-            Stats update once a matchday is marked complete.
-          </Text>
+          <Group gap={16} wrap="nowrap" align="center">
+            <Text c="dimmed" fz={12}>
+              Stats update once a matchday is marked complete.
+            </Text>
+            <Box
+              component="a"
+              href={REPO_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="View source on GitHub"
+              title="View source on GitHub"
+              style={{ color: "var(--text-muted)", display: "flex", flexShrink: 0 }}
+            >
+              <GithubLogo size={18} weight="fill" />
+            </Box>
+          </Group>
         </Group>
       </Container>
     </Box>
