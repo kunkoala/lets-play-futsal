@@ -18,6 +18,68 @@ function Eyebrow({ children }: { children: React.ReactNode }) {
   );
 }
 
+type GoalEventDetail = {
+  id: number;
+  teamId: number;
+  scorer: { name: string } | null;
+  assist: { name: string } | null;
+  matchSec: number | null;
+};
+
+/**
+ * One goal line, laid out under its own team the way a real match report
+ * does — home team's goals on the left, away team's on the right — rather
+ * than one flat list where telling the sides apart meant reading the dot
+ * color. `align` flips text alignment and puts the minute/dot on the
+ * outside edge so both columns read toward the score in the middle.
+ */
+function GoalLine({
+  event,
+  color,
+  align,
+}: {
+  event: GoalEventDetail;
+  color: string;
+  align: "left" | "right";
+}) {
+  const dot = (
+    <Box
+      aria-hidden
+      style={{ width: 7, height: 7, borderRadius: 999, flexShrink: 0, background: color }}
+    />
+  );
+  const label = (
+    <Text fz={13} c="dimmed" style={{ textAlign: align }}>
+      {event.matchSec !== null && (
+        <Text span className="tabular-nums" fw={700}>
+          {Math.floor(event.matchSec / 60)}&apos;{" "}
+        </Text>
+      )}
+      <Text span fw={600} c="var(--mantine-color-text)">
+        {event.scorer?.name ?? "Own goal"}
+      </Text>{" "}
+      ⚽
+      {event.assist ? ` · ${event.assist.name} A` : ""}
+    </Text>
+  );
+
+  return (
+    <Group gap={7} wrap="nowrap" align="center">
+      {align === "left" ? (
+        <>
+          {dot}
+          {label}
+        </>
+      ) : (
+        <>
+          {label}
+          {dot}
+        </>
+      )}
+    </Group>
+  );
+}
+
 /**
  * Shape shared by the Prisma query on `/sessions/[id]` and the generated demo
  * session — declared structurally so both satisfy it without conversion.
@@ -154,8 +216,20 @@ export function SessionDetailView({
                   padding: "16px 18px",
                 }}
               >
-                <Group justify="space-between" align="center" wrap="nowrap">
-                  <Text fw={800} fz={16} style={{ color: m.homeTeam.color }}>
+                {/* Grid rather than a space-between Group: with three unequal-
+                    width children (two team names + the score), space-between
+                    only centers the score when both names happen to be the
+                    same length — a grid's middle column stays centered
+                    regardless of how long "Red" vs "Green" is. */}
+                <Box
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr auto 1fr",
+                    alignItems: "center",
+                    gap: 10,
+                  }}
+                >
+                  <Text fw={800} fz={16} truncate style={{ color: m.homeTeam.color }}>
                     {m.homeTeam.name}
                   </Text>
                   <Group gap={10} align="center" wrap="nowrap">
@@ -169,12 +243,17 @@ export function SessionDetailView({
                       {score.away}
                     </Text>
                   </Group>
-                  <Text fw={800} fz={16} style={{ color: m.awayTeam.color, textAlign: "right" }}>
+                  <Text
+                    fw={800}
+                    fz={16}
+                    truncate
+                    style={{ color: m.awayTeam.color, textAlign: "right" }}
+                  >
                     {m.awayTeam.name}
                   </Text>
-                </Group>
+                </Box>
                 {m.status === "in_progress" && (
-                  <Text fz={11} fw={700} mt={8} style={{ color: "var(--team-yellow)" }}>
+                  <Text fz={11} fw={700} mt={10} style={{ color: "var(--team-yellow)" }}>
                     ● LIVE
                   </Text>
                 )}
@@ -195,22 +274,30 @@ export function SessionDetailView({
                   </Group>
                 )}
                 {m.goalEvents.length > 0 && (
-                  <Stack gap={3} mt={12} pt={12} style={{ borderTop: "1px solid var(--hairline)" }}>
-                    {m.goalEvents.map((e) => (
-                      <Text key={e.id} fz={13} c="dimmed">
-                        {e.matchSec !== null && (
-                          <Text span className="tabular-nums" fw={700}>
-                            {Math.floor(e.matchSec / 60)}&apos;{" "}
-                          </Text>
-                        )}
-                        <Text span fw={600} c="var(--mantine-color-text)">
-                          {e.scorer?.name ?? "Own goal"}
-                        </Text>{" "}
-                        ⚽
-                        {e.assist ? ` · ${e.assist.name} A` : ""}
-                      </Text>
-                    ))}
-                  </Stack>
+                  <Group
+                    mt={12}
+                    pt={12}
+                    align="flex-start"
+                    justify="space-between"
+                    wrap="nowrap"
+                    gap={16}
+                    style={{ borderTop: "1px solid var(--hairline)" }}
+                  >
+                    <Stack gap={5} style={{ flex: 1, minWidth: 0 }}>
+                      {m.goalEvents
+                        .filter((e) => e.teamId === m.homeTeamId)
+                        .map((e) => (
+                          <GoalLine key={e.id} event={e} color={m.homeTeam.color} align="left" />
+                        ))}
+                    </Stack>
+                    <Stack gap={5} style={{ flex: 1, minWidth: 0 }} align="flex-end">
+                      {m.goalEvents
+                        .filter((e) => e.teamId === m.awayTeamId)
+                        .map((e) => (
+                          <GoalLine key={e.id} event={e} color={m.awayTeam.color} align="right" />
+                        ))}
+                    </Stack>
+                  </Group>
                 )}
               </Box>
             );
