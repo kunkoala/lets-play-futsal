@@ -3,14 +3,20 @@
 Ships as **Liga Minggu** — that's the name in the navbar, the browser tab, and
 on the home screen once installed. "Let's Play Futsal" is just the repo.
 
-A weekly futsal team manager for a student community. The public site shows
-registered players, session history, and a semester leaderboard — goals,
-assists, G+A, points, form, clean sheets, match MVPs, and an overall 0-100
-player rating. A single admin (predefined credentials, no sign-up) checks in
-attendees, shuffles them into teams (keepers seeded one per side), runs the
-game day match-by-match with a live courtside scoreboard, picks a man of the
-match, and the app rolls everything up into the season leaderboard and
-end-of-semester awards.
+A weekly futsal team manager for a student community — runs game day start to
+finish and turns it into a season worth bragging about. One admin checks in
+whoever showed up, hits **Shuffle**, and a position-aware algorithm seeds one
+goalkeeper per team before dealing everyone else out at random, previewing
+keeper coverage before it's locked in. From there the matchmaker always
+proposes who plays next — fewest matches played first, tie-broken by longest
+wait, dodging immediate rematches unless fairness says otherwise — while a live
+match clock (duration, pause, break) and courtside scoreboard track every goal
+and assist as it happens, MVP included.
+
+All of it rolls up automatically into a public leaderboard: goals, assists,
+G+A, points, form, clean sheets, match MVPs, and a single 0-100 player rating
+that blends volume and rate stats with a Bayesian prior so one lucky game can't
+outrank a season of showing up — capped off with end-of-semester awards.
 
 Want to see it without real data? **`/demo`** runs the whole app on a generated
 season — nothing there touches the database.
