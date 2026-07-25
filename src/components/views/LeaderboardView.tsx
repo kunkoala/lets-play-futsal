@@ -574,7 +574,7 @@ export function LeaderboardView({
           />
           <LeaderCard
             eyebrow="Top Assists"
-            glyph="🅰"
+            glyph="A"
             leader={leaderBy(stats, "assists")}
             unit="assists"
             accent="var(--team-blue)"

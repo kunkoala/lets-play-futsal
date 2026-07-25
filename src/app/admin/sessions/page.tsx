@@ -100,7 +100,9 @@ export default async function SessionsPage() {
           }}
         >
           <div style={{ overflowX: "auto" }}>
-            <Table verticalSpacing={12} horizontalSpacing="lg" highlightOnHover w="100%">
+            {/* Only four narrow columns, so this one still works as a table on
+                a phone — just at tighter horizontal spacing. */}
+            <Table verticalSpacing={12} horizontalSpacing="sm" highlightOnHover w="100%">
               <TableThead>
                 <TableTr style={{ borderBottom: "1px solid var(--hairline)" }}>
                   <Th>Date</Th>

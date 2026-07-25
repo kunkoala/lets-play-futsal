@@ -34,6 +34,7 @@ export function LiveConsole({
   awayTeam,
   events,
   isFinished,
+  matchLabel,
 }: {
   matchId: number;
   sessionId: number;
@@ -41,6 +42,8 @@ export function LiveConsole({
   awayTeam: TeamInfo;
   events: GoalEventT[];
   isFinished: boolean;
+  /** Eyebrow under the phone scoreboard, e.g. "Matchday 25 Jul · Match 4". */
+  matchLabel: string;
 }) {
   const router = useRouter();
   const [optimisticEvents, addOptimisticEvent] = useOptimistic(
@@ -55,6 +58,10 @@ export function LiveConsole({
   const [mvpId, setMvpId] = useState<number | null>(null);
   const [showFeed, setShowFeed] = useState(false);
   const [cooldownIds, setCooldownIds] = useState<Set<number>>(new Set());
+  // Phone layout only: which roster is tappable, and whether the list area
+  // shows that roster or the event feed.
+  const [phoneTeamId, setPhoneTeamId] = useState(homeTeam.id);
+  const [phoneFeed, setPhoneFeed] = useState(false);
 
   const playersById = new Map<number, Player>();
   for (const p of [...homeTeam.players, ...awayTeam.players]) playersById.set(p.id, p);
@@ -64,6 +71,10 @@ export function LiveConsole({
 
   function goalsFor(playerId: number): number {
     return optimisticEvents.filter((e) => e.scorerId === playerId).length;
+  }
+
+  function assistsFor(playerId: number): number {
+    return optimisticEvents.filter((e) => e.assistId === playerId).length;
   }
 
   function withCooldown(playerId: number, fn: () => void) {
@@ -183,6 +194,7 @@ export function LiveConsole({
         align="start"
         isFinished={isFinished}
         goalsFor={goalsFor}
+        assistsFor={assistsFor}
         cooldownIds={cooldownIds}
         onScore={(p) => handleScore(homeTeam, p)}
         onOwnGoal={() => handleOwnGoal(awayTeam)}
@@ -193,13 +205,45 @@ export function LiveConsole({
         align="end"
         isFinished={isFinished}
         goalsFor={goalsFor}
+        assistsFor={assistsFor}
         cooldownIds={cooldownIds}
         onScore={(p) => handleScore(awayTeam, p)}
         onOwnGoal={() => handleOwnGoal(homeTeam)}
       />
 
+      {/* Phone layout (handoff 5a/5b). Rendered alongside the split court and
+          swapped by CSS at 48em, so both share this component's state. */}
+      <PhoneConsole
+        homeTeam={homeTeam}
+        awayTeam={awayTeam}
+        homeScore={homeScore}
+        awayScore={awayScore}
+        matchLabel={matchLabel}
+        isFinished={isFinished}
+        events={optimisticEvents}
+        playersById={playersById}
+        activeTeamId={phoneTeamId}
+        onSelectTeam={setPhoneTeamId}
+        showFeed={phoneFeed}
+        onToggleFeed={setPhoneFeed}
+        goalsFor={goalsFor}
+        assistsFor={assistsFor}
+        cooldownIds={cooldownIds}
+        pendingAssist={pendingAssist}
+        pendingScorerId={pendingEventScorerId}
+        assistCandidates={assistCandidates}
+        onScore={handleScore}
+        onOwnGoal={handleOwnGoal}
+        onAssist={handleAssist}
+        onDeleteEvent={handleDeleteEvent}
+        onUndo={handleUndo}
+        onEnd={() => setConfirmEnd(true)}
+        onExit={() => router.push(`/admin/sessions/${sessionId}`)}
+      />
+
       {/* Floating control pill — top-center */}
       <div
+        className="lc-toppill"
         style={{
           position: "absolute",
           top: 12,
@@ -235,6 +279,7 @@ export function LiveConsole({
 
       {isFinished && (
         <div
+          className="lc-toppill"
           style={{
             position: "absolute",
             top: 58,
@@ -251,9 +296,11 @@ export function LiveConsole({
         </div>
       )}
 
-      {/* Assist follow-up strip — bottom-center overlay */}
+      {/* Assist follow-up strip — bottom-center overlay (split-court layout;
+          the phone layout inlines the same prompt under the scorer's tile) */}
       {pendingAssist && (
         <div
+          className="lc-assist-float"
           style={{
             position: "absolute",
             bottom: 16,
@@ -404,6 +451,7 @@ function TeamHalf({
   align,
   isFinished,
   goalsFor,
+  assistsFor,
   cooldownIds,
   onScore,
   onOwnGoal,
@@ -413,6 +461,7 @@ function TeamHalf({
   align: "start" | "end";
   isFinished: boolean;
   goalsFor: (playerId: number) => number;
+  assistsFor: (playerId: number) => number;
   cooldownIds: Set<number>;
   onScore: (p: Player) => void;
   onOwnGoal: () => void;
@@ -463,7 +512,7 @@ function TeamHalf({
                 className="tabular-nums"
                 style={{ fontSize: 12, fontWeight: 800, color: "rgba(255,255,255,.72)" }}
               >
-                {goalsFor(p.id)} ⚽
+                {goalsFor(p.id)} ⚽ · {assistsFor(p.id)} A
               </span>
             </button>
           ))}
@@ -472,6 +521,291 @@ function TeamHalf({
           </button>
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * Phone console — handoff screens 5a/5b, one thumb at ~390px.
+ *
+ * Presentational: every piece of state and every action comes from
+ * `LiveConsole`, so tapping here and tapping the split court hit the same
+ * optimistic updates, the same 600ms double-tap guard and the same Server
+ * Actions. Only the reflow differs.
+ */
+function PhoneConsole({
+  homeTeam,
+  awayTeam,
+  homeScore,
+  awayScore,
+  matchLabel,
+  isFinished,
+  events,
+  playersById,
+  activeTeamId,
+  onSelectTeam,
+  showFeed,
+  onToggleFeed,
+  goalsFor,
+  assistsFor,
+  cooldownIds,
+  pendingAssist,
+  pendingScorerId,
+  assistCandidates,
+  onScore,
+  onOwnGoal,
+  onAssist,
+  onDeleteEvent,
+  onUndo,
+  onEnd,
+  onExit,
+}: {
+  homeTeam: TeamInfo;
+  awayTeam: TeamInfo;
+  homeScore: number;
+  awayScore: number;
+  matchLabel: string;
+  isFinished: boolean;
+  events: GoalEventT[];
+  playersById: Map<number, Player>;
+  activeTeamId: number;
+  onSelectTeam: (id: number) => void;
+  showFeed: boolean;
+  onToggleFeed: (v: boolean) => void;
+  goalsFor: (playerId: number) => number;
+  assistsFor: (playerId: number) => number;
+  cooldownIds: Set<number>;
+  pendingAssist: { eventId: number; teamId: number; scorerName: string } | null;
+  /** Scorer of the goal awaiting an assist — by id, since names can repeat. */
+  pendingScorerId: number | null | undefined;
+  assistCandidates: Player[];
+  onScore: (team: TeamInfo, player: Player) => void;
+  onOwnGoal: (team: TeamInfo) => void;
+  onAssist: (playerId: number | null) => void;
+  onDeleteEvent: (eventId: number) => void;
+  onUndo: () => void;
+  onEnd: () => void;
+  onExit: () => void;
+}) {
+  const activeTeam = activeTeamId === awayTeam.id ? awayTeam : homeTeam;
+  const sortedEvents = [...events].sort((a, b) => b.seq - a.seq);
+
+  return (
+    <div className="lc-phone">
+      <div className="lcp-scroll">
+        <div className="lcp-topline">
+          <button className="lcp-chip lcp-chip-outline" onClick={onExit}>
+            ← Exit
+          </button>
+          {isFinished && (
+            <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.14em", color: "var(--text-muted)" }}>
+              MATCH FINISHED
+            </span>
+          )}
+        </div>
+
+        {/* Both scores stay visible whichever roster is active — that is the
+            whole reason the split court can be dropped at this width. */}
+        <div className="lcp-board">
+          <BoardHalf team={homeTeam} score={homeScore} side="left" />
+          <BoardHalf team={awayTeam} score={awayScore} side="right" />
+        </div>
+
+        <div className="lcp-eyebrow">{matchLabel}</div>
+
+        <div className="lcp-seg">
+          {[homeTeam, awayTeam].map((team) => {
+            const active = !showFeed && team.id === activeTeamId;
+            return (
+              <button
+                key={team.id}
+                className="lcp-seg-btn"
+                data-active={active}
+                style={active ? { background: team.color, color: "#fff" } : undefined}
+                onClick={() => {
+                  onToggleFeed(false);
+                  onSelectTeam(team.id);
+                }}
+              >
+                {team.name.toUpperCase()}
+              </button>
+            );
+          })}
+          <button
+            className="lcp-seg-btn"
+            data-active={showFeed}
+            style={showFeed ? { background: "var(--volt)", color: "#0D0F14" } : undefined}
+            onClick={() => onToggleFeed(!showFeed)}
+          >
+            Feed · {events.length}
+          </button>
+        </div>
+
+        {showFeed ? (
+          <>
+            <div className="lcp-eyebrow" style={{ textAlign: "left", margin: "14px 0 8px" }}>
+              Tap × to delete
+            </div>
+            <div className="lcp-list" style={{ marginTop: 0 }}>
+              {sortedEvents.length === 0 && (
+                <Text c="dimmed" fz={14} ta="center" py="lg">
+                  No goals yet.
+                </Text>
+              )}
+              {sortedEvents.map((e) => {
+                const team = e.teamId === homeTeam.id ? homeTeam : awayTeam;
+                const scorer = e.scorerId ? (playersById.get(e.scorerId)?.name ?? "?") : null;
+                const assist = e.assistId ? playersById.get(e.assistId)?.name : null;
+                return (
+                  <div key={e.id} className="lcp-event">
+                    <span className="lcp-event-seq">{e.seq}</span>
+                    <span className="lcp-event-dot" style={{ background: team.color }} />
+                    <span className="lcp-event-text">
+                      {scorer ? (
+                        <>
+                          {scorer} ⚽
+                          {assist && (
+                            <span style={{ fontWeight: 600, color: "var(--text-muted)" }}>
+                              {" "}
+                              ({assist} A)
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          Own goal{" "}
+                          <span style={{ fontWeight: 600, color: "var(--text-muted)" }}>
+                            for {team.name}
+                          </span>
+                        </>
+                      )}
+                    </span>
+                    {/* Optimistic rows carry a negative id and have no server
+                        row to delete yet. */}
+                    {e.id > 0 && !isFinished && (
+                      <button
+                        className="lcp-event-del"
+                        aria-label={`Delete event ${e.seq}`}
+                        onClick={() => onDeleteEvent(e.id)}
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        ) : isFinished ? (
+          <Text c="dimmed" fz={14} ta="center" py="lg">
+            Match finished — open the feed to review the goals.
+          </Text>
+        ) : (
+          <div className="lcp-list">
+            {activeTeam.players.map((p) => {
+              const scored = pendingAssist?.teamId === activeTeam.id && pendingScorerId === p.id;
+              const goals = goalsFor(p.id);
+              const assists = assistsFor(p.id);
+              return (
+                <div
+                  key={p.id}
+                  className="lcp-row"
+                  style={
+                    scored
+                      ? {
+                          borderColor: activeTeam.color,
+                          boxShadow: `0 0 0 3px color-mix(in srgb, ${activeTeam.color} 16%, transparent)`,
+                        }
+                      : undefined
+                  }
+                >
+                  <button
+                    className="lcp-tile"
+                    disabled={cooldownIds.has(p.id)}
+                    onClick={() => onScore(activeTeam, p)}
+                  >
+                    <span style={{ minWidth: 0 }}>
+                      {p.isKeeper ? `${KEEPER_GLYPH} ` : ""}
+                      {p.name}
+                      {scored && <span className="lcp-scored-note"> · scored</span>}
+                    </span>
+                    <span className="lcp-counts">
+                      <span
+                        className="lcp-count"
+                        style={goals > 0 ? { color: activeTeam.color } : undefined}
+                      >
+                        {goals}
+                        <i>⚽</i>
+                      </span>
+                      <span
+                        className="lcp-count"
+                        style={assists > 0 ? { color: activeTeam.color } : undefined}
+                      >
+                        {assists}
+                        <i>A</i>
+                      </span>
+                    </span>
+                  </button>
+
+                  {scored && (
+                    <div className="lcp-assist">
+                      <div className="lcp-assist-label">ASSIST?</div>
+                      <div className="lcp-chips">
+                        {assistCandidates.map((c) => (
+                          <button key={c.id} className="lcp-chip" onClick={() => onAssist(c.id)}>
+                            {c.name}
+                          </button>
+                        ))}
+                        <button
+                          className="lcp-chip lcp-chip-outline"
+                          onClick={() => onAssist(null)}
+                        >
+                          No assist
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {/* Scorer-less goal credited to the team currently shown — named
+                in full because "own goal" alone does not say who gets it. */}
+            <button className="lcp-og" onClick={() => onOwnGoal(activeTeam)}>
+              Own goal / unknown +1 for {activeTeam.name}
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div className="lcp-bar">
+        <button
+          className="lcp-bar-btn lcp-undo"
+          onClick={onUndo}
+          disabled={events.length === 0 || isFinished}
+        >
+          ↺ Undo
+        </button>
+        <button className="lcp-bar-btn lcp-end" onClick={isFinished ? onExit : onEnd}>
+          {isFinished ? "Back to session" : "End match"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function BoardHalf({ team, score, side }: { team: TeamInfo; score: number; side: "left" | "right" }) {
+  return (
+    <div
+      className="lcp-board-half"
+      style={{
+        background: `linear-gradient(${side === "left" ? 150 : 200}deg, ${team.color}, ${gradientDarkFor(team.color)})`,
+        alignItems: side === "left" ? "flex-start" : "flex-end",
+        textAlign: side === "left" ? "left" : "right",
+      }}
+    >
+      <span className="lcp-board-name">{team.name.toUpperCase()}</span>
+      <span className="lcp-board-score">{score}</span>
     </div>
   );
 }
@@ -588,7 +922,7 @@ function FeedOverlay({
                   <Text span fw={800} style={{ color: team.color }}>
                     {team.name}
                   </Text>{" "}
-                  · {scorer} ⚽{assist ? ` (${assist} 🅰)` : ""}
+                  · {scorer} ⚽{assist ? ` (${assist} A)` : ""}
                 </Text>
                 {e.id > 0 && (
                   <button

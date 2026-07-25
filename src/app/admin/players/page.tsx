@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { NavLink } from "@/components/NavLink";
 import { ArrowLeft } from "@/components/icons";
 import { AddPlayerForm } from "./AddPlayerForm";
-import { PlayerRow } from "./PlayerRow";
+import { PlayerCard, PlayerRow } from "./PlayerRow";
 
 function Th({ children, align = "left" }: { children?: React.ReactNode; align?: "left" | "center" | "right" }) {
   return (
@@ -69,7 +69,10 @@ export default async function PlayersPage() {
             background: "var(--panel)",
           }}
         >
-          <div style={{ overflowX: "auto" }}>
+          {/* Name input + position Select + two buttons need ~700px before the
+              columns start colliding, so the table is desktop-only and phones
+              get the stacked card list below instead of a sideways scroll. */}
+          <Box visibleFrom="sm" style={{ overflowX: "auto" }}>
             <Table verticalSpacing={10} horizontalSpacing="lg" w="100%">
               <TableThead>
                 <TableTr style={{ borderBottom: "1px solid var(--hairline)" }}>
@@ -94,7 +97,18 @@ export default async function PlayersPage() {
                 )}
               </TableTbody>
             </Table>
-          </div>
+          </Box>
+
+          <Box hiddenFrom="sm">
+            {players.map((player) => (
+              <PlayerCard key={player.id} player={player} />
+            ))}
+            {players.length === 0 && (
+              <Text c="dimmed" fz={14} p="md">
+                No players yet — add the first one above.
+              </Text>
+            )}
+          </Box>
         </Box>
       </Stack>
     </Container>

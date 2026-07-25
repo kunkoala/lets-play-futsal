@@ -1,6 +1,7 @@
 import { Box, Button, Container, Group } from "@mantine/core";
 import { getActiveSeason } from "@/lib/leaderboard";
 import { NavLink } from "@/components/NavLink";
+import { AdminMobileNav } from "./AdminMobileNav";
 import { logout } from "./actions";
 
 /**
@@ -40,9 +41,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           borderBottom: "1px solid var(--hairline)",
         }}
       >
-        <Container size="lg" py={10}>
-          <Group justify="space-between" wrap="wrap" gap="xs">
-            <Group gap={10} align="center" wrap="nowrap">
+        <Container size="lg" py={10} px={{ base: 16, sm: 24 }}>
+          <Group justify="space-between" wrap="nowrap" gap="xs">
+            <Group gap={10} align="center" wrap="nowrap" style={{ minWidth: 0 }}>
               <NavLink href="/admin" underline="never" c="inherit">
                 <Group gap={9} wrap="nowrap" component="span" align="center">
                   <Box
@@ -87,7 +88,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               )}
             </Group>
 
-            <Group gap={4} wrap="nowrap" align="center">
+            {/* Below `sm` the whole set moves into the burger drawer. */}
+            <Group gap={4} wrap="nowrap" align="center" visibleFrom="sm">
               <AdminNavItem href="/admin/sessions">Sessions</AdminNavItem>
               <AdminNavItem href="/admin/players">Players</AdminNavItem>
               <AdminNavItem href="/admin/seasons">Seasons</AdminNavItem>
@@ -115,6 +117,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                 </Button>
               </form>
             </Group>
+
+            <AdminMobileNav seasonName={activeSeason?.name ?? null} />
           </Group>
         </Container>
       </Box>
@@ -133,7 +137,6 @@ function AdminNavItem({ href, children }: { href: string; children: React.ReactN
       fz={13}
       px={10}
       py={6}
-      visibleFrom="xs"
       style={{
         borderRadius: 10,
         whiteSpace: "nowrap",

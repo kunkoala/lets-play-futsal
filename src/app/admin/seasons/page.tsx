@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { NavLink } from "@/components/NavLink";
 import { ArrowLeft } from "@/components/icons";
 import { CreateSeasonForm } from "./CreateSeasonForm";
-import { SeasonRow } from "./SeasonRow";
+import { SeasonCard, SeasonRow } from "./SeasonRow";
 
 function Th({ children }: { children?: React.ReactNode }) {
   return (
@@ -78,7 +78,9 @@ export default async function SeasonsPage() {
             background: "var(--panel)",
           }}
         >
-          <div style={{ overflowX: "auto" }}>
+          {/* Six columns — two date pickers and a searchable Select among
+              them — need ~900px. Below `md` the card list takes over. */}
+          <Box visibleFrom="md" style={{ overflowX: "auto" }}>
             <Table verticalSpacing={12} horizontalSpacing="md" w="100%">
               <TableThead>
                 <TableTr style={{ borderBottom: "1px solid var(--hairline)" }}>
@@ -110,7 +112,23 @@ export default async function SeasonsPage() {
                 )}
               </TableTbody>
             </Table>
-          </div>
+          </Box>
+
+          <Box hiddenFrom="md">
+            {seasons.map((season) => (
+              <SeasonCard
+                key={season.id}
+                season={season}
+                players={players}
+                mvp={mvpBySeasonId.get(season.id) ?? null}
+              />
+            ))}
+            {seasons.length === 0 && (
+              <Text c="dimmed" fz={14} p="md">
+                No seasons yet — create the first one above.
+              </Text>
+            )}
+          </Box>
         </Box>
       </Stack>
     </Container>

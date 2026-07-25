@@ -85,6 +85,24 @@ body {
   }
 }
 
+/* Admin dashboard tiles. Single column on a phone: `auto-fit minmax(230px, …)`
+ * resolves to one column there, and the "Game day" panel's `span 2` then
+ * created an implicit *second* column that ran off the right edge. The span
+ * only applies from iPad up, where there really are two columns. */
+.admin-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 48em) {
+  .admin-grid {
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  }
+  .admin-grid > .admin-grid-span2 {
+    grid-column: span 2;
+  }
+}
+
 /* Game-day session pages: stacked on phone/iPad portrait, two-column on
  * landscape/desktop (check-in | shuffle, or teams | matchmaker). */
 .session-grid {
@@ -245,6 +263,328 @@ body {
     transform: none;
   }
 }
+/* ---------------------------------------------------------------------
+ * Phone live console (handoff screens 5a/5b). Two rosters cannot sit
+ * side-by-side at 390px — the split court gives each half ~half the viewport,
+ * and between the 72px+ numeral and the tile grid the last players fall below
+ * the fold of a `overflow: hidden` panel. Below 48em the split is replaced by
+ * a compact two-tone scoreboard (both scores always visible), a team toggle
+ * that swaps which roster is tappable, and a sticky one-thumb action bar.
+ *
+ * Both layouts render; this hides whichever one does not apply, so all the
+ * state (scores, pending assist, cooldowns) stays in one component.
+ * ------------------------------------------------------------------- */
+.lc-phone {
+  display: none;
+}
+@media (max-width: 47.99em) {
+  .lc-half,
+  .lc-toppill,
+  .lc-assist-float {
+    display: none;
+  }
+  .lc-phone {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    background: var(--court-night);
+  }
+}
+
+.lcp-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: calc(10px + env(safe-area-inset-top)) 14px 14px;
+}
+
+.lcp-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+/* Scoreboard — two color halves flush together, dark corner vignette each. */
+.lcp-board {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-radius: 16px;
+  overflow: hidden;
+}
+.lcp-board-half {
+  position: relative;
+  overflow: hidden;
+  min-height: 106px;
+  padding: 12px 14px 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.lcp-board-half::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(125% 95% at 50% 18%, transparent 38%, rgba(0, 0, 0, 0.45));
+  pointer-events: none;
+}
+.lcp-board-half > * {
+  position: relative;
+  z-index: 1;
+}
+.lcp-board-name {
+  font-family: var(--font-archivo-expanded), var(--font-archivo), sans-serif;
+  font-weight: 900;
+  font-size: 15px;
+  letter-spacing: 0.08em;
+  color: #fff;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+.lcp-board-score {
+  font-family: var(--font-archivo-expanded), var(--font-archivo), sans-serif;
+  font-weight: 900;
+  font-size: 56px;
+  line-height: 0.88;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  color: #fff;
+  text-shadow: 0 6px 24px rgba(0, 0, 0, 0.42);
+}
+
+.lcp-eyebrow {
+  margin: 10px 0 12px;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* Segmented control: which roster is live, plus the feed. */
+.lcp-seg {
+  display: flex;
+  gap: 8px;
+}
+.lcp-seg-btn {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  border-radius: 12px;
+  padding: 11px 6px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  background: var(--panel);
+  color: var(--text-muted);
+  cursor: pointer;
+  touch-action: manipulation;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lcp-seg-btn[data-active="true"] {
+  color: #fff;
+}
+
+.lcp-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+/* A row is the tile plus, when this player just scored, the assist strip —
+   the strip cannot live inside the tile because the tile is a <button>. */
+.lcp-row {
+  border-radius: 14px;
+  border: 1px solid transparent;
+  background: var(--panel);
+  overflow: hidden;
+}
+.lcp-tile {
+  width: 100%;
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 16px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform 0.08s ease;
+}
+.lcp-tile:active {
+  transform: scale(0.985);
+}
+.lcp-tile:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.lcp-scored-note {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.lcp-counts {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+.lcp-count {
+  font-size: 17px;
+  font-weight: 900;
+  color: var(--text-muted);
+}
+.lcp-count > i {
+  font-style: normal;
+  font-size: 10px;
+  opacity: 0.72;
+  margin-left: 3px;
+}
+
+.lcp-assist {
+  border-top: 1px dashed var(--hairline);
+  background: #161922;
+  padding: 10px 14px 12px;
+}
+.lcp-assist-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: var(--volt);
+  margin-bottom: 8px;
+}
+.lcp-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.lcp-chip {
+  border: none;
+  border-radius: 10px;
+  padding: 9px 14px;
+  background: #2a2f3d;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.lcp-chip-outline {
+  background: transparent;
+  border: 1px solid var(--hairline);
+  color: var(--text-muted);
+}
+
+.lcp-og {
+  width: 100%;
+  min-height: 52px;
+  margin-top: 8px;
+  border: 1px solid var(--hairline);
+  border-radius: 14px;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+/* Feed rows — tap the × to delete an event older than Undo's reach. */
+.lcp-event {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--panel);
+}
+.lcp-event-seq {
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+.lcp-event-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.lcp-event-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 700;
+}
+.lcp-event-del {
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 20px;
+  line-height: 1;
+  padding: 6px 10px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+/* Sticky one-thumb action bar. */
+.lcp-bar {
+  flex-shrink: 0;
+  display: flex;
+  gap: 10px;
+  padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+  background: var(--deep-panel-2);
+  border-top: 1px solid var(--hairline);
+}
+.lcp-bar-btn {
+  min-height: 52px;
+  border: none;
+  border-radius: 14px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.lcp-bar-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.lcp-undo {
+  flex: 1;
+  background: var(--panel-raised);
+  color: var(--text);
+}
+.lcp-end {
+  flex: 1.6;
+  background: var(--volt);
+  color: #0d0f14;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lcp-tile:active {
+    transform: none;
+  }
+}
+
 .lc-chip {
   border: 1px solid var(--hairline);
   border-radius: 18px;

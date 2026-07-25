@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { Box, Button, Group, Select, TableTd, TableTr, TextInput } from "@mantine/core";
+import { Box, Button, Group, Select, Stack, TableTd, TableTr, TextInput } from "@mantine/core";
 import { KEEPER_PREF_OPTIONS } from "@/lib/keeperPref";
 import type { KeeperPref } from "@/lib/shuffle";
 import {
@@ -36,9 +36,18 @@ function StatusPill({ active }: { active: boolean }) {
   );
 }
 
-export function PlayerRow({ player }: { player: Player }) {
+/**
+ * Both variants render at once (the page hides one with `visibleFrom` /
+ * `hiddenFrom`), so the `<form>` id has to differ between them — a duplicate
+ * id would make `form={formId}` on the phone card point at the desktop form.
+ */
+function useRowForm(player: Player, variant: string) {
   const [state, formAction, pending] = useActionState(updatePlayer, initialState);
-  const formId = `update-player-${player.id}`;
+  return { state, formAction, pending, formId: `update-player-${variant}-${player.id}` };
+}
+
+export function PlayerRow({ player }: { player: Player }) {
+  const { state, formAction, pending, formId } = useRowForm(player, "row");
 
   return (
     <TableTr>
@@ -91,5 +100,65 @@ export function PlayerRow({ player }: { player: Player }) {
         </Group>
       </TableTd>
     </TableTr>
+  );
+}
+
+/**
+ * Phone layout for the same row. The four-column table needs ~700px before the
+ * name field and the position Select stop colliding, so below `sm` each player
+ * becomes a stacked card instead of a horizontally scrolling row.
+ */
+export function PlayerCard({ player }: { player: Player }) {
+  const { state, formAction, pending, formId } = useRowForm(player, "card");
+
+  return (
+    <Box
+      style={{
+        borderBottom: "1px solid var(--hairline)",
+        padding: "14px 16px",
+      }}
+    >
+      <Stack gap={10}>
+        <StatusPill active={player.isActive} />
+        <form action={formAction} id={formId}>
+          <input type="hidden" name="id" value={player.id} />
+          <TextInput
+            key={player.name}
+            name="name"
+            label="Name"
+            defaultValue={player.name}
+            error={state?.error}
+            size="sm"
+          />
+        </form>
+        <Select
+          key={player.keeperPref}
+          form={formId}
+          name="keeperPref"
+          label="Position"
+          data={POSITION_DATA}
+          defaultValue={player.keeperPref}
+          allowDeselect={false}
+          size="sm"
+        />
+        <Group gap="xs" grow>
+          <Button type="submit" form={formId} size="sm" variant="light" loading={pending}>
+            Save
+          </Button>
+          <form action={togglePlayerActive}>
+            <input type="hidden" name="id" value={player.id} />
+            <Button
+              type="submit"
+              size="sm"
+              variant="subtle"
+              color={player.isActive ? "red" : "gray"}
+              fullWidth
+            >
+              {player.isActive ? "Deactivate" : "Activate"}
+            </Button>
+          </form>
+        </Group>
+      </Stack>
+    </Box>
   );
 }

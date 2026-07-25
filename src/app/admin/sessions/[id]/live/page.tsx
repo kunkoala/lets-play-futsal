@@ -22,6 +22,8 @@ export default async function LiveMatchPage({
     homeTeam: { include: { players: { include: { player: true } } } },
     awayTeam: { include: { players: { include: { player: true } } } },
     goalEvents: true,
+    // Only for the phone scoreboard's eyebrow ("Matchday … · Match n").
+    session: { select: { date: true } },
   } as const;
 
   const match = matchIdParam
@@ -56,6 +58,10 @@ export default async function LiveMatchPage({
     })),
   };
 
+  // `toISOString` keeps this UTC on both server and client — a locale-aware
+  // format would differ between the two and trip a hydration mismatch.
+  const matchLabel = `Matchday ${match.session.date.toISOString().slice(0, 10)} · Match ${match.seq}`;
+
   return (
     <LiveConsole
       matchId={match.id}
@@ -64,6 +70,7 @@ export default async function LiveMatchPage({
       awayTeam={awayTeam}
       events={match.goalEvents}
       isFinished={match.status === "finished"}
+      matchLabel={matchLabel}
     />
   );
 }

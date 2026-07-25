@@ -1,6 +1,7 @@
 import { Box, Container, Group } from "@mantine/core";
 import { verifySession } from "@/lib/auth";
 import { NavLink } from "@/components/NavLink";
+import { MobileNav } from "@/components/MobileNav";
 import { SoccerBallIcon } from "@/components/icons";
 
 /**
@@ -9,6 +10,15 @@ import { SoccerBallIcon } from "@/components/icons";
  */
 export async function Navbar({ basePath = "" }: { basePath?: string }) {
   const isAdmin = await verifySession();
+
+  const links = [
+    { href: basePath || "/", label: "Leaderboard" },
+    { href: `${basePath}/sessions`, label: "Sessions" },
+    { href: `${basePath}/awards`, label: "Awards" },
+    isAdmin
+      ? { href: "/admin", label: "Admin", accent: true }
+      : { href: "/login", label: "Admin login", accent: true },
+  ];
 
   return (
     <Box
@@ -22,8 +32,8 @@ export async function Navbar({ basePath = "" }: { basePath?: string }) {
         borderBottom: "1px solid var(--hairline)",
       }}
     >
-      <Container size="lg" py={12}>
-        <Group justify="space-between" wrap="nowrap">
+      <Container size="lg" py={12} px={{ base: 16, sm: 24 }}>
+        <Group justify="space-between" wrap="nowrap" gap="sm">
           <NavLink href={basePath || "/"} underline="never" c="inherit">
             <Group gap={9} wrap="nowrap" component="span" align="center">
               <Box
@@ -53,16 +63,17 @@ export async function Navbar({ basePath = "" }: { basePath?: string }) {
             </Group>
           </NavLink>
 
-          <Group gap={4} wrap="nowrap">
-            <NavItem href={basePath || "/"}>Leaderboard</NavItem>
-            <NavItem href={`${basePath}/sessions`}>Sessions</NavItem>
-            <NavItem href={`${basePath}/awards`}>Awards</NavItem>
-            {isAdmin ? (
-              <NavItem href="/admin">Admin</NavItem>
-            ) : (
-              <NavItem href="/login">Admin login</NavItem>
-            )}
+          {/* Below `sm` these collapse into the burger drawer — four labels
+              plus the wordmark do not fit a phone in one nowrap row. */}
+          <Group gap={4} wrap="nowrap" visibleFrom="sm">
+            {links.map((link) => (
+              <NavItem key={link.href} href={link.href}>
+                {link.label}
+              </NavItem>
+            ))}
           </Group>
+
+          <MobileNav items={links} />
         </Group>
       </Container>
     </Box>

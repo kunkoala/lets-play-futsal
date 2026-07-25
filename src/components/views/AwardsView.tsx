@@ -116,7 +116,7 @@ export function AwardsView({
           />
           <Podium
             title="Top Assists"
-            glyph="🅰"
+            glyph="A"
             unit="assists"
             items={top(stats, "assists")}
             accent="var(--team-blue)"

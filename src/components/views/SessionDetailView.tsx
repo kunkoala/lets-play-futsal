@@ -188,7 +188,7 @@ export function SessionDetailView({
                           {e.scorer?.name ?? "Own goal"}
                         </Text>{" "}
                         ⚽
-                        {e.assist ? ` · ${e.assist.name} 🅰` : ""}
+                        {e.assist ? ` · ${e.assist.name} A` : ""}
                       </Text>
                     ))}
                   </Stack>

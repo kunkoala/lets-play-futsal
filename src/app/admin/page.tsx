@@ -30,12 +30,15 @@ function Panel({
 }) {
   return (
     <Box
+      // The two-column span lives in `.admin-grid-span2` (globals.css) rather
+      // than inline, so it can be scoped to the breakpoints that actually have
+      // two columns.
+      className={span2 ? "admin-grid-span2" : undefined}
       style={{
         border: "1px solid var(--hairline)",
         borderRadius: 18,
         background: "var(--panel)",
         padding: "20px 22px",
-        gridColumn: span2 ? "span 2" : undefined,
         ...style,
       }}
     >
@@ -99,13 +102,7 @@ export default async function AdminPage() {
         DASHBOARD
       </Text>
 
-      <Box
-        style={{
-          display: "grid",
-          gap: 14,
-          gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))",
-        }}
-      >
+      <Box className="admin-grid">
         {/* Resume session — spans two columns where space allows */}
         <Panel span2>
           <Eyebrow>Game day</Eyebrow>
