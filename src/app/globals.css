@@ -85,6 +85,23 @@ body {
   }
 }
 
+/* Standings table: every column always renders (see LeaderboardView.tsx),
+ * scrolling horizontally past the fixed min-width rather than dropping
+ * columns below a breakpoint. Below the width where it actually needs to
+ * scroll, a right-edge fade hints there's more to swipe to. */
+@media (max-width: 61.99em) {
+  .lb-scroll-fade::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 28px;
+    background: linear-gradient(to right, transparent, var(--panel));
+    pointer-events: none;
+  }
+}
+
 /* Admin dashboard tiles. Single column on a phone: `auto-fit minmax(230px, …)`
  * resolves to one column there, and the "Game day" panel's `span 2` then
  * created an implicit *second* column that ran off the right edge. The span

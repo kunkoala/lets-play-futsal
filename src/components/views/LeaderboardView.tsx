@@ -264,19 +264,16 @@ function Th({
   children,
   sorted,
   style,
-  visibleFrom,
   help,
 }: {
   children: React.ReactNode;
   sorted?: boolean;
   style?: React.CSSProperties;
-  visibleFrom?: string;
   /** Key into COLUMN_HELP — every column has one. */
   help: string;
 }) {
   return (
     <TableTh
-      visibleFrom={visibleFrom}
       style={{
         textAlign: "center",
         fontWeight: 700,
@@ -293,17 +290,9 @@ function Th({
   );
 }
 
-function Stat({
-  value,
-  active,
-  visibleFrom,
-}: {
-  value: string | number;
-  active?: boolean;
-  visibleFrom?: string;
-}) {
+function Stat({ value, active }: { value: string | number; active?: boolean }) {
   return (
-    <TableTd visibleFrom={visibleFrom} style={{ textAlign: "center" }}>
+    <TableTd style={{ textAlign: "center" }}>
       <Text
         className="tabular-nums"
         fw={active ? 800 : 500}
@@ -336,15 +325,22 @@ function StandingsTable({
 }) {
   return (
     <Box
+      className="lb-scroll-fade"
       style={{
+        position: "relative",
         border: "1px solid var(--hairline)",
         borderRadius: 16,
         overflow: "hidden",
         background: "var(--panel)",
       }}
     >
-      <div style={{ overflowX: "auto" }}>
-        <Table verticalSpacing={10} horizontalSpacing="sm" highlightOnHover w="100%">
+      <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+        <Table
+          verticalSpacing={10}
+          horizontalSpacing="sm"
+          highlightOnHover
+          style={{ minWidth: 780 }}
+        >
           <TableThead>
             <TableTr style={{ borderBottom: "1px solid var(--hairline)" }}>
               <Th help="rank" style={{ width: 42 }}>
@@ -362,36 +358,26 @@ function StandingsTable({
               <Th help="assists" sorted={sort === "assists"}>
                 A
               </Th>
-              <Th help="goalContributions" sorted={sort === "goalContributions"} visibleFrom="xs">
+              <Th help="goalContributions" sorted={sort === "goalContributions"}>
                 G+A
               </Th>
-              <Th help="wins" sorted={sort === "wins"} visibleFrom="md">
+              <Th help="wins" sorted={sort === "wins"}>
                 W
               </Th>
-              <Th help="draws" visibleFrom="lg">
-                D
-              </Th>
-              <Th help="losses" visibleFrom="lg">
-                L
-              </Th>
-              <Th help="points" sorted={sort === "points"} visibleFrom="xs">
+              <Th help="draws">D</Th>
+              <Th help="losses">L</Th>
+              <Th help="points" sorted={sort === "points"}>
                 PTS
               </Th>
-              <Th help="plusMinus" visibleFrom="md">
-                +/−
-              </Th>
-              <Th help="cleanSheets" visibleFrom="lg">
-                CS
-              </Th>
-              <Th help="mvps" sorted={sort === "mvps"} visibleFrom="sm">
+              <Th help="plusMinus">+/−</Th>
+              <Th help="cleanSheets">CS</Th>
+              <Th help="mvps" sorted={sort === "mvps"}>
                 🏆
               </Th>
-              <Th help="winRate" sorted={sort === "winRate"} visibleFrom="sm">
+              <Th help="winRate" sorted={sort === "winRate"}>
                 Win%
               </Th>
-              <Th help="form" visibleFrom="md">
-                Form
-              </Th>
+              <Th help="form">Form</Th>
             </TableTr>
           </TableThead>
           <TableTbody>
@@ -436,24 +422,16 @@ function StandingsTable({
                   </TableTd>
                   <Stat value={s.goals} active={sort === "goals"} />
                   <Stat value={s.assists} active={sort === "assists"} />
-                  <Stat
-                    value={s.goalContributions}
-                    active={sort === "goalContributions"}
-                    visibleFrom="xs"
-                  />
-                  <Stat value={s.wins} active={sort === "wins"} visibleFrom="md" />
-                  <Stat value={s.draws} visibleFrom="lg" />
-                  <Stat value={s.losses} visibleFrom="lg" />
-                  <Stat value={s.points} active={sort === "points"} visibleFrom="xs" />
-                  <Stat value={formatPlusMinus(s.plusMinus)} visibleFrom="md" />
-                  <Stat value={s.cleanSheets} visibleFrom="lg" />
-                  <Stat value={s.mvps} active={sort === "mvps"} visibleFrom="sm" />
-                  <Stat
-                    value={`${Math.round(s.winRate * 100)}%`}
-                    active={sort === "winRate"}
-                    visibleFrom="sm"
-                  />
-                  <TableTd visibleFrom="md" style={{ textAlign: "center" }}>
+                  <Stat value={s.goalContributions} active={sort === "goalContributions"} />
+                  <Stat value={s.wins} active={sort === "wins"} />
+                  <Stat value={s.draws} />
+                  <Stat value={s.losses} />
+                  <Stat value={s.points} active={sort === "points"} />
+                  <Stat value={formatPlusMinus(s.plusMinus)} />
+                  <Stat value={s.cleanSheets} />
+                  <Stat value={s.mvps} active={sort === "mvps"} />
+                  <Stat value={`${Math.round(s.winRate * 100)}%`} active={sort === "winRate"} />
+                  <TableTd style={{ textAlign: "center" }}>
                     <FormGuide form={s.form} size={18} />
                   </TableTd>
                 </TableTr>
