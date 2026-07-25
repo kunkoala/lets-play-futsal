@@ -1,20 +1,8 @@
 services:
-  # Postgres is a separate Coolify-managed resource, not a service here, so
-  # `DATABASE_URL` points at that resource's internal hostname.
-  #
-  # This file used to declare its own `db:` service as well, which meant every
-  # deploy started a *second* Postgres that nothing ever connected to — wasted
-  # memory, and a `depends_on` healthcheck that blocked startup on a database
-  # the app doesn't use. Removing the service does not delete its old `pgdata`
-  # volume; Docker keeps orphaned volumes until they're removed explicitly.
-  #
-  # For local development, run Postgres however suits you (a plain
-  # `docker run postgres:16-alpine`, or a hosted instance) and point
-  # `DATABASE_URL` in `.env` at it. This file is prod/Coolify parity only.
-  #
-  # No Traefik/proxy labels here — Coolify manages its own reverse proxy/TLS
-  # for docker-compose resources via its UI.
   app:
     build: .
-    env_file: .env
+    env_file:
+      - .env
+    expose:
+      - "3000"
     restart: unless-stopped
