@@ -18,6 +18,11 @@ import { shuffleIntoTeamsWithKeepers, type KeeperPref } from "@/lib/shuffle";
 import { paletteFor } from "@/lib/teamPalette";
 import { aggregateSeason, type PlayerSeasonStats } from "@/lib/seasonAggregate";
 import { applyMatch, emptyTotals, withRates, type PlayerStats } from "@/lib/stats";
+import { DEFAULT_DURATION_MIN } from "@/lib/matchClock";
+
+/** No real clock behind the demo, so goal minutes are scattered across a
+ *  match of this length rather than derived from one. */
+const DEMO_MATCH_DURATION_SEC = DEFAULT_DURATION_MIN * 60;
 
 const PLAYER_ID_BASE = 90_000;
 const SESSION_ID_BASE = 80_000;
@@ -87,6 +92,7 @@ export type DemoGoalEvent = {
   assistId: number | null;
   scorer: DemoPlayer | null;
   assist: DemoPlayer | null;
+  matchSec: number;
 };
 
 export type DemoMatch = {
@@ -226,9 +232,19 @@ function buildSeason() {
               assistId: assist?.playerId ?? null,
               scorer: scorer.player,
               assist: assist?.player ?? null,
+              matchSec: randomInt(rng, 0, DEMO_MATCH_DURATION_SEC - 1),
             });
           }
         }
+
+        // Goals were pushed team-by-team above, not in the order they'd
+        // actually fall in a match — re-sort chronologically by the minute
+        // just assigned, and renumber `seq` to match, same as a real admin
+        // recording them live in order.
+        goalEvents.sort((a, b) => a.matchSec - b.matchSec);
+        goalEvents.forEach((e, index) => {
+          e.seq = index + 1;
+        });
 
         const homeGoals = goalEvents.filter((e) => e.teamId === homeTeam.id).length;
         const awayGoals = goalEvents.length - homeGoals;

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { elapsedSec, type MatchClock } from "@/lib/matchClock";
 
 export type GoalActionState = { error: string } | { eventId: number } | undefined;
 export type MatchFormState = { error: string } | undefined;
@@ -14,6 +15,15 @@ async function nextEventSeq(matchId: number): Promise<number> {
     orderBy: { seq: "desc" },
   });
   return (last?.seq ?? 0) + 1;
+}
+
+/**
+ * Elapsed match time right now, for stamping onto a goal as it's recorded.
+ * Snapshotted at write time because reconstructing it later would need every
+ * pause window the match ever had — see GoalEvent.matchSec in schema.prisma.
+ */
+function currentMatchSec(match: MatchClock): number {
+  return elapsedSec(match, Date.now());
 }
 
 async function assertRostered(teamId: number, playerId: number): Promise<boolean> {
@@ -47,8 +57,15 @@ export async function recordGoal(
   }
 
   const seq = await nextEventSeq(matchId);
+  const matchSec = currentMatchSec({
+    startedAt: match.startedAt.getTime(),
+    durationSec: match.durationSec,
+    pausedAt: match.pausedAt?.getTime() ?? null,
+    pausedTotalSec: match.pausedTotalSec,
+    breakTakenAt: match.breakTakenAt?.getTime() ?? null,
+  });
   const event = await prisma.goalEvent.create({
-    data: { matchId, seq, teamId, scorerId },
+    data: { matchId, seq, teamId, scorerId, matchSec },
   });
 
   revalidatePath(`/admin/sessions/${match.sessionId}/live`);
@@ -75,8 +92,15 @@ export async function recordOwnGoal(
   }
 
   const seq = await nextEventSeq(matchId);
+  const matchSec = currentMatchSec({
+    startedAt: match.startedAt.getTime(),
+    durationSec: match.durationSec,
+    pausedAt: match.pausedAt?.getTime() ?? null,
+    pausedTotalSec: match.pausedTotalSec,
+    breakTakenAt: match.breakTakenAt?.getTime() ?? null,
+  });
   const event = await prisma.goalEvent.create({
-    data: { matchId, seq, teamId, scorerId: null, assistId: null },
+    data: { matchId, seq, teamId, scorerId: null, assistId: null, matchSec },
   });
 
   revalidatePath(`/admin/sessions/${match.sessionId}/live`);

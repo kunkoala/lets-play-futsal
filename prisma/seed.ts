@@ -21,11 +21,16 @@
  */
 import { PrismaClient } from "../src/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { DEFAULT_DURATION_MIN } from "../src/lib/matchClock";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter });
 
 const SEASON_NAME = "Odd Semester 2026";
+/** These matches have no real clock behind them (started_at === ended_at,
+ *  by construction below), so goal minutes are spread evenly across a match
+ *  of this length rather than derived from one — same idea as demoData.ts. */
+const SEED_MATCH_DURATION_SEC = DEFAULT_DURATION_MIN * 60;
 
 const TEAM_COLORS = {
   Red: "#ef4444",
@@ -193,6 +198,9 @@ async function createSession(params: {
     let eventSeq = 1;
     for (const event of result.events) {
       const benefitingTeam = event.side === "home" ? homeTeam : awayTeam;
+      const matchSec = Math.floor(
+        (eventSeq / (result.events.length + 1)) * SEED_MATCH_DURATION_SEC,
+      );
       await prisma.goalEvent.create({
         data: {
           matchId: match.id,
@@ -200,6 +208,7 @@ async function createSession(params: {
           teamId: benefitingTeam.id,
           scorerId: event.scorer?.id ?? null,
           assistId: event.assist?.id ?? null,
+          matchSec,
         },
       });
     }

@@ -9,6 +9,7 @@ import { gradientDarkFor } from "@/lib/teamPalette";
 import {
   breakAtSec,
   displaySec,
+  elapsedSec,
   formatClock,
   isBreakDue,
   isFullTime,
@@ -33,9 +34,16 @@ type GoalEventT = {
   teamId: number;
   scorerId: number | null;
   assistId: number | null;
+  matchSec: number | null;
 };
 
 let optimisticIdCounter = -1;
+
+/** `11'` — floor rather than round, matching the clock's own mm:ss floor. */
+function formatMinute(matchSec: number | null): string | null {
+  if (matchSec === null) return null;
+  return `${Math.floor(matchSec / 60)}'`;
+}
 
 export function LiveConsole({
   matchId,
@@ -154,6 +162,7 @@ export function LiveConsole({
           teamId: team.id,
           scorerId: scorer.id,
           assistId: null,
+          matchSec: elapsedSec(clock, Date.now()),
         });
         const fd = new FormData();
         fd.set("matchId", String(matchId));
@@ -177,6 +186,7 @@ export function LiveConsole({
         teamId: team.id,
         scorerId: null,
         assistId: null,
+        matchSec: elapsedSec(clock, Date.now()),
       });
       const fd = new FormData();
       fd.set("matchId", String(matchId));
@@ -757,11 +767,17 @@ function PhoneConsole({
                 const team = e.teamId === homeTeam.id ? homeTeam : awayTeam;
                 const scorer = e.scorerId ? (playersById.get(e.scorerId)?.name ?? "?") : null;
                 const assist = e.assistId ? playersById.get(e.assistId)?.name : null;
+                const minute = formatMinute(e.matchSec);
                 return (
                   <div key={e.id} className="lcp-event">
                     <span className="lcp-event-seq">{e.seq}</span>
                     <span className="lcp-event-dot" style={{ background: team.color }} />
                     <span className="lcp-event-text">
+                      {minute && (
+                        <span style={{ fontWeight: 700, color: "var(--text-muted)" }}>
+                          {minute}{" "}
+                        </span>
+                      )}
                       {scorer ? (
                         <>
                           {scorer} ⚽
@@ -1015,6 +1031,7 @@ function FeedOverlay({
             const team = e.teamId === homeTeam.id ? homeTeam : awayTeam;
             const scorer = e.scorerId ? (playersById.get(e.scorerId)?.name ?? "?") : "Own goal";
             const assist = e.assistId ? playersById.get(e.assistId)?.name : null;
+            const minute = formatMinute(e.matchSec);
             return (
               <Group
                 key={e.id}
@@ -1026,6 +1043,11 @@ function FeedOverlay({
                   <Text span className="tabular-nums" c="dimmed" fw={700}>
                     {e.seq}
                   </Text>{" "}
+                  {minute && (
+                    <Text span className="tabular-nums" c="dimmed" fw={700}>
+                      {minute}
+                    </Text>
+                  )}{" "}
                   <Text span fw={800} style={{ color: team.color }}>
                     {team.name}
                   </Text>{" "}

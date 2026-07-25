@@ -45,6 +45,9 @@ export type SessionDetail = {
       teamId: number;
       scorer: { name: string } | null;
       assist: { name: string } | null;
+      /** Elapsed match clock when the goal went in, in seconds. Null for
+       *  goals recorded before the clock existed. */
+      matchSec: number | null;
     }[];
   }[];
 };
@@ -184,6 +187,11 @@ export function SessionDetailView({
                   <Stack gap={3} mt={12} pt={12} style={{ borderTop: "1px solid var(--hairline)" }}>
                     {m.goalEvents.map((e) => (
                       <Text key={e.id} fz={13} c="dimmed">
+                        {e.matchSec !== null && (
+                          <Text span className="tabular-nums" fw={700}>
+                            {Math.floor(e.matchSec / 60)}&apos;{" "}
+                          </Text>
+                        )}
                         <Text span fw={600} c="var(--mantine-color-text)">
                           {e.scorer?.name ?? "Own goal"}
                         </Text>{" "}

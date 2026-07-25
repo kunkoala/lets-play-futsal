@@ -228,6 +228,12 @@ model GoalEvent {
   teamId    Int      @map("team_id")
   scorerId  Int?     @map("scorer_id")
   assistId  Int?     @map("assist_id")
+  // Elapsed match clock (see src/lib/matchClock.ts) at the moment the goal was
+  // recorded, snapshotted rather than derived after the fact: reconstructing
+  // it later would need every pause window the match ever had, but only the
+  // current cumulative pausedTotalSec is stored. Null for goals recorded
+  // before this column existed, and for matches with no clock at all.
+  matchSec  Int?     @map("match_sec")
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
 
   match  Match   @relation(fields: [matchId], references: [id], onDelete: Cascade)
