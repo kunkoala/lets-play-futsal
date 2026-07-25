@@ -1,31 +1,20 @@
 services:
-  db:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-    restart: unless-stopped
-
-  # For local dev, only run `db` (docker compose up -d db) and use
-  # `npm run dev` on the host for hot reload. This `app` service is for
-  # prod/Coolify parity (it's what Coolify actually builds and runs).
-  # No Traefik/proxy labels here — Coolify manages its own reverse
-  # proxy/TLS for docker-compose resources via its UI.
+  # Postgres is a separate Coolify-managed resource, not a service here, so
+  # `DATABASE_URL` points at that resource's internal hostname.
+  #
+  # This file used to declare its own `db:` service as well, which meant every
+  # deploy started a *second* Postgres that nothing ever connected to — wasted
+  # memory, and a `depends_on` healthcheck that blocked startup on a database
+  # the app doesn't use. Removing the service does not delete its old `pgdata`
+  # volume; Docker keeps orphaned volumes until they're removed explicitly.
+  #
+  # For local development, run Postgres however suits you (a plain
+  # `docker run postgres:16-alpine`, or a hosted instance) and point
+  # `DATABASE_URL` in `.env` at it. This file is prod/Coolify parity only.
+  #
+  # No Traefik/proxy labels here — Coolify manages its own reverse proxy/TLS
+  # for docker-compose resources via its UI.
   app:
     build: .
-    depends_on:
-      db:
-        condition: service_healthy
     env_file: .env
     restart: unless-stopped
-
-volumes:
-  pgdata:
