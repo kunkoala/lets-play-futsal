@@ -4,6 +4,18 @@ import { NavLink } from "@/components/NavLink";
 import { logout } from "./actions";
 
 /**
+ * Every admin screen is per-request: it reads the session cookie and live
+ * database rows, and none of it can be meaningfully prerendered. Declaring that
+ * here covers the whole segment.
+ *
+ * This is load-bearing for the Docker build, not just an optimisation. The bar
+ * below queries the active season, and a layout that touches the database
+ * without opting out gets prerendered during `next build` — where no database
+ * exists — failing the image build with `P1001 Can't reach database server`.
+ */
+export const dynamic = "force-dynamic";
+
+/**
  * Chrome shared by every admin screen. Before this, the only way back to the
  * public site was editing `/admin` out of the URL by hand — the dashboard had
  * a bar but the inner pages had nothing but a breadcrumb.

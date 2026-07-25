@@ -1,6 +1,17 @@
 import { Navbar } from "@/components/Navbar";
 import { SiteFooter } from "@/components/SiteFooter";
 
+/**
+ * Every public page reads live rows — standings, sessions, profiles, awards —
+ * so there is nothing here worth prerendering, and prerendering it would mean
+ * querying the database during `next build`, where none is running. Declared on
+ * the layout so it covers the whole segment rather than page by page.
+ *
+ * `/demo` and `/login` are deliberately left out: neither touches the database,
+ * so both can stay static.
+ */
+export const dynamic = "force-dynamic";
+
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
   return (
     // Full-height column so the footer sits at the bottom of the viewport on
