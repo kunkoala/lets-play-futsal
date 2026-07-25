@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { proposeNext, type PlayedMatch } from "./matchmaker";
+import { proposeNext, roundRobinComplete, type PlayedMatch } from "./matchmaker";
 
 function playedCounts(teams: number[], matches: PlayedMatch[]): Map<number, number> {
   const counts = new Map(teams.map((t) => [t, 0]));
@@ -89,5 +89,43 @@ describe("proposeNext", () => {
 
   it("throws with fewer than 2 teams", () => {
     expect(() => proposeNext([1], [])).toThrow();
+  });
+});
+
+describe("roundRobinComplete", () => {
+  it("false with no matches played", () => {
+    expect(roundRobinComplete([1, 2, 3], [])).toBe(false);
+  });
+
+  it("false with fewer than 2 teams, even with matches recorded", () => {
+    expect(roundRobinComplete([1], [{ home: 1, away: 1, seq: 1 }])).toBe(false);
+  });
+
+  it("false until every pair has played, true once they have", () => {
+    const teams = [1, 2, 3];
+    // 1v2 and 2v3 played, but 1v3 never has.
+    const partial: PlayedMatch[] = [
+      { home: 1, away: 2, seq: 1 },
+      { home: 2, away: 3, seq: 2 },
+    ];
+    expect(roundRobinComplete(teams, partial)).toBe(false);
+
+    const complete = [...partial, { home: 3, away: 1, seq: 3 }];
+    expect(roundRobinComplete(teams, complete)).toBe(true);
+  });
+
+  it("doesn't care which side was home vs away", () => {
+    const teams = [1, 2];
+    expect(roundRobinComplete(teams, [{ home: 2, away: 1, seq: 1 }])).toBe(true);
+  });
+
+  it("a repeated pairing doesn't fake-complete a bigger round robin", () => {
+    const teams = [1, 2, 3, 4];
+    const onlyOnePairRepeated: PlayedMatch[] = [
+      { home: 1, away: 2, seq: 1 },
+      { home: 1, away: 2, seq: 2 },
+      { home: 1, away: 2, seq: 3 },
+    ];
+    expect(roundRobinComplete(teams, onlyOnePairRepeated)).toBe(false);
   });
 });

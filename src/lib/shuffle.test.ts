@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   fisherYatesShuffle,
   keeperCoverage,
+  shuffleIntoBalancedTeams,
   shuffleIntoTeams,
   shuffleIntoTeamsWithKeepers,
   type KeeperPref,
@@ -137,6 +138,76 @@ describe("shuffleIntoTeamsWithKeepers", () => {
 
   it("rejects fewer than 4 players, like the position-blind shuffle", () => {
     expect(() => shuffleIntoTeamsWithKeepers(candidates(3), 5)).toThrow();
+  });
+});
+
+describe("shuffleIntoBalancedTeams", () => {
+  // Constant 0.5 zeroes out the jitter term ((rng() - 0.5) * RATING_JITTER),
+  // leaving a pure, deterministic snake draft by rating to assert against.
+  const noJitter = () => 0.5;
+
+  it("assigns every player exactly once, with no duplicates or omissions", () => {
+    const ratings = new Map(ids(17).map((id) => [id, id * 3]));
+    const teams = shuffleIntoBalancedTeams(
+      candidates(17, { 4: "goalkeeper", 9: "flexible" }),
+      5,
+      ratings,
+      noJitter,
+    );
+    const flat = teams.flatMap((t) => t.playerIds).sort((a, b) => a - b);
+    expect(flat).toEqual(ids(17));
+  });
+
+  it("produces the same team sizes as the position-blind shuffle", () => {
+    for (const n of [4, 6, 9, 11, 13, 16, 22, 31]) {
+      const ratings = new Map(ids(n).map((id) => [id, id]));
+      const teams = shuffleIntoBalancedTeams(candidates(n), 5, ratings, noJitter);
+      expect(teams.map((t) => t.playerIds.length)).toEqual(sizes(shuffleIntoTeams(ids(n), 5)));
+    }
+  });
+
+  it("still seeds one keeper per team like the other position-aware shuffle", () => {
+    const ratings = new Map(ids(15).map((id) => [id, id]));
+    const teams = shuffleIntoBalancedTeams(
+      candidates(15, { 1: "goalkeeper", 2: "goalkeeper", 3: "goalkeeper" }),
+      5,
+      ratings,
+      noJitter,
+    );
+    expect(teams.map((t) => t.keeperId).sort((a, b) => a! - b!)).toEqual([1, 2, 3]);
+  });
+
+  it("snake-drafts outfield players so team-average rating stays close, without jitter", () => {
+    // Ratings 1..15, no keepers to complicate the outfield draft.
+    const ratings = new Map(ids(15).map((id) => [id, id]));
+    const teams = shuffleIntoBalancedTeams(candidates(15), 5, ratings, noJitter);
+    const avg = teams.map(
+      (t) => t.playerIds.reduce((sum, id) => sum + ratings.get(id)!, 0) / t.playerIds.length,
+    );
+    // All three teams average out near the pool's overall mean (8) — nowhere
+    // near the ~13/8/3 split a naive "sort then chunk" split would produce.
+    for (const a of avg) expect(Math.abs(a - 8)).toBeLessThan(1.5);
+  });
+
+  it("treats an unrated player as the median of the rated pool, not as worst", () => {
+    // Player 99 has no entry in `ratings` at all (e.g. no finished matches
+    // yet) — it should draft as if rated at the pool's median (8), not 0.
+    const ratings = new Map(ids(14).map((id) => [id, id]));
+    const candidatesWithUnrated = [...candidates(14), { id: 99, keeperPref: "outfield" as const }];
+    const teams = shuffleIntoBalancedTeams(candidatesWithUnrated, 5, ratings, noJitter);
+    const teamOf99 = teams.find((t) => t.playerIds.includes(99))!;
+    // Its teammates should be clustered around the middle of the 1..14 range,
+    // not all-low (if it drafted last, as rating 0 would) or all-high.
+    const teammateRatings = teamOf99.playerIds
+      .filter((id) => id !== 99)
+      .map((id) => ratings.get(id)!);
+    const avg = teammateRatings.reduce((a, b) => a + b, 0) / teammateRatings.length;
+    expect(avg).toBeGreaterThan(4);
+    expect(avg).toBeLessThan(11);
+  });
+
+  it("rejects fewer than 4 players, like the other shuffles", () => {
+    expect(() => shuffleIntoBalancedTeams(candidates(3), 5, new Map())).toThrow();
   });
 });
 

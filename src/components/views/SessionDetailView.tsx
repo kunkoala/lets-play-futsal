@@ -30,6 +30,10 @@ export type SessionDetail = {
     id: number;
     name: string;
     color: string;
+    /** Which shuffle round these teams are from (see Team.generation in
+     *  schema.prisma). Missing on the demo season, which never reshuffles —
+     *  treated the same as generation 1. */
+    generation?: number;
     players: readonly { isKeeper: boolean; player: { id: number; name: string } }[];
   }[];
   matches: readonly {
@@ -59,6 +63,13 @@ export function SessionDetailView({
   session: SessionDetail;
   basePath?: string;
 }) {
+  // A reshuffle mid-session (see reshuffleTeams) adds a new generation of
+  // teams rather than replacing the old ones, so this grid only shows the
+  // latest round — the match-by-match breakdown below already shows exactly
+  // who scored regardless of which generation's roster they were on.
+  const currentGeneration = session.teams.reduce((max, t) => Math.max(max, t.generation ?? 1), 1);
+  const currentTeams = session.teams.filter((t) => (t.generation ?? 1) === currentGeneration);
+
   return (
     <Container size="md" py={{ base: 20, sm: 32 }} pb={64}>
       <Stack gap="xl">
@@ -86,13 +97,13 @@ export function SessionDetailView({
 
         <Stack gap={12} className="fs-fade-up" style={{ animationDelay: "0.05s" }}>
           <Eyebrow>Teams</Eyebrow>
-          {session.teams.length === 0 ? (
+          {currentTeams.length === 0 ? (
             <Text fz={14} c="dimmed">
               Teams haven&apos;t been shuffled yet.
             </Text>
           ) : (
             <Group align="stretch" gap={12} wrap="wrap">
-              {session.teams.map((team) => (
+              {currentTeams.map((team) => (
                 <Box
                   key={team.id}
                   style={{

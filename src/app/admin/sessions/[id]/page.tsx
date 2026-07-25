@@ -2,15 +2,18 @@ import { notFound } from "next/navigation";
 import { Box, Container, Group, Stack, Text } from "@mantine/core";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { roundRobinComplete } from "@/lib/matchmaker";
 import { NavButton, NavLink } from "@/components/NavLink";
 import { ArrowLeft } from "@/components/icons";
 import { AttendanceChecklist } from "./AttendanceChecklist";
 import { ShuffleControls } from "./ShuffleControls";
 import { LockTeamsButton, UnlockTeamsButton } from "./SessionStageActions";
 import { TeamRosters } from "./TeamRosters";
+import { TeamRosterEditor } from "./TeamRosterEditor";
 import { NextMatchCard } from "./NextMatchCard";
 import { MatchesSoFar } from "./MatchesSoFar";
 import { CompleteSessionButton, ReopenSessionButton } from "./CompleteSessionButton";
+import { ReshuffleBanner } from "./ReshuffleBanner";
 
 const STATUS_STYLE: Record<string, { label: string; color: string; bg: string }> = {
   draft: { label: "Draft", color: "var(--team-green)", bg: "rgba(47,208,106,.14)" },
@@ -85,9 +88,25 @@ export default async function SessionDetailPage({
   const attendingNames = attending.map((p) => p.name);
   const attendingCandidates = attending.map((p) => ({ id: p.id, keeperPref: p.keeperPref }));
   const inProgressMatch = session.matches.find((m) => m.status === "in_progress");
+
+  // A reshuffle (see reshuffleTeams) adds a new generation of Team rows
+  // rather than replacing the old ones, so roster/next-match UI only shows
+  // the latest round — MatchesSoFar still gets every team (all generations),
+  // since its MVP-candidate lookup is keyed by team id.
+  const currentGeneration = session.teams.reduce((max, t) => Math.max(max, t.generation), 1);
+  const currentTeams = session.teams.filter((t) => t.generation === currentGeneration);
   const finishedMatches = session.matches
     .filter((m) => m.status === "finished")
     .map((m) => ({ home: m.homeTeamId, away: m.awayTeamId, seq: m.seq }));
+  const suggestReshuffle =
+    session.status === "teams_set" &&
+    roundRobinComplete(
+      currentTeams.map((t) => t.id),
+      finishedMatches,
+    );
+  const rosteredIds = new Set(currentTeams.flatMap((t) => t.players.map((tp) => tp.player.id)));
+  const assignablePlayers = activePlayers.filter((p) => !rosteredIds.has(p.id));
+  const playedTeamIds = new Set(finishedMatches.flatMap((m) => [m.home, m.away]));
   const status = STATUS_STYLE[session.status] ?? STATUS_STYLE.draft;
 
   return (
@@ -170,12 +189,18 @@ export default async function SessionDetailPage({
       {session.status === "teams_set" && (
         <div className="session-grid">
           <Stack gap={16}>
+            {suggestReshuffle && <ReshuffleBanner sessionId={session.id} />}
             <Panel>
               <Group justify="space-between" align="center" mb={14}>
                 <Eyebrow>Teams · Locked</Eyebrow>
                 <UnlockTeamsButton sessionId={session.id} />
               </Group>
-              <TeamRosters teams={session.teams} />
+              <TeamRosterEditor
+                sessionId={session.id}
+                teams={currentTeams}
+                assignablePlayers={assignablePlayers}
+                playedTeamIds={playedTeamIds}
+              />
             </Panel>
             <Panel>
               <Eyebrow>Matches so far</Eyebrow>
@@ -205,7 +230,7 @@ export default async function SessionDetailPage({
             ) : (
               <NextMatchCard
                 sessionId={session.id}
-                teams={session.teams.map((t) => ({ id: t.id, name: t.name, color: t.color }))}
+                teams={currentTeams.map((t) => ({ id: t.id, name: t.name, color: t.color }))}
                 finishedMatches={finishedMatches}
               />
             )}
@@ -219,7 +244,7 @@ export default async function SessionDetailPage({
           <Panel>
             <Eyebrow>Teams</Eyebrow>
             <Box mt={12}>
-              <TeamRosters teams={session.teams} />
+              <TeamRosters teams={currentTeams} />
             </Box>
           </Panel>
           <Panel>

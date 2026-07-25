@@ -123,7 +123,29 @@ export function shuffleIntoTeamsWithKeepers(
   rng: () => number = Math.random,
 ): ShuffledTeam[] {
   const sizes = computeTeamSizes(candidates.length, teamSize);
+  const { keeperIds, outfield } = seedKeepers(candidates, sizes, rng);
+  const remainder = fisherYatesShuffle(
+    outfield.map((c) => c.id),
+    rng,
+  );
+  return assembleTeams(sizes, keeperIds, remainder);
+}
 
+/**
+ * Seeds one keeper per team (dedicated `goalkeeper` preference first, then
+ * `flexible` cover), same precedence `shuffleIntoTeamsWithKeepers` has always
+ * used. Shared by every shuffle variant so keeper coverage behaves identically
+ * regardless of how the outfield remainder gets split up afterward.
+ *
+ * Returns the chosen keeper id per team slot (`null` where nobody was left to
+ * cover it) and the candidates *not* used as a keeper, for the caller to deal
+ * out into the remaining slots however it likes.
+ */
+function seedKeepers(
+  candidates: readonly ShuffleCandidate[],
+  sizes: readonly number[],
+  rng: () => number,
+): { keeperIds: (number | null)[]; outfield: ShuffleCandidate[] } {
   const dedicated = fisherYatesShuffle(
     candidates.filter((c) => c.keeperPref === "goalkeeper"),
     rng,
@@ -142,20 +164,94 @@ export function shuffleIntoTeamsWithKeepers(
     takenAsKeeper.add(keeper.id);
   }
 
-  const remainder = fisherYatesShuffle(
-    candidates.filter((c) => !takenAsKeeper.has(c.id)).map((c) => c.id),
-    rng,
-  );
+  return {
+    keeperIds,
+    outfield: candidates.filter((c) => !takenAsKeeper.has(c.id)),
+  };
+}
 
+/** Slots a keeper (if any) plus the outfield remainder — already in the order
+ *  they should be dealt out — into `sizes`-shaped teams. */
+function assembleTeams(
+  sizes: readonly number[],
+  keeperIds: readonly (number | null)[],
+  outfieldOrder: readonly number[],
+): ShuffledTeam[] {
   const teams: ShuffledTeam[] = [];
   let index = 0;
   for (const [i, size] of sizes.entries()) {
     const keeperId = keeperIds[i];
     const outfieldCount = size - (keeperId === null ? 0 : 1);
     const playerIds = keeperId === null ? [] : [keeperId];
-    playerIds.push(...remainder.slice(index, index + outfieldCount));
+    playerIds.push(...outfieldOrder.slice(index, index + outfieldCount));
     index += outfieldCount;
     teams.push({ playerIds, keeperId });
   }
   return teams;
+}
+
+/** How much random noise to mix into a rating before sorting the draft order,
+ *  on the same 0-100 scale ratings live on. Large enough that a close-ish
+ *  pair of players can land in either order, small enough that the best and
+ *  worst players in a big group essentially never swap places. */
+const RATING_JITTER = 18;
+
+/**
+ * Position-aware team split whose outfield order is driven by rating rather
+ * than pure chance: after keepers are seeded (see `seedKeepers`), the
+ * remaining players are dealt out in a snake draft (team 0, 1, 2, ..., last,
+ * last, ..., 2, 1, 0, repeat) ordered by rating plus a little random jitter —
+ * the same idea as a fantasy-sports draft, so team-average rating stays close
+ * without every week's teams being byte-identical for an unchanged pool.
+ *
+ * `ratingById` need not cover every candidate: anyone missing (typically a
+ * player with no finished matches yet) is treated as exactly the median
+ * rating of whoever *is* covered, so new players spread across teams instead
+ * of all clustering wherever "unrated = 0" would otherwise sort them.
+ */
+export function shuffleIntoBalancedTeams(
+  candidates: readonly ShuffleCandidate[],
+  teamSize: number,
+  ratingById: ReadonlyMap<number, number>,
+  rng: () => number = Math.random,
+): ShuffledTeam[] {
+  const sizes = computeTeamSizes(candidates.length, teamSize);
+  const { keeperIds, outfield } = seedKeepers(candidates, sizes, rng);
+
+  const known = [...ratingById.values()].sort((a, b) => a - b);
+  const medianRating = known.length > 0 ? known[Math.floor(known.length / 2)] : 0;
+  const ratingOf = (id: number) => ratingById.get(id) ?? medianRating;
+
+  const drafted = [...outfield]
+    .map((c) => ({ id: c.id, jittered: ratingOf(c.id) + (rng() - 0.5) * RATING_JITTER }))
+    .sort((a, b) => b.jittered - a.jittered)
+    .map((c) => c.id);
+
+  // Outfield slots remaining per team, in team order — how long the snake
+  // draft needs to run and which teams are still open each round.
+  const openSlots = sizes.map((size, i) => size - (keeperIds[i] === null ? 0 : 1));
+  const draftOrder: number[] = [];
+  let forward = true;
+  while (openSlots.some((n) => n > 0)) {
+    const round = forward ? openSlots.keys() : [...openSlots.keys()].reverse();
+    for (const i of round) {
+      if (openSlots[i] > 0) {
+        draftOrder.push(i);
+        openSlots[i]--;
+      }
+    }
+    forward = !forward;
+  }
+
+  const outfieldByTeam: number[][] = sizes.map(() => []);
+  draftOrder.forEach((teamIndex, pick) => {
+    outfieldByTeam[teamIndex].push(drafted[pick]);
+  });
+
+  return sizes.map((_, i) => {
+    const keeperId = keeperIds[i];
+    const playerIds = keeperId === null ? [] : [keeperId];
+    playerIds.push(...outfieldByTeam[i]);
+    return { playerIds, keeperId };
+  });
 }

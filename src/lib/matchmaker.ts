@@ -70,3 +70,29 @@ export function proposeNext(
 
   return [first, second];
 }
+
+function pairKey(a: TeamId, b: TeamId): string {
+  return a < b ? `${a}:${b}` : `${b}:${a}`;
+}
+
+/**
+ * True once every team has played every other team at least once — the
+ * "everyone's had a go" milestone the session page uses to suggest a
+ * reshuffle. Deliberately checks actual pairs played, not just equal
+ * played-counts: `proposeNext` balances counts, but an unlucky run of
+ * rematches could equalise counts before the round robin is really done.
+ */
+export function roundRobinComplete(
+  teamIds: readonly TeamId[],
+  playedMatches: readonly PlayedMatch[],
+): boolean {
+  if (teamIds.length < 2) return false;
+
+  const played = new Set(playedMatches.map((m) => pairKey(m.home, m.away)));
+  for (let i = 0; i < teamIds.length; i++) {
+    for (let j = i + 1; j < teamIds.length; j++) {
+      if (!played.has(pairKey(teamIds[i], teamIds[j]))) return false;
+    }
+  }
+  return true;
+}

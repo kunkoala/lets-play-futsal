@@ -145,6 +145,17 @@ model Team {
   sessionId Int    @map("session_id")
   name      String
   color     String
+  // Which shuffle round these teams belong to, within this one session.
+  // Reshuffling mid-session (see reshuffleTeams in admin/sessions/actions.ts)
+  // creates a NEW generation of Team rows rather than deleting the old ones —
+  // those are still referenced by whatever matches/goal_events they already
+  // played, and Team has onDelete: Cascade from Session, so deleting them
+  // would take those finished matches with them. Pages that show "the
+  // current teams" (roster panel, next-match picker) filter to
+  // max(generation) for the session; MatchesSoFar's roster lookup (keyed by
+  // team id, for MVP picking) intentionally does not filter, since it needs
+  // every generation a match was actually played under.
+  generation Int    @default(1)
 
   session     Session      @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   players     TeamPlayer[]

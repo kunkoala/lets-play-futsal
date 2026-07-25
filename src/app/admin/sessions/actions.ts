@@ -4,9 +4,32 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { shuffleIntoTeamsWithKeepers, type ShuffledTeam } from "@/lib/shuffle";
+import { shuffleIntoBalancedTeams, type ShuffledTeam } from "@/lib/shuffle";
 import { MAX_DURATION_MIN, MIN_DURATION_MIN } from "@/lib/matchClock";
 import { paletteFor } from "@/lib/teamPalette";
+import { getSeasonLeaderboard } from "@/lib/leaderboard";
+
+/**
+ * Each attendee's current-season rating, for the balanced shuffle to draft
+ * by. Only players who've actually finished a match this season get a real
+ * number — `ratePlayers` rates everyone else 0, which would wrongly sort a
+ * brand-new player as "the worst" rather than an unknown; `shuffleIntoBalancedTeams`
+ * treats anyone missing from this map as the pool's median instead.
+ */
+async function ratingsForAttendees(
+  seasonId: number,
+  playerIds: readonly number[],
+): Promise<Map<number, number>> {
+  const standings = await getSeasonLeaderboard(seasonId);
+  const attending = new Set(playerIds);
+  const ratings = new Map<number, number>();
+  for (const p of standings) {
+    if (attending.has(p.playerId) && p.matchesPlayed > 0) {
+      ratings.set(p.playerId, p.rating);
+    }
+  }
+  return ratings;
+}
 
 export type SessionFormState = { error: string } | undefined;
 
@@ -116,13 +139,15 @@ export async function shuffleTeams(
     where: { sessionId },
     select: { player: { select: { id: true, keeperPref: true } } },
   });
+  const candidates = attendance.map((a) => a.player);
+  const ratings = await ratingsForAttendees(
+    session.seasonId,
+    candidates.map((c) => c.id),
+  );
 
   let teams: ShuffledTeam[];
   try {
-    teams = shuffleIntoTeamsWithKeepers(
-      attendance.map((a) => a.player),
-      teamSize,
-    );
+    teams = shuffleIntoBalancedTeams(candidates, teamSize, ratings);
   } catch (err) {
     return {
       error: err instanceof Error ? err.message : "Could not shuffle teams.",
@@ -145,6 +170,85 @@ export async function shuffleTeams(
   });
 
   revalidatePath(`/admin/sessions/${sessionId}`);
+}
+
+/** Teams from the latest shuffle round for a session — see Team.generation
+ *  in schema.prisma for why old rounds are never deleted. */
+async function currentGenerationTeams(sessionId: number) {
+  const teams = await prisma.team.findMany({ where: { sessionId } });
+  const generation = teams.reduce((max, t) => Math.max(max, t.generation), 1);
+  return teams.filter((t) => t.generation === generation);
+}
+
+/**
+ * Reshuffles a session's teams mid-night — typically once the round robin
+ * is done (see roundRobinComplete in matchmaker.ts) and the admin wants a
+ * fresh, still-balanced split rather than replaying the same match-ups.
+ * Unlike the initial shuffle, this never deletes existing Team rows: they're
+ * attached to whatever matches/goal_events they already played, so a new
+ * generation is added instead (see Team.generation).
+ */
+export async function reshuffleTeams(
+  _prevState: SessionFormState,
+  formData: FormData,
+): Promise<SessionFormState> {
+  await requireAdmin();
+
+  const sessionId = Number(formData.get("sessionId"));
+  if (!Number.isInteger(sessionId)) return { error: "Invalid session." };
+
+  const session = await prisma.session.findUnique({ where: { id: sessionId } });
+  if (!session) return { error: "Session not found." };
+  if (session.status !== "teams_set") {
+    return { error: "Reshuffle only applies once teams are locked for the night." };
+  }
+
+  const currentTeams = await currentGenerationTeams(sessionId);
+  if (currentTeams.length < 2) return { error: "No teams to reshuffle." };
+  const nextGeneration = currentTeams[0].generation + 1;
+
+  const attendance = await prisma.attendance.findMany({
+    where: { sessionId },
+    select: { player: { select: { id: true, keeperPref: true } } },
+  });
+  const candidates = attendance.map((a) => a.player);
+  const ratings = await ratingsForAttendees(
+    session.seasonId,
+    candidates.map((c) => c.id),
+  );
+
+  // Keep the same number of teams the night already has, whatever attendance
+  // happens to be now — `computeTeamSizes` derives team *count* from a target
+  // size, so back-solve the size that yields today's team count.
+  const teamSize = Math.max(1, Math.round(candidates.length / currentTeams.length));
+
+  let teams: ShuffledTeam[];
+  try {
+    teams = shuffleIntoBalancedTeams(candidates, teamSize, ratings);
+  } catch (err) {
+    return {
+      error: err instanceof Error ? err.message : "Could not reshuffle teams.",
+    };
+  }
+
+  await prisma.$transaction(async (tx) => {
+    for (const [index, roster] of teams.entries()) {
+      const { name, color } = paletteFor(index);
+      const team = await tx.team.create({
+        data: { sessionId, name, color, generation: nextGeneration },
+      });
+      await tx.teamPlayer.createMany({
+        data: roster.playerIds.map((playerId) => ({
+          teamId: team.id,
+          playerId,
+          isKeeper: playerId === roster.keeperId,
+        })),
+      });
+    }
+  });
+
+  revalidatePath(`/admin/sessions/${sessionId}`);
+  revalidatePath(`/sessions/${sessionId}`);
 }
 
 export async function lockTeams(
@@ -310,5 +414,151 @@ export async function reopenSession(
     where: { id: sessionId },
     data: { status: "teams_set" },
   });
+  revalidatePath(`/admin/sessions/${sessionId}`);
+}
+
+export type RosterActionState = { error: string } | undefined;
+
+/**
+ * Moves a player onto a team — whether they're already rostered elsewhere
+ * this session or are a latecomer with no attendance row yet (upserted
+ * here). Only ever touches the current shuffle generation: a player can be
+ * on at most one of *this round's* teams at a time.
+ *
+ * Note this doesn't retroactively fix team-level stats for matches the
+ * target team already played tonight (win/loss, clean sheets, keeper
+ * numbers) — those are derived from whoever's currently rostered, not a
+ * per-match snapshot. Accepted tradeoff: individual goals/assists stay
+ * correctly attributed either way, and it only affects this one session.
+ */
+export async function assignPlayerToTeam(
+  _prevState: RosterActionState,
+  formData: FormData,
+): Promise<RosterActionState> {
+  await requireAdmin();
+
+  const sessionId = Number(formData.get("sessionId"));
+  const playerId = Number(formData.get("playerId"));
+  const teamId = Number(formData.get("teamId"));
+  if (![sessionId, playerId, teamId].every(Number.isInteger)) {
+    return { error: "Invalid input." };
+  }
+
+  const session = await prisma.session.findUnique({ where: { id: sessionId } });
+  if (!session) return { error: "Session not found." };
+  if (session.status !== "teams_set") {
+    return { error: "Rosters can only be edited once teams are locked for the night." };
+  }
+
+  const currentTeams = await currentGenerationTeams(sessionId);
+  const targetTeam = currentTeams.find((t) => t.id === teamId);
+  if (!targetTeam) return { error: "Invalid team for this session." };
+
+  const player = await prisma.player.findUnique({ where: { id: playerId } });
+  if (!player || !player.isActive) return { error: "Player not found or inactive." };
+
+  await prisma.$transaction([
+    prisma.attendance.upsert({
+      where: { sessionId_playerId: { sessionId, playerId } },
+      update: {},
+      create: { sessionId, playerId },
+    }),
+    prisma.teamPlayer.deleteMany({
+      where: { playerId, teamId: { in: currentTeams.map((t) => t.id) } },
+    }),
+    prisma.teamPlayer.create({
+      data: { teamId, playerId, isKeeper: false },
+    }),
+  ]);
+
+  revalidatePath(`/admin/sessions/${sessionId}`);
+}
+
+/**
+ * Sets or clears which rostered player is a team's keeper — a team has at
+ * most one, so setting a new one clears whoever had it.
+ */
+export async function setTeamPlayerKeeper(
+  _prevState: RosterActionState,
+  formData: FormData,
+): Promise<RosterActionState> {
+  await requireAdmin();
+
+  const sessionId = Number(formData.get("sessionId"));
+  const teamId = Number(formData.get("teamId"));
+  const playerId = Number(formData.get("playerId"));
+  const isKeeper = formData.get("isKeeper") === "true";
+  if (![sessionId, teamId, playerId].every(Number.isInteger)) {
+    return { error: "Invalid input." };
+  }
+
+  const session = await prisma.session.findUnique({ where: { id: sessionId } });
+  if (!session) return { error: "Session not found." };
+  if (session.status !== "teams_set") {
+    return { error: "Rosters can only be edited once teams are locked for the night." };
+  }
+
+  const currentTeams = await currentGenerationTeams(sessionId);
+  if (!currentTeams.some((t) => t.id === teamId)) {
+    return { error: "Invalid team for this session." };
+  }
+
+  const membership = await prisma.teamPlayer.findUnique({
+    where: { teamId_playerId: { teamId, playerId } },
+  });
+  if (!membership) return { error: "Player is not on that team." };
+
+  await prisma.$transaction([
+    prisma.teamPlayer.updateMany({
+      where: { teamId, isKeeper: true },
+      data: { isKeeper: false },
+    }),
+    ...(isKeeper
+      ? [
+          prisma.teamPlayer.update({
+            where: { teamId_playerId: { teamId, playerId } },
+            data: { isKeeper: true },
+          }),
+        ]
+      : []),
+  ]);
+
+  revalidatePath(`/admin/sessions/${sessionId}`);
+}
+
+/**
+ * Takes a player off their current team entirely — no destination, unlike
+ * `assignPlayerToTeam`. Covers a community-league reality `assignPlayerToTeam`
+ * alone can't: someone gets tired or leaves early with nobody replacing them,
+ * so the team just plays a player short. A straight substitution is this
+ * plus `assignPlayerToTeam` for whoever comes on; a player from another team
+ * covering a short-handed side is just `assignPlayerToTeam` moving them over
+ * (and back again later, if it's only for one match) — neither needed a new
+ * action of its own.
+ */
+export async function benchPlayer(
+  _prevState: RosterActionState,
+  formData: FormData,
+): Promise<RosterActionState> {
+  await requireAdmin();
+
+  const sessionId = Number(formData.get("sessionId"));
+  const playerId = Number(formData.get("playerId"));
+  if (![sessionId, playerId].every(Number.isInteger)) {
+    return { error: "Invalid input." };
+  }
+
+  const session = await prisma.session.findUnique({ where: { id: sessionId } });
+  if (!session) return { error: "Session not found." };
+  if (session.status !== "teams_set") {
+    return { error: "Rosters can only be edited once teams are locked for the night." };
+  }
+
+  const currentTeams = await currentGenerationTeams(sessionId);
+  const { count } = await prisma.teamPlayer.deleteMany({
+    where: { playerId, teamId: { in: currentTeams.map((t) => t.id) } },
+  });
+  if (count === 0) return { error: "Player is not on a team this round." };
+
   revalidatePath(`/admin/sessions/${sessionId}`);
 }
