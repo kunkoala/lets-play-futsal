@@ -5,13 +5,15 @@ on the home screen once installed. "Let's Play Futsal" is just the repo.
 
 A weekly futsal team manager for a student community — runs game day start to
 finish and turns it into a season worth bragging about. One admin checks in
-whoever showed up, hits **Shuffle**, and a position-aware algorithm seeds one
-goalkeeper per team before dealing everyone else out at random, previewing
-keeper coverage before it's locked in. From there the matchmaker always
-proposes who plays next — fewest matches played first, tie-broken by longest
-wait, dodging immediate rematches unless fairness says otherwise — while a live
-match clock (duration, pause, break) and courtside scoreboard track every goal
-and assist as it happens, MVP included.
+whoever showed up, hits **Shuffle**, and a position-aware, rating-balanced
+draft seeds one goalkeeper per team before dealing everyone else out by
+season rating (with enough randomness that it's never the same three teams
+every week), previewing keeper coverage before it's locked in. From there the
+matchmaker always proposes who plays next — fewest matches played first,
+tie-broken by longest wait, dodging immediate rematches unless fairness says
+otherwise — while a live match clock (duration, pause, break) and courtside
+scoreboard track every goal and assist as it happens, minute and all, MVP
+included.
 
 All of it rolls up automatically into a public leaderboard: goals, assists,
 G+A, points, form, clean sheets, match MVPs, and a single 0-100 player rating
@@ -27,14 +29,14 @@ See `PLAN.md` for the full architecture, domain model, and phased build plan.
 ## Local development
 
 1. Start Postgres only (the app itself runs on the host for hot reload):
-   ```
-   docker compose up -d db
-   ```
+```
+docker compose up -d db
+```
 2. Install dependencies and run the dev server:
-   ```
-   npm install
-   npm run dev
-   ```
+```
+npm install
+npm run dev
+```
 3. Open http://localhost:3000.
 
 Copy `.env.example` to `.env` (or `.env.local`) and fill in real values before
@@ -65,28 +67,58 @@ Once installed you also get shortcuts: long-press the icon for **Matchday HQ**
 Two things worth knowing:
 
 - **It needs a connection.** There is no offline mode, deliberately — logging a
-  goal, shuffling teams and ending a match are all server writes, so a cache
-  that served stale screens mid-match would do more harm than offline reading
-  would do good. See `PLAN.md` §11e.
+goal, shuffling teams and ending a match are all server writes, so a cache
+that served stale screens mid-match would do more harm than offline reading
+would do good. See `PLAN.md` §11e.
 - **Install only appears over HTTPS.** That means the real deployed domain, or
-  `localhost` during development — it will not show up if you browse to a dev
-  machine over the network by IP.
+`localhost` during development — it will not show up if you browse to a dev
+machine over the network by IP.
 
 ## Weekly routine (admin)
 
 1. Open the session for this week (`/admin/sessions` → create, or open an
-   existing one).
+existing one).
 2. Check in whoever showed up, then hit **Shuffle** to split them into teams.
 3. **Lock teams** once everyone's happy with the split.
 4. Start each proposed match and tap goals/assists live on the court (an iPad
-   works well — install it, see above) — the app always proposes who plays next.
+works well — install it, see above) — the app always proposes who plays next.
 5. On **End match**, optionally tap a man of the match from either roster. You
-   can skip it, or set it later from the session page.
+can skip it, or set it later from the session page.
 6. Hit **Complete session** once the last match ends.
 
 Set each player's position (outfield / can keep if needed / goalkeeper) on
 `/admin/players`. The shuffle seeds one keeper per team before dealing everyone
 else out, and the check-in screen previews the coverage before you commit.
+
+## Team balance, reshuffling, and mid-session edits
+
+**Shuffle** drafts by each player's current-season rating rather than pure
+chance — a snake draft (1st pick, 2nd, 3rd, ... last, last, ... 3rd, 2nd, 1st,
+repeat, like a fantasy-sports draft) with a little random jitter mixed in, so
+teams stay close in average rating without being the identical three sides
+every week. A newcomer with no matches yet drafts at the pool's median rather
+than dead last, so they don't automatically land on the "weak" team.
+
+Once every team has played every other team, a banner offers a one-tap
+**reshuffle** for a fresh balanced split — it adds a new round of teams rather
+than deleting the old ones, so the night's results so far stay attached to
+whoever actually played them. And because a community squad doesn't always
+stay put for a whole session, the locked-teams screen lets the admin move a
+player to another team, add a latecomer (auto-checking them in), hand the
+goalkeeper glove to someone else, or bench a player who's had enough — with
+one accepted tradeoff: team-level results (win/loss, clean sheets) for that
+session follow whoever's currently rostered, not a per-match snapshot,
+so moving someone late does affect their session stats going forward.
+
+## Live ticker
+
+`/live` shows whatever match is being played right now — no login needed —
+with the running score, clock, and a goal feed split home/away like a real
+match report, each goal timestamped to the minute it went in. It polls every
+few seconds rather than needing a websocket, matching how the rest of the app
+already works. Whenever a match is live, a banner appears above the nav on
+every public page linking straight there, so nobody has to know to go looking
+for it.
 
 ## Achievements
 
