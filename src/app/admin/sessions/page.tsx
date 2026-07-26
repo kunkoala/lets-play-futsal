@@ -1,10 +1,10 @@
-import { Box, Button, Container, Group, Stack, Table, TableTbody, TableTd, TableTh, TableThead, TableTr, Text } from "@mantine/core";
+import { Box, Container, Group, Stack, Table, TableTbody, TableTd, TableTh, TableThead, TableTr, Text } from "@mantine/core";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NavLink } from "@/components/NavLink";
 import { ArrowLeft } from "@/components/icons";
 import { CreateSessionForm } from "./CreateSessionForm";
-import { deleteSession } from "./actions";
+import { DeleteSessionButton } from "./DeleteSessionButton";
 
 function nextSaturdayISO(): string {
   const d = new Date();
@@ -150,14 +150,11 @@ export default async function SessionsPage() {
                         </Text>
                       </TableTd>
                       <TableTd style={{ textAlign: "right" }}>
-                        {session.status === "draft" && (
-                          <form action={deleteSession}>
-                            <input type="hidden" name="id" value={session.id} />
-                            <Button type="submit" size="xs" variant="subtle" color="red">
-                              Delete
-                            </Button>
-                          </form>
-                        )}
+                        <DeleteSessionButton
+                          sessionId={session.id}
+                          sessionDate={session.date.toISOString().slice(0, 10)}
+                          completed={session.status === "completed"}
+                        />
                       </TableTd>
                     </TableTr>
                   );

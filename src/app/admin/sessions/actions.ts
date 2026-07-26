@@ -77,8 +77,12 @@ export async function deleteSession(formData: FormData): Promise<void> {
   if (!Number.isInteger(id)) return;
 
   const session = await prisma.session.findUnique({ where: { id } });
-  if (!session || session.status !== "draft") return; // only draft sessions may be deleted
+  if (!session) return;
 
+  // Session -> Team/Match/GoalEvent/Attendance all cascade (see schema.prisma
+  // referential-action notes), so this is safe at any status, including
+  // completed — the confirm dialog on the client is what guards against
+  // accidental loss of a night's recorded matches/stats.
   await prisma.session.delete({ where: { id } });
   revalidatePath("/admin/sessions");
 }
