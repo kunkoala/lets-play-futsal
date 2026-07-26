@@ -19,6 +19,7 @@ import { paletteFor } from "@/lib/teamPalette";
 import { aggregateSeason, type PlayerSeasonStats } from "@/lib/seasonAggregate";
 import { applyMatch, emptyTotals, withRates, type PlayerStats } from "@/lib/stats";
 import { DEFAULT_DURATION_MIN } from "@/lib/matchClock";
+import { deriveExtraSignals, type ExtraSignals } from "@/lib/achievements";
 
 /** No real clock behind the demo, so goal minutes are scattered across a
  *  match of this length rather than derived from one. */
@@ -106,6 +107,8 @@ export type DemoMatch = {
   awayTeam: DemoTeam;
   mvpPlayerId: number | null;
   mvpPlayer: DemoPlayer | null;
+  /** Every demo match plays the same fixed length — see DEMO_MATCH_DURATION_SEC. */
+  durationSec: number;
   goalEvents: DemoGoalEvent[];
 };
 
@@ -273,6 +276,7 @@ function buildSeason() {
           awayTeam,
           mvpPlayerId: mvp.playerId,
           mvpPlayer: mvp.player,
+          durationSec: DEMO_MATCH_DURATION_SEC,
           goalEvents,
         });
       }
@@ -347,6 +351,7 @@ export type DemoPlayerProfile = {
   seasonName: string;
   /** Newest matchday first. */
   history: DemoPlayerHistoryRow[];
+  extraSignals: ExtraSignals;
 };
 
 /**
@@ -418,5 +423,8 @@ export function getDemoPlayerProfile(playerId: number): DemoPlayerProfile | null
     totals: withRates(totals),
     seasonName: season.name,
     history: history.reverse(),
+    // deriveExtraSignals already skips sessions this player wasn't rostered
+    // in, so passing the whole demo season is safe here.
+    extraSignals: deriveExtraSignals(sessions, playerId),
   };
 }

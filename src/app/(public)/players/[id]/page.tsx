@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getPlayerProfile } from "@/lib/playerProfile";
 import { getActiveSeason, getSeasonLeaderboard } from "@/lib/leaderboard";
+import { evaluateAchievements } from "@/lib/achievements";
 import { prisma } from "@/lib/prisma";
 import { PlayerProfileView } from "@/components/views/PlayerProfileView";
 
@@ -30,6 +31,15 @@ export default async function PlayerProfilePage({
     .sort((a, b) => b.rating - a.rating);
   const rankIndex = ranked.findIndex((s) => s.playerId === id);
 
+  // Badges are all-time, so this uses whatever season rating is available
+  // (there's no single all-time rating — it's a per-season concept) rather
+  // than gating Rising Star/Elite on the currently active season specifically.
+  const achievements = evaluateAchievements({
+    ...profile.allTime,
+    ...profile.extraSignals,
+    rating: rankIndex >= 0 ? ranked[rankIndex].rating : 0,
+  });
+
   return (
     <PlayerProfileView
       data={{
@@ -39,6 +49,7 @@ export default async function PlayerProfilePage({
         totalsLabel: profile.activeSeason ? (profile.activeSeasonName ?? "Season") : "All-time",
         sessionHistory: profile.sessionHistory,
         seasonAwards: seasonAwards.map((a) => ({ id: a.id, seasonName: a.season.name })),
+        achievements,
         rating:
           rankIndex >= 0
             ? {

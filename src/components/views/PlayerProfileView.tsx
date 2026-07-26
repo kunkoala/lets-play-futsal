@@ -18,8 +18,10 @@ import type { PlayerSessionHistoryRow } from "@/lib/playerProfile";
 import { RatingBreakdown } from "@/components/RatingBreakdown";
 import { formatPlusMinus, formatRate, type PlayerStats } from "@/lib/stats";
 import type { RatingComponent } from "@/lib/rating";
+import type { EvaluatedAchievement } from "@/lib/achievements";
 import type { KeeperPref } from "@/lib/shuffle";
 import { keeperPrefBadge, keeperPrefLabel, KEEPER_GLYPH } from "@/lib/keeperPref";
+import { AchievementBadges } from "@/components/AchievementBadges";
 
 import { NavLink } from "@/components/NavLink";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
@@ -174,6 +176,8 @@ export type ProfileData = {
   /** Season-MVP trophies won, shown as chips by the name. */
   seasonAwards: { id: number; seasonName: string }[];
   rating: ProfileRating | null;
+  /** All 23 achievements, all-time scope, locked and unlocked alike. */
+  achievements: EvaluatedAchievement[];
 };
 
 export function PlayerProfileView({
@@ -264,6 +268,8 @@ export function PlayerProfileView({
                 </Box>
               </Group>
             </Box>
+
+            <AchievementBadges achievements={data.achievements} />
 
             {seasonEntry && (
               <RatingBreakdown

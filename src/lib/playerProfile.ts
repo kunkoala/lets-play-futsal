@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { applyMatch, emptyTotals, withRates, type PlayerStats, type PlayerTotals } from "@/lib/stats";
+import { deriveExtraSignals, type ExtraSignals } from "@/lib/achievements";
 import type { KeeperPref } from "@/lib/shuffle";
 
 /** @deprecated Kept as an alias so older imports keep compiling — use `PlayerStats`. */
@@ -26,6 +27,13 @@ export type PlayerProfile = {
   activeSeasonName: string | null;
   /** Newest matchday first. */
   sessionHistory: PlayerSessionHistoryRow[];
+  /**
+   * The achievement signals `PlayerStats` doesn't already cover (see
+   * achievements.ts), derived across this player's whole career. The caller
+   * combines this with `allTime` and a rating (this module doesn't compute
+   * one — see players/[id]/page.tsx) to evaluate the full badge list.
+   */
+  extraSignals: ExtraSignals;
 };
 
 /**
@@ -120,6 +128,13 @@ export async function getPlayerProfile(playerId: number): Promise<PlayerProfile 
     history.push(row);
   }
 
+  // Achievement derivation needs the same session/match/goalEvent shape this
+  // function already fetched — reused as-is rather than re-queried.
+  const extraSignals = deriveExtraSignals(
+    attendances.map((a) => a.session),
+    playerId,
+  );
+
   return {
     player: {
       id: player.id,
@@ -131,5 +146,6 @@ export async function getPlayerProfile(playerId: number): Promise<PlayerProfile 
     activeSeason: activeSeason ? withRates(thisSeason) : null,
     activeSeasonName: activeSeason?.name ?? null,
     sessionHistory: history.reverse(),
+    extraSignals,
   };
 }

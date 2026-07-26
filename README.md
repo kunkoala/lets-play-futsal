@@ -16,7 +16,8 @@ and assist as it happens, MVP included.
 All of it rolls up automatically into a public leaderboard: goals, assists,
 G+A, points, form, clean sheets, match MVPs, and a single 0-100 player rating
 that blends volume and rate stats with a Bayesian prior so one lucky game can't
-outrank a season of showing up — capped off with end-of-semester awards.
+outrank a season of showing up — capped off with end-of-semester awards and a
+23-strong Xbox-style achievement badge grid on every player's profile.
 
 Want to see it without real data? **`/demo`** runs the whole app on a generated
 season — nothing there touches the database.
@@ -87,6 +88,27 @@ Set each player's position (outfield / can keep if needed / goalkeeper) on
 `/admin/players`. The shuffle seeds one keeper per team before dealing everyone
 else out, and the check-in screen previews the coverage before you commit.
 
+## Achievements
+
+Every player profile shows a badge grid — 23 Xbox-style achievements across
+six categories (Scoring, Defense, Team results, Recognition, Commitment,
+Excellence), each worth points by tier (Bronze 10 · Silver 25 · Gold 50 ·
+Platinum 100). A few examples: **Hat-Trick Hero** (3+ goals in a match),
+**Last-Minute Hero** (score in the final minute of a timed match), **God of
+Goals** (10+ goals across one session's matches), **Hot Streak** (3 match
+wins in a row), **Iron Wall** (a clean sheet), **Elite** (a season rating of
+85+).
+
+Locked badges show grey; unlocking one lights it up with the same volt glow
+as the rest of the app's accent color. Tap any badge — locked or not — for
+the full detail in a bottom sheet, which also works as the hover target on
+desktop.
+
+Like the rest of the app's numbers, nothing here is stored — every badge is
+recomputed from goal events, match results, and attendance on each page load
+(see `src/lib/achievements.ts`). Unlocking is all-time and permanent: once a
+threshold is met in any session or season, it stays met.
+
 ## Tests
 
 ```
@@ -95,7 +117,8 @@ npm test
 
 Runs vitest — unit tests cover the shuffle including keeper seeding
 (`src/lib/shuffle.ts`), the matchmaker (`src/lib/matchmaker.ts`), the derived
-stats (`src/lib/stats.ts`), and the player rating (`src/lib/rating.ts`).
+stats (`src/lib/stats.ts`), the player rating (`src/lib/rating.ts`), and the
+achievement derivation/evaluation (`src/lib/achievements.ts`).
 
 ## Deployment
 

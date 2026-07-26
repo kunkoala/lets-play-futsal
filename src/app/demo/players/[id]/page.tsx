@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { getDemoLeaderboard, getDemoPlayerProfile } from "@/lib/demoData";
+import { evaluateAchievements } from "@/lib/achievements";
 import { PlayerProfileView } from "@/components/views/PlayerProfileView";
 
 export default async function DemoPlayerProfilePage({
@@ -16,6 +17,11 @@ export default async function DemoPlayerProfilePage({
     .filter((s) => s.matchesPlayed > 0)
     .sort((a, b) => b.rating - a.rating);
   const rankIndex = ranked.findIndex((s) => s.playerId === id);
+  const achievements = evaluateAchievements({
+    ...profile.totals,
+    ...profile.extraSignals,
+    rating: rankIndex >= 0 ? ranked[rankIndex].rating : 0,
+  });
 
   return (
     <PlayerProfileView
@@ -31,6 +37,7 @@ export default async function DemoPlayerProfilePage({
           seasonId: 0,
         })),
         seasonAwards: [],
+        achievements,
         rating:
           rankIndex >= 0
             ? {
