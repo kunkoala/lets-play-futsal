@@ -1,5 +1,6 @@
 import { Navbar } from "@/components/Navbar";
 import { SiteFooter } from "@/components/SiteFooter";
+import { LiveBanner } from "@/components/LiveBanner";
 
 /**
  * Every public page reads live rows — standings, sessions, profiles, awards —
@@ -18,7 +19,12 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
     // short pages instead of floating mid-screen. The wrapper sets no overflow,
     // so the viewport stays the scroll container and the sticky navbar still works.
     <div style={{ display: "flex", flexDirection: "column", minHeight: "100dvh" }}>
-      <Navbar />
+      {/* Banner + nav stick together as one unit — see the comment in
+          Navbar.tsx for why Navbar no longer sticks on its own. */}
+      <div style={{ position: "sticky", top: 0, zIndex: 100 }}>
+        <LiveBanner />
+        <Navbar />
+      </div>
       <main style={{ flex: 1 }}>{children}</main>
       <SiteFooter />
     </div>

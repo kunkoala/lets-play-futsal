@@ -28,15 +28,17 @@ export async function Navbar({ basePath = "" }: { basePath?: string }) {
     <Box
       component="nav"
       style={{
-        position: "sticky",
-        top: 0,
-        zIndex: 100,
+        // Stickiness now lives on the wrapper in (public)/layout.tsx and
+        // demo/layout.tsx, so the LiveBanner/DemoBanner above it scrolls
+        // together with the nav as one stuck unit instead of scrolling away
+        // on its own.
         backdropFilter: "blur(10px)",
         backgroundColor: "color-mix(in srgb, var(--deep-panel) 82%, transparent)",
         borderBottom: "1px solid var(--hairline)",
         // Standalone PWA on iOS runs content under the Dynamic Island
-        // (viewport-fit=cover in the root layout); without this the sticky
-        // bar sits under it and its links become untappable.
+        // (viewport-fit=cover in the root layout). This still matters when
+        // Navbar is the first element (no banner showing) — the wrapper
+        // sticking doesn't change who's actually touching the island.
         paddingTop: "env(safe-area-inset-top)",
       }}
     >

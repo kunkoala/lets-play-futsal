@@ -18,8 +18,12 @@ export const metadata: Metadata = {
 export default function DemoLayout({ children }: { children: React.ReactNode }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", minHeight: "100dvh" }}>
-      <DemoBanner />
-      <Navbar basePath="/demo" />
+      {/* Same sticky-wrapper pattern as (public)/layout.tsx, now that Navbar
+          no longer sticks on its own — see the comment in Navbar.tsx. */}
+      <div style={{ position: "sticky", top: 0, zIndex: 100 }}>
+        <DemoBanner />
+        <Navbar basePath="/demo" />
+      </div>
       <main style={{ flex: 1 }}>{children}</main>
       <SiteFooter basePath="/demo" />
     </div>
