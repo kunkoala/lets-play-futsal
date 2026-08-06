@@ -96,6 +96,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               <AdminNavItem href="/admin/sessions">Sessions</AdminNavItem>
               <AdminNavItem href="/admin/players">Players</AdminNavItem>
               <AdminNavItem href="/admin/seasons">Seasons</AdminNavItem>
+              <AdminNavItem href="/admin/analytics">Analytics</AdminNavItem>
               {/* The way home — this is what was missing. */}
               <NavLink
                 href="/"

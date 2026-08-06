@@ -7,6 +7,7 @@ import type { Metadata, Viewport } from "next";
 import { MantineProvider } from "@mantine/core";
 import { Notifications } from "@mantine/notifications";
 import { theme } from "@/theme";
+import { AnalyticsTracker } from "@/components/AnalyticsTracker";
 
 // Archivo + Archivo Expanded per the design handoff (§Typography). Loaded via
 // Google Fonts rather than next/font because this Next build's bundled font
@@ -68,6 +69,9 @@ export default function RootLayout({
         {/* Design is dark-only (courtside). Force dark rather than following OS. */}
         <MantineProvider theme={theme} forceColorScheme="dark">
           <Notifications />
+          {/* Renders nothing; reports page views and impressions for the
+              /admin/analytics dashboard. Skips /admin and /login itself. */}
+          <AnalyticsTracker />
           {children}
         </MantineProvider>
       </body>

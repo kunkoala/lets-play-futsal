@@ -12,6 +12,7 @@ const LINKS = [
   { href: "/admin/sessions", label: "Sessions" },
   { href: "/admin/players", label: "Players" },
   { href: "/admin/seasons", label: "Seasons" },
+  { href: "/admin/analytics", label: "Analytics" },
 ];
 
 /**

@@ -15,6 +15,10 @@ export async function Navbar({ basePath = "" }: { basePath?: string }) {
     { href: basePath || "/", label: "Leaderboard" },
     { href: `${basePath}/sessions`, label: "Sessions" },
     { href: `${basePath}/awards`, label: "Awards" },
+    // Only an admin sees this, and it always points at the real dashboard —
+    // there is no demo copy of the traffic figures. Everyone else's nav is
+    // unchanged, so the route stays effectively invisible to the public.
+    ...(isAdmin ? [{ href: "/admin/analytics", label: "Analytics" }] : []),
   ];
   const adminLink = isAdmin
     ? { href: "/admin", label: "Admin", accent: true }

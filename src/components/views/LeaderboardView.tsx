@@ -22,6 +22,7 @@ import { NavLink } from "@/components/NavLink";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { FormGuide } from "@/components/FormGuide";
 import { StatTooltip } from "@/components/StatTooltip";
+import { impressionProps, IMPRESSION_PLAYER_ROW } from "@/lib/analyticsMarks";
 
 const SORT_OPTIONS = [
   { value: "rating", label: "Rating" },
@@ -384,7 +385,9 @@ function StandingsTable({
             {rows.map((s, i) => {
               const rank = startRank + i + 1;
               return (
-                <TableTr key={s.playerId}>
+                // Counted as "seen" once per visit when the row is actually on
+                // screen — feeds the most-viewed-players panel on /admin/analytics.
+                <TableTr key={s.playerId} {...impressionProps(IMPRESSION_PLAYER_ROW, s.playerId)}>
                   <TableTd style={{ textAlign: "center" }}>
                     <Text
                       className="tabular-nums"

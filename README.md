@@ -141,6 +141,40 @@ recomputed from goal events, match results, and attendance on each page load
 (see `src/lib/achievements.ts`). Unlocking is all-time and permanent: once a
 threshold is met in any session or season, it stays met.
 
+## Analytics
+
+The site measures itself. No Google Analytics, no third-party script, no
+consent banner to write — a first-party collector (`/api/track`) writes to one
+append-only `analytics_event` table, and **/admin/analytics** derives every
+figure from it at request time. The link only appears in the navbar and footer
+once you're logged in as admin, and the route sits behind the same proxy gate
+and `requireAdmin()` check as the rest of `/admin`.
+
+What it records: page views (fired client-side on real navigations, so Next's
+route prefetches don't count as traffic), how long each page actually stayed
+visible, and **impressions** — leaderboard rows and session rows that were at
+least half on screen for half a second, deduplicated to once per visit. That
+last one drives the "most-looked-at players" panel: how often a player's row
+was seen versus how often someone opened their profile.
+
+The dashboard shows views / visitors / visits / views-per-visit / average time
+on page / impressions, each against the previous period of the same length,
+plus a daily traffic chart, top routes, referrer hosts, device and browser
+splits, and views by hour of the local day. Range switches between 7, 30 and
+90 days.
+
+Privacy is a design constraint, not a footnote: no IP addresses, no
+fingerprinting, no cross-site anything. A visitor is a random UUID in an
+HTTP-only first-party cookie (`_lpf_vid`, one year) plus a rolling 30-minute
+visit cookie (`_lpf_vis`); the only request-derived fields kept are device
+class, browser, OS and an edge-provided country. Known bots are dropped at the
+endpoint, browsers sending Do Not Track are never tracked at all, `/admin` and
+`/login` are skipped outright, and the admin's own browsing is flagged and
+excluded from every number.
+
+Set `ANALYTICS_TZ` to change the timezone day and hour buckets are cut in
+(defaults to `Asia/Jakarta`).
+
 ## Tests
 
 ```
@@ -149,8 +183,10 @@ npm test
 
 Runs vitest — unit tests cover the shuffle including keeper seeding
 (`src/lib/shuffle.ts`), the matchmaker (`src/lib/matchmaker.ts`), the derived
-stats (`src/lib/stats.ts`), the player rating (`src/lib/rating.ts`), and the
-achievement derivation/evaluation (`src/lib/achievements.ts`).
+stats (`src/lib/stats.ts`), the player rating (`src/lib/rating.ts`), the
+achievement derivation/evaluation (`src/lib/achievements.ts`), and the
+analytics collector's route/referrer normalization and rate limiting
+(`src/lib/analyticsCollect.ts`).
 
 ## Deployment
 

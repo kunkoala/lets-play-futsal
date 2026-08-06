@@ -13,6 +13,7 @@ import {
   Text,
 } from "@mantine/core";
 import { NavLink } from "@/components/NavLink";
+import { impressionProps, IMPRESSION_SESSION_ROW } from "@/lib/analyticsMarks";
 
 const STATUS_STYLE: Record<string, { label: string; color: string; bg: string }> = {
   draft: { label: "Upcoming", color: "var(--text-muted)", bg: "rgba(255,255,255,.06)" },
@@ -101,7 +102,7 @@ export function SessionsView({
               </TableThead>
               <TableTbody>
                 {sessions.map((s) => (
-                  <TableTr key={s.id}>
+                  <TableTr key={s.id} {...impressionProps(IMPRESSION_SESSION_ROW, s.id)}>
                     <TableTd>
                       <NavLink
                         href={`${basePath}/sessions/${s.id}`}

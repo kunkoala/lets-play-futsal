@@ -117,7 +117,10 @@ export async function SiteFooter({ basePath = "" }: { basePath?: string }) {
             <FooterLink href={`${basePath}/awards`}>Season awards</FooterLink>
             {basePath === "" && <FooterLink href="/demo">Demo with sample data</FooterLink>}
             {isAdmin ? (
-              <FooterLink href="/admin">Admin</FooterLink>
+              <>
+                <FooterLink href="/admin">Admin</FooterLink>
+                <FooterLink href="/admin/analytics">Analytics</FooterLink>
+              </>
             ) : (
               <FooterLink href="/login">Admin login</FooterLink>
             )}

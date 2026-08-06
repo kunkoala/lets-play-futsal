@@ -265,6 +265,95 @@ model GoalEvent {
   @@map("goal_event")
 }
 
+/// What kind of thing a row in `analytics_event` records.
+/// `pageview` = one route render seen by one visitor;
+/// `impression` = a tracked element (a player row, a session card) actually
+/// scrolled into view, deduplicated to once per visit per target client-side;
+/// `action` = a deliberate interaction worth counting (share, outbound click).
+enum AnalyticsEventType {
+  pageview
+  impression
+  action
+
+  @@map("analytics_event_type")
+}
+
+/// First-party, cookie-based analytics — see src/lib/analytics.ts (queries),
+/// src/app/api/track/route.ts (collection) and src/components/analytics/
+/// (the client beacons).
+///
+/// Deliberately privacy-light: no IP address, no fingerprint, no third-party
+/// script. A visitor is a random UUID in an HTTP-only first-party cookie, and
+/// the only request-derived fields kept are the coarse ones (device class,
+/// browser family, OS, edge-provided country) that can't single anyone out.
+/// Known bots are dropped at the endpoint rather than stored and filtered later.
+///
+/// This is an append-only event log: no counters are incremented in place, so
+/// any new metric can be derived from history rather than needing to have been
+/// planned for. `dwellMs` is the single exception — it lands on the pageview
+/// row itself, because a dwell time belongs to the view it measures and is
+/// stitched back on by `clientEventId`.
+model AnalyticsEvent {
+  id Int @id @default(autoincrement())
+
+  type AnalyticsEventType
+  /// Route pattern with dynamic segments collapsed, e.g. `/players/[id]` —
+  /// this is what the dashboard groups by, so a hundred player profiles read
+  /// as one popular route instead of a hundred one-view rows.
+  route String
+  /// The concrete path as visited (`/players/12`), kept for drill-down.
+  path  String
+
+  /// For impression/action rows: what was seen or done ("player_row",
+  /// "session_card", "share_click"), plus the domain id when there is one.
+  name     String?
+  targetId Int?    @map("target_id")
+
+  /// Random UUID from the `_lpf_vid` cookie (1 year) — stable-ish identity for
+  /// "unique visitors", with no personal data behind it.
+  visitorId String @map("visitor_id")
+  /// Random UUID from the `_lpf_vis` cookie, rolling 30-minute expiry, so a
+  /// "visit" ends after half an hour of inactivity like every other analytics
+  /// tool defines it.
+  visitId   String @map("visit_id")
+
+  /// Referrer host only (`google.com`), never the full URL — the path of the
+  /// page someone came from is theirs, not ours.
+  referrerHost String? @map("referrer_host")
+
+  device  String?
+  browser String?
+  os      String?
+  /// Two-letter country from the reverse proxy/CDN header when one is present
+  /// (`cf-ipcountry`, `x-vercel-ip-country`); null on a bare deploy.
+  country String?
+
+  /// Set when the request carried a valid admin session cookie, so the admin's
+  /// own browsing can be excluded from every figure on the dashboard without
+  /// throwing the rows away.
+  isAdmin Boolean @default(false) @map("is_admin")
+
+  /// Milliseconds the pageview stayed visible, patched onto the row when the
+  /// tab is hidden or closed. Null for events that never reported back
+  /// (closed too fast, beacon dropped) and for non-pageview rows.
+  dwellMs Int? @map("dwell_ms")
+
+  /// Client-generated UUID for this event. Unique, which does double duty: it
+  /// is how the later dwell beacon finds the pageview it belongs to, and it
+  /// makes the whole endpoint idempotent — a retried or duplicated beacon
+  /// collides instead of inflating the count.
+  clientEventId String? @unique @map("client_event_id")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([createdAt])
+  @@index([type, createdAt])
+  @@index([visitorId])
+  @@index([route, createdAt])
+  @@index([name, targetId])
+  @@map("analytics_event")
+}
+
 model Award {
   id       Int       @id @default(autoincrement())
   seasonId Int       @map("season_id")

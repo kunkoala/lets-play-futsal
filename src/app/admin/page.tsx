@@ -64,6 +64,7 @@ const QUICK_LINKS = [
   { href: "/admin/players", label: "Players", glyph: "👤" },
   { href: "/admin/sessions", label: "Sessions", glyph: "📅" },
   { href: "/admin/seasons", label: "Seasons", glyph: "🗓" },
+  { href: "/admin/analytics", label: "Analytics", glyph: "📈" },
   { href: "/awards", label: "Awards", glyph: "🏆" },
 ];
 
