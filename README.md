@@ -13,7 +13,7 @@ matchmaker always proposes who plays next — fewest matches played first,
 tie-broken by longest wait, dodging immediate rematches unless fairness says
 otherwise — while a live match clock (duration, pause, break) and courtside
 scoreboard track every goal and assist as it happens, minute and all. At the
-end of the night, one player of the day gets picked for the whole session.
+end of the matchday, one player of the day gets picked for the whole session.
 
 All of it rolls up automatically into a public leaderboard: goals, assists,
 G+A, points, form, clean sheets, session MVPs, and a single 0-100 player rating
@@ -103,7 +103,7 @@ than dead last, so they don't automatically land on the "weak" team.
 
 Once every team has played every other team, a banner offers a one-tap
 **reshuffle** for a fresh balanced split — it adds a new round of teams rather
-than deleting the old ones, so the night's results so far stay attached to
+than deleting the old ones, so the matchday's results so far stay attached to
 whoever actually played them. And because a community squad doesn't always
 stay put for a whole session, the locked-teams screen lets the admin move a
 player to another team, add a latecomer (auto-checking them in), hand the

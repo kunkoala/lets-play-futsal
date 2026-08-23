@@ -38,7 +38,7 @@ export function DeleteSessionButton({
           <Text fz={14}>
             This permanently deletes the {sessionDate} session
             {completed
-              ? ", including every match, goal, and stat recorded that night"
+              ? ", including every match, goal, and stat recorded that matchday"
               : ""}
             . This can&apos;t be undone.
           </Text>

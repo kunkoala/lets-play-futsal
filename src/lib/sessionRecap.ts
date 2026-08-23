@@ -1,6 +1,6 @@
 /**
  * One matchday's story, in the handful of numbers people actually ask about
- * afterwards: who scored most, who set up most, who kept it out, how the night
+ * afterwards: who scored most, who set up most, who kept it out, how the matchday
  * went overall.
  *
  * Same shape-in / shape-out contract as `seasonAggregate.ts` — declared
@@ -41,7 +41,7 @@ export type RecapLeader = {
   value: number;
 };
 
-/** Everything one player did on the night, for the full session table. */
+/** Everything one player did on the matchday, for the full session table. */
 export type RecapPlayerLine = {
   playerId: number;
   name: string;
@@ -73,7 +73,7 @@ export type SessionRecap = {
   topScorer: RecapLeader | null;
   topAssister: RecapLeader | null;
   mostCleanSheets: RecapLeader | null;
-  /** Biggest winning margin of the night, with the scoreline that produced it. */
+  /** Biggest winning margin of the matchday, with the scoreline that produced it. */
   biggestWin: { margin: number; home: number; away: number } | null;
   /** Top three scorers, ties sharing a place. */
   scorerPodium: RecapPodiumPlace[];
@@ -137,7 +137,7 @@ export function summariseSession(session: RecapSession): SessionRecap {
   const assists = new Map<number, number>();
   const cleanSheets = new Map<number, number>();
 
-  // One row per player, built up across the night for the full session table.
+  // One row per player, built up across the matchday for the full session table.
   const lines = new Map<number, RecapPlayerLine>();
   const lineFor = (id: number): RecapPlayerLine => {
     let line = lines.get(id);

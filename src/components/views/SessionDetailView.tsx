@@ -308,7 +308,7 @@ function StatTh({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * Everyone's night in one table — the point being that a player who scored
+ * Everyone's matchday in one table — the point being that a player who scored
  * nothing can still find their own row and see what they did. Ordered by goal
  * contributions, so the podium's names are the ones at the top.
  */
@@ -448,7 +448,7 @@ export function SessionDetailView({
   const currentTeams = session.teams.filter((t) => (t.generation ?? 1) === currentGeneration);
 
   // Every generation, not just the current one: the recap covers the whole
-  // night, including matches played before a mid-session reshuffle.
+  // matchday, including matches played before a mid-session reshuffle.
   const recap = summariseSession(session);
 
   return (
@@ -557,7 +557,7 @@ export function SessionDetailView({
                       basePath={basePath}
                     />
                     {/* Not a podium: only one player per team per match can
-                        keep a clean sheet now, so at a typical three-team night
+                        keep a clean sheet now, so at a typical three-team matchday
                         a top three is most of the keepers. */}
                     <RecapCard
                       label="Most clean sheets"
@@ -574,7 +574,7 @@ export function SessionDetailView({
               {recap.players.length > 0 && (
                 <Stack gap={12}>
                   <Group justify="space-between" align="baseline" gap={10} wrap="wrap">
-                    <Eyebrow>Everyone&apos;s night</Eyebrow>
+                    <Eyebrow>Everyone&apos;s matchday</Eyebrow>
                     <Text fz={11} c="dimmed">
                       Sorted by goals + assists
                     </Text>

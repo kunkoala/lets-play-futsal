@@ -249,7 +249,7 @@ async function main() {
     seasonId: season.id,
     date: "2026-08-06",
     attendees: session1Attendees,
-    mvp: byName("Raka Pratama"), // two goals and an assist across the night
+    mvp: byName("Raka Pratama"), // two goals and an assist across the matchday
     matchResults: [
       {
         // Red 3 - 2 Blue
@@ -290,7 +290,7 @@ async function main() {
     seasonId: season.id,
     date: "2026-08-13",
     attendees: session2Attendees,
-    mvp: byName("Reza Pahlevi"), // a goal and two assists across the night
+    mvp: byName("Reza Pahlevi"), // a goal and two assists across the matchday
     matchResults: [
       {
         // Red 2 - 2 Green (draw)

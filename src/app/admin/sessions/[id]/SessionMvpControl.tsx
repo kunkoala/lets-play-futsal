@@ -23,7 +23,7 @@ export function SessionMvpControl({
 }: {
   sessionId: number;
   mvp: { id: number; name: string } | null;
-  /** Everyone marked present tonight — the server checks attendance too. */
+  /** Everyone marked present this matchday — the server checks attendance too. */
   candidates: Candidate[];
 }) {
   const router = useRouter();

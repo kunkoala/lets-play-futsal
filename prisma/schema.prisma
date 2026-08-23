@@ -215,7 +215,7 @@ model TeamPlayer {
 ///
 /// `isKeeper` is copied per match too: whoever went in goal for *this* game is
 /// what the clean-sheet and goals-conceded numbers need, and that can change
-/// between matches on the same night.
+/// between matches on the same matchday.
 ///
 /// Cascades mirror GoalEvent for the same reason documented there — Team is a
 /// compositional child of Session, and a RESTRICT here would race the sibling

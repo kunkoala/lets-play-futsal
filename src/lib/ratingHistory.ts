@@ -202,7 +202,7 @@ export type ImprovedPlayer = {
  * Minimum sessions before a rating gain counts as improvement.
  *
  * Without a gate this award is won every week by whoever played their second
- * ever match: a first rating is built on one night of results and swings
+ * ever match: a first rating is built on one matchday of results and swings
  * enormously on the next. Three sessions is where the Bayesian prior in
  * `rating.ts` has largely handed over to a player's own numbers.
  */

@@ -236,27 +236,24 @@ match 1-2 history.
 - Bump `minWidth: 780` (`:343`) and the empty-state `colSpan={15}` (`:445`).
 - Consider adding it to `SORT_FIELDS` (`:28-35`) so it's sortable.
 
-**Open question — which number.** There are two:
-- `gamesPlayed` = matchdays attended (from `Attendance`) — what "games played" means
-  colloquially here, and what the rating's `Matchdays` metric uses.
-- `matchesPlayed` = individual 5-a-side matches — the denominator of every per-match rate.
-
-Recommendation: show `GP` (matchdays) in the always-visible group since that's the
-relevance signal being asked for, and add `MP` further right where `+/−` and `CS`
-already live. A player with `GP 1` next to a 92 rating explains itself immediately.
+**Resolved — which number.** There were two: `gamesPlayed` (matchdays attended) and
+`matchesPlayed` (individual 5-a-side matches). Shipped first as `GP` next to the rating
+with `MP` further right, then changed on review to a single `MP` column and dropped from
+sorting — it is context for the rating, not something anyone competes on.
 
 ---
 
 ## 4 · Add-player combobox + players page responsiveness
 
-> **Status: combobox done, responsiveness still todo.** `src/lib/playerName.ts` holds the
-> normalisation (`playerNameKey` / `findNameCollision`, unit-tested); `AddPlayerForm` is a
-> Mantine `Autocomplete` that warns inline and blocks submit on a normalised collision,
-> flags deactivated matches, and offers a one-click `reactivatePlayer`. Both `addPlayer`
-> and `updatePlayer` repeat the check server-side.
+> **Status: done.** `src/lib/playerName.ts` holds the normalisation (`playerNameKey` /
+> `findNameCollision`, unit-tested); `AddPlayerForm` is a Mantine `Autocomplete` that
+> warns inline and blocks submit on a normalised collision, flags deactivated matches,
+> and offers a one-click `reactivatePlayer`. Both `addPlayer` and `updatePlayer` repeat
+> the check server-side.
 >
-> Still outstanding from this item: the **responsiveness** half — search/filter over the
-> roster, active/inactive sectioning, and the narrow-single-column desktop table.
+> The responsiveness half is `PlayerDirectory`: a search box over the roster with
+> deactivated players in a collapsed section — never hidden from a search hit, since "I
+> couldn't find them so I added them again" is how the duplicates appeared.
 
 **Ask:** typing a new player's name should surface existing matches so duplicates stop
 happening; the flat list is hard to scan on both phone and desktop.
@@ -292,6 +289,10 @@ duplicates are already impossible. The real failure is **near**-duplicates: `Azh
 
 ## 5 · Session recap cards
 
+> **Status: done**, then reshaped twice on review — see [round 2](#round-2--follow-ups-from-reviewing-the-above).
+> `src/lib/sessionRecap.ts` derives it; the session page carries top-three podiums for
+> goals and assists, a clean-sheet leader card, and a table of everyone's matchday.
+
 **Ask:** sessions are a destination page — players go there to find their own matches.
 Add a small recap: most goals, most assists, most clean sheets, etc.
 
@@ -312,6 +313,15 @@ Add a small recap: most goals, most assists, most clean sheets, etc.
 ---
 
 ## 6 · Rank/rating movement, player graphs, Most Improved
+
+> **Status: done.** `src/lib/ratingHistory.ts` replays `aggregateSeason` over each prefix
+> of the season, as planned below — no snapshot table. Arrows on the leaderboard, charts
+> on the profile, Most Improved on the awards page, gated at
+> `MIN_SESSIONS_FOR_IMPROVEMENT`.
+>
+> Two things changed on review: the arrow follows whichever column the table is sorted by
+> (so every sortable metric is ranked at every point, not just the rating), and the
+> profile's eight-metric rating breakdown was cut entirely — see [round 2](#round-2--follow-ups-from-reviewing-the-above).
 
 **Ask:** arrows on the leaderboard showing change since last session; rating delta and
 graphs on the player profile; "Most Improved" as a new prize.
@@ -342,6 +352,10 @@ guarantees it will).
 
 ## 7 · Public changelog page
 
+> **Status: done.** `/changelog`, fed by the static array in `src/lib/changelog.ts`,
+> linked from the footer. Written for players rather than developers: the entries that
+> matter are the ones explaining why numbers people already knew have moved.
+
 **Ask:** a changelog page inside the web app.
 
 - Route `src/app/(public)/changelog/page.tsx`, plus `/demo` sibling only if the demo
@@ -354,3 +368,32 @@ guarantees it will).
 - Items 1 and 6 both change numbers players have already seen (ratings shift when MVP
   leaves the formula). The changelog is where that gets explained — write those entries
   as part of shipping those items, not afterwards.
+
+---
+
+## Round 2 · Follow-ups from reviewing the above
+
+Not part of the original seven — these came out of looking at the shipped work. All
+done; recorded here so the reasoning survives.
+
+| Change | Why |
+|--------|-----|
+| Movement arrow follows the active sort, in its own column beside the rank | Beside a goals ranking it was silently reporting *rating* movement, which is worse than nothing. Under the rank it made every row taller and read as part of the number. |
+| MVP off the leaderboard entirely (column, sort tab, leaders card) | A fun award that no longer feeds the rating was never something to rank a season by. It stays on the session page and season awards. |
+| `GP` → a single un-sortable `MP` column | Context for the rating, not a competition. |
+| Clean sheets are the keeper's, not the team's | Crediting all five meant an outfielder collected them at the same rate as the person stopping the shots, and at this squad size most of the pitch kept one every other match. The three Defense badges collapsed into one ladder rather than two badges testing an identical condition. **Regression:** outfielders lose Iron Wall and Shutout Specialist. |
+| Session page split into Matches / Statistics tabs | Stacked, a phone scrolled past three podiums and a stats table to reach the scores. |
+| Player profile split into Overview / Progress tabs | A 340px sticky aside held everything about a player at once; history was below the fold on a phone. |
+| Sessions index rows collapse to leader cards | The inline "top scorer" line became three lines of names once ten players tied on one goal. |
+| Player names link everywhere | Scorers, assisters, team sheets, podiums, leader cards. `RecapLeader`/`RecapPodiumPlace` carry ids; `PlayerNameList` renders the shared tied-names case. |
+| Rating breakdown cut to rating + rank + since-last-matchday | Eight weighted bars answered "why am I below him?" but buried the only figure anyone acts on. The leaderboard has every one of those columns, one tap away. |
+| Live console top bar caps its width, drops labels below ~56em | Centred with a translate, so it had no width limit and clipped its own end buttons once Sub joined. No control removed — the split-court layout has no second Undo. |
+
+### Known open
+
+- **Neither migration is applied.** See the warning at the top of this file.
+- **No prettier config.** Running `npx prettier` picks up the 80-column default against a
+  codebase written at ~100, which reformats whole files. Add a `.prettierrc` with
+  `printWidth: 100` before anyone runs it in anger.
+- **`ratingComponents` still on `PlayerSeasonStats`.** The profile stopped using it; the
+  season awards page still does, for the MVP spotlight's top-contributors line.

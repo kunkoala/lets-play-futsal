@@ -332,7 +332,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
 
   // --- Recognition ---
   // Thresholds are scaled for *session* MVPs: at most one per matchday, where
-  // the old match MVP could be won six times in a night. 5 was a reachable
+  // the old match MVP could be won six times in a matchday. 5 was a reachable
   // gold under the old award and would be a season-long grind under this one.
   {
     id: "man_of_the_match",

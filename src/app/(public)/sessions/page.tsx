@@ -5,7 +5,7 @@ import { SessionsView } from "@/components/views/SessionsView";
 
 export default async function PublicSessionsPage() {
   const activeSeason = await getActiveSeason();
-  // Lineups and goal events come along so each row can show that night's top
+  // Lineups and goal events come along so each row can show that matchday's top
   // scorer. A season is a few dozen sessions of six short matches, so pulling
   // the events is cheaper than a second round of per-session queries.
   const sessions = activeSeason

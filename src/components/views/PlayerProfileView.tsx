@@ -455,7 +455,7 @@ export function PlayerProfileView({
 /**
  * Matchday-by-matchday: which team, goals, assists, and whether they were that
  * day's MVP. Lives on the overview tab because it's the same story as the
- * headline totals, told one night at a time — the totals say what, this says
+ * headline totals, told one matchday at a time — the totals say what, this says
  * when.
  */
 function SessionHistory({

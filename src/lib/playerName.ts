@@ -2,7 +2,7 @@
  * "Is this the same person?" for player names.
  *
  * `Player.name` is `@unique`, so exact duplicates were never possible — the
- * duplicates that actually happened on launch night were near-misses:
+ * duplicates that actually happened on launch were near-misses:
  * `Azhar R.` typed again as `azhar r`, or a player who'd been deactivated
  * (and so no longer appears in the shuffle pickers) being re-added from
  * scratch. This key is what the add-player form compares against.

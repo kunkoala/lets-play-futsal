@@ -17,7 +17,7 @@ const PLAYERS: AggregatePlayer[] = [
 
 /**
  * One session: two teams of one, a single finished match, and whatever goals
- * the caller asks for. Enough to move a rating without modelling a real night.
+ * the caller asks for. Enough to move a rating without modelling a real matchday.
  */
 function session(
   id: number,

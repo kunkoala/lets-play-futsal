@@ -1,37 +1,13 @@
 import { Box, Container, Group, Stack, Text } from "@mantine/core";
 import { CHANGELOG, type ChangeKind, type ChangelogEntry } from "@/lib/changelog";
 
-const KIND_STYLE: Record<ChangeKind, { label: string; color: string; bg: string }> = {
-  added: { label: "New", color: "var(--volt)", bg: "rgba(200,255,47,.12)" },
-  changed: { label: "Changed", color: "var(--team-blue)", bg: "rgba(77,139,255,.14)" },
-  fixed: { label: "Fixed", color: "var(--team-green)", bg: "rgba(47,208,106,.14)" },
-};
+const KIND_ORDER: ChangeKind[] = ["added", "changed", "fixed"];
 
-function KindPill({ kind }: { kind: ChangeKind }) {
-  const style = KIND_STYLE[kind];
-  return (
-    <Box
-      component="span"
-      style={{
-        flexShrink: 0,
-        // Fixed width so the text of every item starts on the same line,
-        // rather than stepping in and out with the label length.
-        width: 62,
-        textAlign: "center",
-        padding: "3px 0",
-        borderRadius: 20,
-        fontWeight: 800,
-        fontSize: 10,
-        letterSpacing: "0.06em",
-        textTransform: "uppercase",
-        color: style.color,
-        background: style.bg,
-      }}
-    >
-      {style.label}
-    </Box>
-  );
-}
+const KIND_LABEL: Record<ChangeKind, { heading: string; accent: string }> = {
+  added: { heading: "New", accent: "var(--volt)" },
+  changed: { heading: "Changed", accent: "var(--team-blue)" },
+  fixed: { heading: "Fixed", accent: "var(--team-green)" },
+};
 
 /** Human date — "23 August 2026". The ISO string stays in the data. */
 function longDate(iso: string): string {
@@ -53,6 +29,71 @@ function longDate(iso: string): string {
   return `${day} ${months[month - 1]} ${year}`;
 }
 
+/**
+ * A change that moves a figure someone already knew — a shifted rating, a stat
+ * that now counts differently.
+ *
+ * Given its own block above the feature list because it is the only part of
+ * this page a player actually needs to read, and burying it as one bullet
+ * among a dozen is how it gets missed.
+ */
+function HeadsUp({ title, text }: { title: string; text: string }) {
+  return (
+    <Box
+      style={{
+        border: "1px solid var(--team-yellow)",
+        borderRadius: 12,
+        background: "rgba(255,209,71,.08)",
+        padding: "12px 14px",
+      }}
+    >
+      <Text fw={800} fz={13} style={{ color: "var(--team-yellow)" }}>
+        {title}
+      </Text>
+      <Text fz={13} mt={4} style={{ lineHeight: 1.55 }}>
+        {text}
+      </Text>
+    </Box>
+  );
+}
+
+/**
+ * One kind of change, as a headed list.
+ *
+ * Grouped rather than tagged per row: a pill beside every line made a ragged
+ * left edge and repeated the same three words a dozen times, when the reader
+ * only needs to know which group they are in.
+ */
+function KindSection({ kind, items }: { kind: ChangeKind; items: string[] }) {
+  const { heading, accent } = KIND_LABEL[kind];
+
+  return (
+    <Box>
+      <Group gap={8} align="center" mb={8}>
+        <Box
+          aria-hidden
+          style={{ width: 5, height: 5, borderRadius: 999, background: accent, flexShrink: 0 }}
+        />
+        <Text
+          fw={800}
+          fz={10}
+          style={{ letterSpacing: "0.14em", textTransform: "uppercase", color: accent }}
+        >
+          {heading}
+        </Text>
+      </Group>
+
+      <Stack gap={7} component="ul" style={{ margin: 0, paddingLeft: 17 }}>
+        {items.map((text, i) => (
+          <Text key={i} component="li" fz={14} style={{ lineHeight: 1.55 }}>
+            {text}
+          </Text>
+        ))}
+      </Stack>
+    </Box>
+  );
+}
+
 function Entry({ entry }: { entry: ChangelogEntry }) {
   return (
     <Box
@@ -61,7 +102,7 @@ function Entry({ entry }: { entry: ChangelogEntry }) {
         border: "1px solid var(--hairline)",
         borderRadius: 18,
         background: "var(--panel)",
-        padding: "20px 22px",
+        padding: "22px 24px",
       }}
     >
       <Text
@@ -76,29 +117,32 @@ function Entry({ entry }: { entry: ChangelogEntry }) {
         component="h2"
         className="display-face"
         fw={900}
-        fz={{ base: 20, sm: 24 }}
+        fz={{ base: 21, sm: 26 }}
         mt={6}
         style={{ letterSpacing: "-0.01em", lineHeight: 1.15 }}
       >
         {entry.title}
       </Text>
       {entry.summary && (
-        <Text c="dimmed" fz={14} mt={8} style={{ lineHeight: 1.55 }}>
+        <Text c="dimmed" fz={14} mt={6} style={{ lineHeight: 1.55 }}>
           {entry.summary}
         </Text>
       )}
 
-      <Stack gap={10} mt={16}>
-        {entry.items.map((item, i) => (
-          <Group key={i} gap={10} wrap="nowrap" align="flex-start">
-            <Box mt={2}>
-              <KindPill kind={item.kind} />
-            </Box>
-            <Text fz={14} style={{ lineHeight: 1.55 }}>
-              {item.text}
-            </Text>
-          </Group>
-        ))}
+      {entry.headsUp && entry.headsUp.length > 0 && (
+        <Stack gap={10} mt={18}>
+          {entry.headsUp.map((notice) => (
+            <HeadsUp key={notice.title} {...notice} />
+          ))}
+        </Stack>
+      )}
+
+      <Stack gap={20} mt={22}>
+        {KIND_ORDER.map((kind) => {
+          const items = entry.items.filter((i) => i.kind === kind).map((i) => i.text);
+          if (items.length === 0) return null;
+          return <KindSection key={kind} kind={kind} items={items} />;
+        })}
       </Stack>
     </Box>
   );
@@ -119,8 +163,8 @@ export function ChangelogView() {
             WHAT&apos;S NEW
           </Text>
           <Text c="dimmed" fz={13} mt={6} style={{ lineHeight: 1.55 }}>
-            Changes to the app, newest first. Anything that moves the numbers you already know
-            gets explained here rather than left to be noticed.
+            Changes to the app, newest first. Anything that moves a number you already know is
+            called out at the top of its entry.
           </Text>
         </div>
 

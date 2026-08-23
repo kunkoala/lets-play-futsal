@@ -9,7 +9,7 @@ const initialState: SessionFormState = undefined;
 /**
  * Surfaces once every team has played every other team this round (see
  * roundRobinComplete in matchmaker.ts) — a nudge, not an auto-reshuffle, so
- * the admin decides when the night is ready for fresh teams rather than
+ * the admin decides when the matchday is ready for fresh teams rather than
  * having it happen mid-match without warning.
  */
 export function ReshuffleBanner({ sessionId }: { sessionId: number }) {
@@ -34,7 +34,7 @@ export function ReshuffleBanner({ sessionId }: { sessionId: number }) {
             Everyone&apos;s played everyone once
           </Text>
           <Text fz={12} c="dimmed" mt={2}>
-            Reshuffle for a fresh, balanced split — tonight&apos;s results so far stay recorded.
+            Reshuffle for a fresh, balanced split — this matchday&apos;s results so far stay recorded.
           </Text>
         </Box>
         <Group gap={8} wrap="nowrap">
@@ -61,7 +61,7 @@ export function ReshuffleBanner({ sessionId }: { sessionId: number }) {
       >
         <Stack>
           <Text fz={14}>
-            This deals a brand new, balanced split from tonight&apos;s check-in. Matches already
+            This deals a brand new, balanced split from this matchday&apos;s check-in. Matches already
             played keep their results and stats — they stay attached to the teams that played
             them.
           </Text>

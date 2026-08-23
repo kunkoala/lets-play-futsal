@@ -281,8 +281,8 @@ function buildSeason() {
     }
 
     // One player of the day for the whole matchday, weighted toward whoever
-    // did the most across the night — the instinct an admin picking at the end
-    // of the evening would follow.
+    // did the most across the matchday — the instinct an admin picking at the end
+    // of the matchday would follow.
     const contribution = new Map<number, number>();
     for (const match of matches) {
       for (const e of match.goalEvents) {

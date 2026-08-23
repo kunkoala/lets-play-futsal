@@ -41,7 +41,7 @@ export type AggregateSession = {
     /**
      * Who actually played, snapshotted when the match started — not the
      * team's current roster. This is what makes a mid-session substitution a
-     * local fact instead of a retroactive edit to the whole night.
+     * local fact instead of a retroactive edit to the whole matchday.
      */
     lineup: readonly { playerId: number; teamId: number; isKeeper: boolean }[];
     goalEvents: readonly {

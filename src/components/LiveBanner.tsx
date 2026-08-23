@@ -14,7 +14,7 @@ export async function LiveBanner() {
   const matches = await getLiveMatches();
   if (matches.length === 0) return null;
 
-  // Most nights this is exactly one match; if two sessions somehow have one
+  // Usually this is exactly one match; if two sessions somehow have one
   // live at once, name the first and let the ticker page show the rest.
   const first = matches[0];
   const score = computeScore(first.goalEvents, first.homeTeamId, first.awayTeamId);

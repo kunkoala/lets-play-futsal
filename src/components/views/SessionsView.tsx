@@ -12,7 +12,7 @@ export type SessionsViewRow = {
   /** Player of the day, when one was picked. */
   mvpName?: string | null;
   /**
-   * That night's leaders, shown in the expandable panel. Every tied name is
+   * That matchday's leaders, shown in the expandable panel. Every tied name is
    * included — which is exactly why they can't go in the collapsed row: ten
    * players level on one goal is a normal Sunday and made an unreadable
    * three-line wall of names on the index.

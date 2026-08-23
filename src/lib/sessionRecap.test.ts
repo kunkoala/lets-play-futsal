@@ -25,7 +25,7 @@ function goal(teamId: number, scorer: typeof alice | null, assist: typeof alice 
 }
 
 describe("summariseSession", () => {
-  it("summarises an ordinary night", () => {
+  it("summarises an ordinary matchday", () => {
     const recap = summariseSession(
       session([
         {

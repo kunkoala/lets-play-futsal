@@ -36,12 +36,12 @@ function StatusPill({ status }: { status: string }) {
 }
 
 /**
- * One night's leader in one stat, in the same shape as the season leaderboard's
+ * One matchday's leader in one stat, in the same shape as the season leaderboard's
  * highlight cards — the season and the matchday version of "top scorer" should
  * look like the same idea.
  *
  * Names wrap rather than truncate: a ten-way tie on one goal is the normal
- * result of a short evening, and cutting it to "Andika Putra…" would hide
+ * result of a short matchday, and cutting it to "Andika Putra…" would hide
  * everyone else who earned it.
  */
 function LeaderCard({
@@ -108,7 +108,7 @@ function LeaderCard({
 }
 
 /**
- * Matchday rows, each expanding to that night's highlights.
+ * Matchday rows, each expanding to that matchday's highlights.
  *
  * The leaders used to sit inline in the collapsed row, which worked until a
  * session ended with ten players on one goal each and the row grew to three

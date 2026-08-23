@@ -113,7 +113,7 @@ export async function getPlayerProfile(playerId: number): Promise<PlayerProfile 
       const onAway = spot.teamId === match.awayTeamId;
       if (!onHome && !onAway) continue;
 
-      // Kept goal in at least one match that night — enough for the glove on
+      // Kept goal in at least one match that matchday — enough for the glove on
       // the matchday row, which isn't a per-match view.
       if (spot.isKeeper) row.keeper = true;
 
