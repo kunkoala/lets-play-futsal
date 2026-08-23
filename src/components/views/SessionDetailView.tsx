@@ -1,8 +1,16 @@
 import { Box, Container, Group, Stack, Text } from "@mantine/core";
 import { computeScore } from "@/lib/matchScore";
 import { KEEPER_GLYPH } from "@/lib/keeperPref";
+import {
+  summariseSession,
+  type RecapLeader,
+  type RecapPodiumPlace,
+} from "@/lib/sessionRecap";
 import { NavLink } from "@/components/NavLink";
+import { PlayerNameList } from "@/components/PlayerNameList";
 import { ArrowLeft } from "@/components/icons";
+import { PanelTabs } from "@/components/PanelTabs";
+import { SessionStatsTable } from "./SessionStatsTable";
 
 function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
@@ -21,8 +29,8 @@ function Eyebrow({ children }: { children: React.ReactNode }) {
 type GoalEventDetail = {
   id: number;
   teamId: number;
-  scorer: { name: string } | null;
-  assist: { name: string } | null;
+  scorer: { id: number; name: string } | null;
+  assist: { id: number; name: string } | null;
   matchSec: number | null;
 };
 
@@ -37,10 +45,12 @@ function GoalLine({
   event,
   color,
   align,
+  basePath,
 }: {
   event: GoalEventDetail;
   color: string;
   align: "left" | "right";
+  basePath: string;
 }) {
   const dot = (
     <Box
@@ -55,11 +65,38 @@ function GoalLine({
           {Math.floor(event.matchSec / 60)}&apos;{" "}
         </Text>
       )}
-      <Text span fw={600} c="var(--mantine-color-text)">
-        {event.scorer?.name ?? "Own goal"}
-      </Text>{" "}
+      {/* Every name on this page goes to that player's profile — a scoreline
+          is the most natural place to wonder how someone's season is going. */}
+      {event.scorer ? (
+        <NavLink
+          href={`${basePath}/players/${event.scorer.id}`}
+          fw={600}
+          fz={13}
+          c="var(--mantine-color-text)"
+          underline="hover"
+        >
+          {event.scorer.name}
+        </NavLink>
+      ) : (
+        <Text span fw={600} c="var(--mantine-color-text)">
+          Own goal
+        </Text>
+      )}{" "}
       ⚽
-      {event.assist ? ` · ${event.assist.name} A` : ""}
+      {event.assist && (
+        <>
+          {" · "}
+          <NavLink
+            href={`${basePath}/players/${event.assist.id}`}
+            fz={13}
+            c="dimmed"
+            underline="hover"
+          >
+            {event.assist.name}
+          </NavLink>
+          {" A"}
+        </>
+      )}
     </Text>
   );
 
@@ -81,6 +118,167 @@ function GoalLine({
 }
 
 /**
+ * One recap figure. Renders every tied name rather than a winner, which at a
+ * five-a-side sample size is usually two or three people.
+ */
+function RecapCard({
+  label,
+  leader,
+  glyph,
+  unit,
+  accent,
+  basePath,
+}: {
+  label: string;
+  leader: RecapLeader | null;
+  glyph: string;
+  unit: string;
+  accent: string;
+  basePath: string;
+}) {
+  return (
+    <Box
+      style={{
+        flex: "1 1 150px",
+        minWidth: 150,
+        border: "1px solid var(--hairline)",
+        borderRadius: 14,
+        background: "var(--panel)",
+        padding: "12px 14px",
+      }}
+    >
+      <Group gap={6} wrap="nowrap" align="center">
+        <Text fz={12} aria-hidden>
+          {glyph}
+        </Text>
+        <Text
+          fz={9}
+          fw={800}
+          c="var(--text-muted)"
+          style={{ letterSpacing: "0.12em", textTransform: "uppercase" }}
+        >
+          {label}
+        </Text>
+      </Group>
+      {leader ? (
+        <>
+          <Box mt={6}>
+            <PlayerNameList players={leader.players} basePath={basePath} fz={15} fw={800} />
+          </Box>
+          <Text className="tabular-nums" fz={12} fw={700} mt={2} style={{ color: accent }}>
+            {leader.value} {unit}
+          </Text>
+        </>
+      ) : (
+        <Text c="dimmed" fz={14} mt={6}>
+          —
+        </Text>
+      )}
+    </Box>
+  );
+}
+
+const PLACE_ACCENT = ["var(--volt)", "var(--text-muted)", "var(--team-yellow)"];
+
+/**
+ * Session podium, in the same shape as the season awards — the matchday
+ * equivalent of Top Scorer, so the same thing looks the same in both places.
+ *
+ * A place holds every name tied at its value, so two players on 3 goals are
+ * joint first and the next is second. Three *places*, not three names.
+ */
+function SessionPodium({
+  title,
+  glyph,
+  unit,
+  places,
+  accent,
+  basePath,
+}: {
+  title: string;
+  glyph: string;
+  unit: string;
+  places: RecapPodiumPlace[];
+  accent: string;
+  basePath: string;
+}) {
+  return (
+    <Box
+      style={{
+        flex: "1 1 260px",
+        minWidth: 240,
+        border: "1px solid var(--hairline)",
+        borderRadius: 16,
+        background: "var(--panel)",
+        padding: "16px 18px 8px",
+      }}
+    >
+      <Group gap={8} align="center" mb={places.length ? 12 : 4}>
+        <Text fz={15} component="span" aria-hidden>
+          {glyph}
+        </Text>
+        <Text
+          fw={700}
+          fz={11}
+          c="dimmed"
+          style={{ letterSpacing: "0.14em", textTransform: "uppercase" }}
+        >
+          {title}
+        </Text>
+      </Group>
+
+      {places.length === 0 ? (
+        <Text size="sm" c="dimmed" pb={10}>
+          Nobody yet.
+        </Text>
+      ) : (
+        <Stack gap={0}>
+          {places.map((entry, i) => (
+            <Group
+              key={entry.place}
+              justify="space-between"
+              wrap="nowrap"
+              gap="sm"
+              style={{
+                padding: "10px 0",
+                borderTop: i === 0 ? "none" : "1px solid var(--hairline)",
+              }}
+            >
+              <Group gap={11} wrap="nowrap" style={{ minWidth: 0 }}>
+                <Text
+                  className="display-face tabular-nums"
+                  fw={900}
+                  fz={17}
+                  w={18}
+                  ta="center"
+                  style={{
+                    color: i === 0 ? accent : PLACE_ACCENT[i] ?? "var(--text-muted)",
+                    flexShrink: 0,
+                  }}
+                >
+                  {entry.place}
+                </Text>
+                <Box style={{ minWidth: 0 }}>
+                  <PlayerNameList players={entry.players} basePath={basePath} fz={14} fw={600} />
+                </Box>
+              </Group>
+              <Text className="tabular-nums" fw={800} fz={15} style={{ flexShrink: 0 }}>
+                {entry.value}
+                <Text span c="dimmed" fw={500} fz={11}>
+                  {" "}
+                  {unit}
+                </Text>
+              </Text>
+            </Group>
+          ))}
+        </Stack>
+      )}
+    </Box>
+  );
+}
+
+
+/**
  * Shape shared by the Prisma query on `/sessions/[id]` and the generated demo
  * session — declared structurally so both satisfy it without conversion.
  */
@@ -88,6 +286,8 @@ export type SessionDetail = {
   date: Date;
   status?: string;
   season: { name: string };
+  /** Player of the day — one per session, or null if nobody was picked. */
+  mvpPlayer: { id: number; name: string } | null;
   teams: readonly {
     id: number;
     name: string;
@@ -105,16 +305,13 @@ export type SessionDetail = {
     awayTeamId: number;
     homeTeam: { name: string; color: string };
     awayTeam: { name: string; color: string };
-    mvpPlayer: { id: number; name: string } | null;
-    goalEvents: readonly {
-      id: number;
+    /** Who played in this match — see MatchPlayer in prisma/schema.prisma. */
+    lineup: readonly {
       teamId: number;
-      scorer: { name: string } | null;
-      assist: { name: string } | null;
-      /** Elapsed match clock when the goal went in, in seconds. Null for
-       *  goals recorded before the clock existed. */
-      matchSec: number | null;
+      isKeeper: boolean;
+      player: { id: number; name: string };
     }[];
+    goalEvents: readonly GoalEventDetail[];
   }[];
 };
 
@@ -131,6 +328,10 @@ export function SessionDetailView({
   // who scored regardless of which generation's roster they were on.
   const currentGeneration = session.teams.reduce((max, t) => Math.max(max, t.generation ?? 1), 1);
   const currentTeams = session.teams.filter((t) => (t.generation ?? 1) === currentGeneration);
+
+  // Every generation, not just the current one: the recap covers the whole
+  // matchday, including matches played before a mid-session reshuffle.
+  const recap = summariseSession(session);
 
   return (
     <Container size="md" py={{ base: 20, sm: 32 }} pb={64}>
@@ -157,8 +358,139 @@ export function SessionDetailView({
           </Text>
         </div>
 
-        <Stack gap={12} className="fs-fade-up" style={{ animationDelay: "0.05s" }}>
-          <Eyebrow>Teams</Eyebrow>
+        {session.mvpPlayer && (
+          <Box
+            className="fs-fade-up"
+            style={{
+              animationDelay: "0.03s",
+              border: "1px solid var(--volt)",
+              borderRadius: 16,
+              background: "rgba(200,255,47,.08)",
+              padding: "16px 18px",
+            }}
+          >
+            <Text
+              fz={10}
+              fw={800}
+              c="var(--text-muted)"
+              style={{ letterSpacing: "0.14em", textTransform: "uppercase" }}
+            >
+              Player of the day
+            </Text>
+            <NavLink
+              href={`${basePath}/players/${session.mvpPlayer.id}`}
+              c="inherit"
+              underline="hover"
+            >
+              <Text fw={900} fz={22} mt={2} style={{ color: "var(--volt)" }}>
+                🏆 {session.mvpPlayer.name}
+              </Text>
+            </NavLink>
+          </Box>
+        )}
+
+        <PanelTabs
+          defaultValue="matches"
+          tabs={[
+            {
+              value: "matches",
+              label: "Matches",
+              content: (
+                <MatchesPanel session={session} currentTeams={currentTeams} basePath={basePath} />
+              ),
+            },
+            {
+              value: "stats",
+              label: "Statistics",
+              content: (
+            <Stack gap="xl">
+              {recap.matchesPlayed === 0 && (
+                <Text fz={14} c="dimmed">
+                  Nothing to total up yet — stats appear once a match has finished.
+                </Text>
+              )}
+
+              {recap.matchesPlayed > 0 && (
+                <Stack gap={12}>
+                  <Group justify="space-between" align="baseline" gap={10} wrap="wrap">
+                    <Eyebrow>Matchday recap</Eyebrow>
+                    <Text className="tabular-nums" fz={12} c="dimmed" fw={600}>
+                      {recap.matchesPlayed} match{recap.matchesPlayed === 1 ? "" : "es"} ·{" "}
+                      {recap.totalGoals} goal{recap.totalGoals === 1 ? "" : "s"}
+                      {recap.biggestWin &&
+                        ` · biggest win ${recap.biggestWin.home}–${recap.biggestWin.away}`}
+                    </Text>
+                  </Group>
+                  <Group align="stretch" gap={12} wrap="wrap">
+                    <SessionPodium
+                      title="Top Scorer"
+                      glyph="⚽"
+                      unit="goals"
+                      places={recap.scorerPodium}
+                      accent="var(--volt)"
+                      basePath={basePath}
+                    />
+                    <SessionPodium
+                      title="Top Assists"
+                      glyph="🅰"
+                      unit="assists"
+                      places={recap.assistPodium}
+                      accent="var(--team-blue)"
+                      basePath={basePath}
+                    />
+                    {/* Not a podium: only one player per team per match can
+                        keep a clean sheet now, so at a typical three-team matchday
+                        a top three is most of the keepers. */}
+                    <RecapCard
+                      label="Most clean sheets"
+                      glyph={KEEPER_GLYPH}
+                      unit="matches"
+                      leader={recap.mostCleanSheets}
+                      accent="var(--team-purple)"
+                      basePath={basePath}
+                    />
+                  </Group>
+                </Stack>
+              )}
+
+              {recap.players.length > 0 && (
+                <Stack gap={12}>
+                  <Group justify="space-between" align="baseline" gap={10} wrap="wrap">
+                    <Eyebrow>Everyone&apos;s matchday</Eyebrow>
+                    <Text fz={11} c="dimmed">
+                      Sorted by goals + assists
+                    </Text>
+                  </Group>
+                  <SessionStatsTable players={recap.players} basePath={basePath} />
+                </Stack>
+              )}
+                </Stack>
+              ),
+            },
+          ]}
+        />
+      </Stack>
+    </Container>
+  );
+}
+
+/**
+ * The "what actually happened" tab: who was on which team, then every match
+ * with its scorers.
+ */
+function MatchesPanel({
+  session,
+  currentTeams,
+  basePath,
+}: {
+  session: SessionDetail;
+  currentTeams: SessionDetail["teams"];
+  basePath: string;
+}) {
+  return (
+    <Stack gap="xl">
+      <Stack gap={12}>
+        <Eyebrow>Teams</Eyebrow>
           {currentTeams.length === 0 ? (
             <Text fz={14} c="dimmed">
               Teams haven&apos;t been shuffled yet.
@@ -185,10 +517,17 @@ export function SessionDetailView({
                     {[...team.players]
                       .sort((a, b) => Number(b.isKeeper) - Number(a.isKeeper))
                       .map((tp) => (
-                        <Text key={tp.player.id} fz={13} fw={tp.isKeeper ? 700 : 500}>
+                        <NavLink
+                          key={tp.player.id}
+                          href={`${basePath}/players/${tp.player.id}`}
+                          fz={13}
+                          fw={tp.isKeeper ? 700 : 500}
+                          c="inherit"
+                          underline="hover"
+                        >
                           {tp.player.name}
                           {tp.isKeeper ? ` ${KEEPER_GLYPH}` : ""}
-                        </Text>
+                        </NavLink>
                       ))}
                   </Stack>
                 </Box>
@@ -197,9 +536,9 @@ export function SessionDetailView({
           )}
         </Stack>
 
-        <Stack gap={12} className="fs-fade-up" style={{ animationDelay: "0.1s" }}>
-          <Eyebrow>Matches</Eyebrow>
-          {session.matches.length === 0 && (
+      <Stack gap={12}>
+        <Eyebrow>Matches</Eyebrow>
+        {session.matches.length === 0 && (
             <Text fz={14} c="dimmed">
               No matches yet.
             </Text>
@@ -257,22 +596,6 @@ export function SessionDetailView({
                     ● LIVE
                   </Text>
                 )}
-                {m.mvpPlayer && (
-                  <Group gap={6} mt={10} wrap="nowrap">
-                    <Text fz={11} fw={800} style={{ color: "var(--volt)" }}>
-                      🏆 MVP
-                    </Text>
-                    <NavLink
-                      href={`${basePath}/players/${m.mvpPlayer.id}`}
-                      fz={13}
-                      fw={600}
-                      c="inherit"
-                      underline="hover"
-                    >
-                      {m.mvpPlayer.name}
-                    </NavLink>
-                  </Group>
-                )}
                 {m.goalEvents.length > 0 && (
                   <Group
                     mt={12}
@@ -287,14 +610,26 @@ export function SessionDetailView({
                       {m.goalEvents
                         .filter((e) => e.teamId === m.homeTeamId)
                         .map((e) => (
-                          <GoalLine key={e.id} event={e} color={m.homeTeam.color} align="left" />
+                          <GoalLine
+                            key={e.id}
+                            event={e}
+                            color={m.homeTeam.color}
+                            align="left"
+                            basePath={basePath}
+                          />
                         ))}
                     </Stack>
                     <Stack gap={5} style={{ flex: 1, minWidth: 0 }} align="flex-end">
                       {m.goalEvents
                         .filter((e) => e.teamId === m.awayTeamId)
                         .map((e) => (
-                          <GoalLine key={e.id} event={e} color={m.awayTeam.color} align="right" />
+                          <GoalLine
+                            key={e.id}
+                            event={e}
+                            color={m.awayTeam.color}
+                            align="right"
+                            basePath={basePath}
+                          />
                         ))}
                     </Stack>
                   </Group>
@@ -302,8 +637,7 @@ export function SessionDetailView({
               </Box>
             );
           })}
-        </Stack>
       </Stack>
-    </Container>
+    </Stack>
   );
 }

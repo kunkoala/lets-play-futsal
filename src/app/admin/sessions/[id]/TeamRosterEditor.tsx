@@ -17,22 +17,21 @@ type Team = {
  * Editable version of `TeamRosters` for the `teams_set` stage — lets the
  * admin move a rostered player to a different team, hand the glove to
  * someone else, or add a latecomer who wasn't part of the original shuffle.
- * Moving players around after this team has already played tonight changes
- * that team's derived win/loss/clean-sheet numbers for the whole session
- * (see assignPlayerToTeam's doc comment) — flagged inline rather than hidden.
+ *
+ * Edits here apply from the next match onward: each match snapshots its own
+ * lineup at kick-off (see MatchPlayer in prisma/schema.prisma), so nothing
+ * already played is affected. Changing a match that's under way is the live
+ * console's substitution, not this.
  */
 export function TeamRosterEditor({
   sessionId,
   teams,
   assignablePlayers,
-  playedTeamIds,
 }: {
   sessionId: number;
   teams: Team[];
   /** Active players not currently on any of this session's current-round teams. */
   assignablePlayers: { id: number; name: string }[];
-  /** Teams that already have at least one finished match tonight. */
-  playedTeamIds: ReadonlySet<number>;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -95,7 +94,6 @@ export function TeamRosterEditor({
           const roster = [...team.players].sort(
             (a, b) => Number(b.isKeeper) - Number(a.isKeeper),
           );
-          const played = playedTeamIds.has(team.id);
           return (
             <Box
               key={team.id}
@@ -113,11 +111,6 @@ export function TeamRosterEditor({
                 <Text fw={800} fz={14} style={{ color: team.color }}>
                   {team.name}
                 </Text>
-                {played && (
-                  <Text fz={10} fw={800} c="var(--team-yellow)" title="Already played tonight">
-                    ⚠ played
-                  </Text>
-                )}
               </Group>
               <Stack gap={6}>
                 {roster.map((tp) => (
@@ -219,8 +212,9 @@ export function TeamRosterEditor({
       )}
       <Text fz={11} c="dimmed">
         Tap the glove to make someone the keeper, × to bench them (no replacement — the team plays
-        a player short). Moving or adding someone onto a team that&apos;s already played tonight
-        counts them in toward that team&apos;s results for the whole session.
+        a player short). Changes apply from the next match on; matches already played keep the
+        lineup they were played with. To swap someone during a match, use ⇄ Sub in the live
+        console.
       </Text>
     </Stack>
   );

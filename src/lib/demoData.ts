@@ -17,6 +17,7 @@
 import { shuffleIntoTeamsWithKeepers, type KeeperPref } from "@/lib/shuffle";
 import { paletteFor } from "@/lib/teamPalette";
 import { aggregateSeason, type PlayerSeasonStats } from "@/lib/seasonAggregate";
+import { buildRatingHistory, movementsFrom, type PlayerRatingHistory } from "@/lib/ratingHistory";
 import { applyMatch, emptyTotals, withRates, type PlayerStats } from "@/lib/stats";
 import { DEFAULT_DURATION_MIN } from "@/lib/matchClock";
 import { deriveExtraSignals, type ExtraSignals } from "@/lib/achievements";
@@ -105,8 +106,13 @@ export type DemoMatch = {
   awayTeamId: number;
   homeTeam: DemoTeam;
   awayTeam: DemoTeam;
-  mvpPlayerId: number | null;
-  mvpPlayer: DemoPlayer | null;
+  /**
+   * Who was on the pitch, mirroring the real `match_player` snapshot — the
+   * joined `player` included, like the Prisma queries that feed the recap. The
+   * demo never substitutes, so this is always both rosters, but it goes through
+   * the same field so the derivations it feeds are the production ones.
+   */
+  lineup: { playerId: number; teamId: number; isKeeper: boolean; player: DemoPlayer }[];
   /** Every demo match plays the same fixed length — see DEMO_MATCH_DURATION_SEC. */
   durationSec: number;
   goalEvents: DemoGoalEvent[];
@@ -119,6 +125,8 @@ export type DemoSession = {
   status: "completed";
   season: { id: number; name: string };
   attendances: { playerId: number }[];
+  mvpPlayerId: number | null;
+  mvpPlayer: DemoPlayer | null;
   teams: DemoTeam[];
   matches: DemoMatch[];
 };
@@ -249,22 +257,6 @@ function buildSeason() {
           e.seq = index + 1;
         });
 
-        const homeGoals = goalEvents.filter((e) => e.teamId === homeTeam.id).length;
-        const awayGoals = goalEvents.length - homeGoals;
-
-        // MVP usually comes from the winning side, and usually from whoever
-        // did something in the match — same instinct an admin picking on the
-        // night would follow.
-        const winner =
-          homeGoals === awayGoals ? null : homeGoals > awayGoals ? homeTeam : awayTeam;
-        const pool = (winner ?? (rng() < 0.5 ? homeTeam : awayTeam)).players;
-        const contribution = new Map<number, number>();
-        for (const e of goalEvents) {
-          if (e.scorerId) contribution.set(e.scorerId, (contribution.get(e.scorerId) ?? 0) + 2);
-          if (e.assistId) contribution.set(e.assistId, (contribution.get(e.assistId) ?? 0) + 1);
-        }
-        const mvp = weightedPick(rng, pool, (tp) => 1 + (contribution.get(tp.playerId) ?? 0) * 3);
-
         matches.push({
           id: ++matchIdSeq,
           seq: ++seq,
@@ -274,13 +266,31 @@ function buildSeason() {
           awayTeamId: awayTeam.id,
           homeTeam,
           awayTeam,
-          mvpPlayerId: mvp.playerId,
-          mvpPlayer: mvp.player,
+          lineup: [homeTeam, awayTeam].flatMap((team) =>
+            team.players.map((tp) => ({
+              playerId: tp.playerId,
+              teamId: team.id,
+              isKeeper: tp.isKeeper,
+              player: tp.player,
+            })),
+          ),
           durationSec: DEMO_MATCH_DURATION_SEC,
           goalEvents,
         });
       }
     }
+
+    // One player of the day for the whole matchday, weighted toward whoever
+    // did the most across the matchday — the instinct an admin picking at the end
+    // of the matchday would follow.
+    const contribution = new Map<number, number>();
+    for (const match of matches) {
+      for (const e of match.goalEvents) {
+        if (e.scorerId) contribution.set(e.scorerId, (contribution.get(e.scorerId) ?? 0) + 2);
+        if (e.assistId) contribution.set(e.assistId, (contribution.get(e.assistId) ?? 0) + 1);
+      }
+    }
+    const mvp = weightedPick(rng, roster, (p) => 1 + (contribution.get(p.id) ?? 0) * 3);
 
     sessions.push({
       id: sessionId,
@@ -289,6 +299,8 @@ function buildSeason() {
       status: "completed",
       season: { id: SEASON.id, name: SEASON.name },
       attendances: roster.map((p) => ({ playerId: p.id })),
+      mvpPlayerId: mvp.id,
+      mvpPlayer: mvp,
       teams,
       matches,
     });
@@ -321,6 +333,27 @@ export function getDemoLeaderboard(): PlayerSeasonStats[] {
   return demo().standings;
 }
 
+/**
+ * Rating/rank history for the demo season, built through the same replay the
+ * real leaderboard uses. Memoised alongside the season itself — it is the one
+ * O(sessions²) derivation here, and the demo is regenerated per process.
+ */
+let cachedHistory: Map<number, PlayerRatingHistory> | null = null;
+
+export function getDemoRatingHistory(): Map<number, PlayerRatingHistory> {
+  const { sessions, players } = demo();
+  cachedHistory ??= buildRatingHistory(
+    // Oldest first: the replay only means anything in chronological order.
+    [...sessions].sort((a, b) => a.date.getTime() - b.date.getTime()),
+    [...players].sort((a, b) => a.name.localeCompare(b.name)),
+  );
+  return cachedHistory;
+}
+
+export function getDemoMovements() {
+  return movementsFrom(getDemoRatingHistory());
+}
+
 /** Newest matchday first, matching the real sessions list. */
 export function getDemoSessions(): DemoSession[] {
   return [...demo().sessions].sort((a, b) => b.date.getTime() - a.date.getTime());
@@ -342,7 +375,8 @@ export type DemoPlayerHistoryRow = {
   keeper: boolean;
   goals: number;
   assists: number;
-  mvps: number;
+  /** Whether this player was the session MVP that day. */
+  mvp: boolean;
 };
 
 export type DemoPlayerProfile = {
@@ -370,6 +404,9 @@ export function getDemoPlayerProfile(playerId: number): DemoPlayerProfile | null
     if (!session.attendances.some((a) => a.playerId === playerId)) continue;
     totals.gamesPlayed += 1;
 
+    const sessionMvp = session.mvpPlayerId === playerId;
+    if (sessionMvp) totals.mvps += 1;
+
     const team = session.teams.find((t) => t.players.some((tp) => tp.playerId === playerId)) ?? null;
     const keeper = team?.players.find((tp) => tp.playerId === playerId)?.isKeeper ?? false;
 
@@ -381,13 +418,14 @@ export function getDemoPlayerProfile(playerId: number): DemoPlayerProfile | null
       keeper,
       goals: 0,
       assists: 0,
-      mvps: 0,
+      mvp: sessionMvp,
     };
 
     for (const match of session.matches) {
-      const onHome = team !== null && match.homeTeamId === team.id;
-      const onAway = team !== null && match.awayTeamId === team.id;
-      if (!onHome && !onAway) continue;
+      // Read off the match lineup, like the real profile does.
+      const spot = match.lineup.find((m) => m.playerId === playerId);
+      if (!spot) continue;
+      const onHome = spot.teamId === match.homeTeamId;
 
       let home = 0;
       let away = 0;
@@ -400,19 +438,16 @@ export function getDemoPlayerProfile(playerId: number): DemoPlayerProfile | null
         if (e.assistId === playerId) assists += 1;
       }
 
-      const mvp = match.mvpPlayerId === playerId;
       applyMatch(totals, {
         goalsFor: onHome ? home : away,
         goalsAgainst: onHome ? away : home,
         playerGoals,
         assists,
-        keeper,
-        mvp,
+        keeper: spot.isKeeper,
       });
 
       row.goals += playerGoals;
       row.assists += assists;
-      if (mvp) row.mvps += 1;
     }
 
     history.push(row);

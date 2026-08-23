@@ -74,6 +74,8 @@ export type AchievementSession = {
     homeTeamId: number;
     awayTeamId: number;
     status: string;
+    /** Who was actually on the pitch — see MatchPlayer in prisma/schema.prisma. */
+    lineup: readonly { playerId: number; teamId: number }[];
     /** Planned match length; null on untimed/legacy matches — the
      *  last-minute check simply never fires for those. */
     durationSec: number | null;
@@ -120,16 +122,18 @@ export function deriveExtraSignals(
 
     for (const match of session.matches) {
       if (match.status !== "finished") continue;
-      const onHome = match.homeTeamId === team.id;
-      const onAway = match.awayTeamId === team.id;
-      if (!onHome && !onAway) continue;
+      // Which side they played for comes from this match's own lineup, not the
+      // team sheet — a substitute can be on a different team from the one they
+      // were shuffled into (see MatchPlayer in prisma/schema.prisma).
+      const spot = match.lineup.find((m) => m.playerId === playerId);
+      if (!spot) continue;
 
       let goalsFor = 0;
       let goalsAgainst = 0;
       let playerGoals = 0;
       let playerAssists = 0;
       for (const e of match.goalEvents) {
-        if (e.teamId === team.id) goalsFor++;
+        if (e.teamId === spot.teamId) goalsFor++;
         else goalsAgainst++;
         if (e.scorerId === playerId) {
           playerGoals++;
@@ -261,10 +265,16 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
   },
 
   // --- Defense ---
+  // A clean sheet now belongs to whoever was in goal (see PlayerTotals in
+  // stats.ts), so these three are a single ladder rather than the old
+  // "anyone on the team" / "the keeper" split, which after the change would
+  // have been two badges for exactly the same condition. Thresholds are lower
+  // than the old team-wide ones because only one player per team per match
+  // can earn one now.
   {
     id: "iron_wall",
     name: "Iron Wall",
-    description: "Keep a clean sheet.",
+    description: "Keep a clean sheet in goal.",
     category: "Defense",
     glyph: "🧱",
     ...tier("bronze", (s) => s.cleanSheets > 0),
@@ -272,18 +282,18 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
   {
     id: "the_wall",
     name: "The Wall",
-    description: "Keep a clean sheet as goalkeeper.",
+    description: "Keep 3 clean sheets in goal.",
     category: "Defense",
     glyph: "🧤",
-    ...tier("silver", (s) => s.keeperCleanSheets > 0),
+    ...tier("silver", (s) => s.cleanSheets >= 3),
   },
   {
     id: "shutout_specialist",
     name: "Shutout Specialist",
-    description: "Keep 5+ clean sheets in a single season.",
+    description: "Keep 6+ clean sheets in goal.",
     category: "Defense",
     glyph: "🛡️",
-    ...tier("gold", (s) => s.cleanSheets >= 5),
+    ...tier("gold", (s) => s.cleanSheets >= 6),
   },
 
   // --- Team results ---
@@ -321,10 +331,13 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
   },
 
   // --- Recognition ---
+  // Thresholds are scaled for *session* MVPs: at most one per matchday, where
+  // the old match MVP could be won six times in a matchday. 5 was a reachable
+  // gold under the old award and would be a season-long grind under this one.
   {
     id: "man_of_the_match",
-    name: "Man of the Match",
-    description: "Win your first MVP.",
+    name: "Player of the Day",
+    description: "Win your first session MVP.",
     category: "Recognition",
     glyph: "🏆",
     ...tier("bronze", (s) => s.mvps > 0),
@@ -332,18 +345,18 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
   {
     id: "crowd_favorite",
     name: "Crowd Favorite",
-    description: "Win 5 MVPs.",
+    description: "Win 3 session MVPs.",
     category: "Recognition",
     glyph: "📣",
-    ...tier("gold", (s) => s.mvps >= 5),
+    ...tier("gold", (s) => s.mvps >= 3),
   },
   {
     id: "talk_of_the_season",
     name: "Talk of the Season",
-    description: "Win 3 MVPs in a single season.",
+    description: "Win 2 session MVPs in a single season.",
     category: "Recognition",
     glyph: "🗣️",
-    ...tier("silver", (s) => s.mvps >= 3),
+    ...tier("silver", (s) => s.mvps >= 2),
   },
 
   // --- Commitment ---

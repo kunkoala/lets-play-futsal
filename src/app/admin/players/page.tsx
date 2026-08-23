@@ -1,27 +1,10 @@
-import { Box, Container, Group, Stack, Table, TableTbody, TableTd, TableTh, TableThead, TableTr, Text } from "@mantine/core";
+import { Box, Container, Group, Stack, Text } from "@mantine/core";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NavLink } from "@/components/NavLink";
 import { ArrowLeft } from "@/components/icons";
 import { AddPlayerForm } from "./AddPlayerForm";
-import { PlayerCard, PlayerRow } from "./PlayerRow";
-
-function Th({ children, align = "left" }: { children?: React.ReactNode; align?: "left" | "center" | "right" }) {
-  return (
-    <TableTh
-      style={{
-        textAlign: align,
-        fontWeight: 700,
-        fontSize: 10,
-        letterSpacing: "0.12em",
-        textTransform: "uppercase",
-        color: "var(--text-muted)",
-      }}
-    >
-      {children}
-    </TableTh>
-  );
-}
+import { PlayerDirectory } from "./PlayerDirectory";
 
 export default async function PlayersPage() {
   await requireAdmin(); // convention: see src/lib/auth.ts's requireAdmin() doc comment
@@ -58,58 +41,19 @@ export default async function PlayersPage() {
             padding: "18px 20px",
           }}
         >
-          <AddPlayerForm key={players.length} />
+          <AddPlayerForm
+            key={players.length}
+            players={players.map((p) => ({ id: p.id, name: p.name, isActive: p.isActive }))}
+          />
         </Box>
 
-        <Box
-          style={{
-            border: "1px solid var(--hairline)",
-            borderRadius: 16,
-            overflow: "hidden",
-            background: "var(--panel)",
-          }}
-        >
-          {/* Name input + position Select + two buttons need ~700px before the
-              columns start colliding, so the table is desktop-only and phones
-              get the stacked card list below instead of a sideways scroll. */}
-          <Box visibleFrom="sm" style={{ overflowX: "auto" }}>
-            <Table verticalSpacing={10} horizontalSpacing="lg" w="100%">
-              <TableThead>
-                <TableTr style={{ borderBottom: "1px solid var(--hairline)" }}>
-                  <Th>Name</Th>
-                  <Th>Position</Th>
-                  <Th>Status</Th>
-                  <Th align="right">Actions</Th>
-                </TableTr>
-              </TableThead>
-              <TableTbody>
-                {players.map((player) => (
-                  <PlayerRow key={player.id} player={player} />
-                ))}
-                {players.length === 0 && (
-                  <TableTr>
-                    <TableTd colSpan={4}>
-                      <Text c="dimmed" fz={14} py="sm">
-                        No players yet — add the first one above.
-                      </Text>
-                    </TableTd>
-                  </TableTr>
-                )}
-              </TableTbody>
-            </Table>
-          </Box>
-
-          <Box hiddenFrom="sm">
-            {players.map((player) => (
-              <PlayerCard key={player.id} player={player} />
-            ))}
-            {players.length === 0 && (
-              <Text c="dimmed" fz={14} p="md">
-                No players yet — add the first one above.
-              </Text>
-            )}
-          </Box>
-        </Box>
+        {players.length === 0 ? (
+          <Text c="dimmed" fz={14}>
+            No players yet — add the first one above.
+          </Text>
+        ) : (
+          <PlayerDirectory players={players} />
+        )}
       </Stack>
     </Container>
   );

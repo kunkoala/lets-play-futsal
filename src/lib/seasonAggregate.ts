@@ -31,16 +31,19 @@ export type AggregatePlayer = {
 
 export type AggregateSession = {
   attendances: readonly { playerId: number }[];
-  teams: readonly {
-    id: number;
-    players: readonly { playerId: number; isKeeper: boolean }[];
-  }[];
+  /** Player of the day, or null if nobody was picked. */
+  mvpPlayerId: number | null;
   /** Ordered by `seq` ascending. */
   matches: readonly {
     homeTeamId: number;
     awayTeamId: number;
     status: string;
-    mvpPlayerId: number | null;
+    /**
+     * Who actually played, snapshotted when the match started — not the
+     * team's current roster. This is what makes a mid-session substitution a
+     * local fact instead of a retroactive edit to the whole matchday.
+     */
+    lineup: readonly { playerId: number; teamId: number; isKeeper: boolean }[];
     goalEvents: readonly {
       teamId: number;
       scorerId: number | null;
@@ -70,13 +73,14 @@ export function aggregateSeason(
       if (t) t.gamesPlayed += 1;
     }
 
-    const rosters = new Map<number, readonly { playerId: number; isKeeper: boolean }[]>();
-    for (const team of session.teams) rosters.set(team.id, team.players);
+    // Once per matchday, not per match — so it can't ride along on applyMatch.
+    if (session.mvpPlayerId !== null) {
+      const t = totals.get(session.mvpPlayerId);
+      if (t) t.mvps += 1;
+    }
 
     for (const match of session.matches) {
       if (match.status !== "finished") continue;
-      const homeRoster = rosters.get(match.homeTeamId) ?? [];
-      const awayRoster = rosters.get(match.awayTeamId) ?? [];
 
       let home = 0;
       let away = 0;
@@ -89,22 +93,22 @@ export function aggregateSeason(
         if (e.assistId) assists.set(e.assistId, (assists.get(e.assistId) ?? 0) + 1);
       }
 
-      for (const [roster, goalsFor, goalsAgainst] of [
-        [homeRoster, home, away],
-        [awayRoster, away, home],
-      ] as const) {
-        for (const member of roster) {
-          const t = totals.get(member.playerId);
-          if (!t) continue;
-          applyMatch(t, {
-            goalsFor,
-            goalsAgainst,
-            playerGoals: goals.get(member.playerId) ?? 0,
-            assists: assists.get(member.playerId) ?? 0,
-            keeper: member.isKeeper,
-            mvp: match.mvpPlayerId === member.playerId,
-          });
-        }
+      for (const member of match.lineup) {
+        const t = totals.get(member.playerId);
+        if (!t) continue;
+        // A lineup row pointing at neither side would be a data bug; skipping
+        // is better than crediting them with the home team's result.
+        const onHome = member.teamId === match.homeTeamId;
+        const onAway = member.teamId === match.awayTeamId;
+        if (!onHome && !onAway) continue;
+
+        applyMatch(t, {
+          goalsFor: onHome ? home : away,
+          goalsAgainst: onHome ? away : home,
+          playerGoals: goals.get(member.playerId) ?? 0,
+          assists: assists.get(member.playerId) ?? 0,
+          keeper: member.isKeeper,
+        });
       }
     }
   }

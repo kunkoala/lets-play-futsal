@@ -165,23 +165,6 @@ body {
 }
 
 /* Profile: card left, history right on desktop; stacked on phone/iPad portrait. */
-.profile-grid {
-  display: grid;
-  gap: 16px;
-  grid-template-columns: 1fr;
-}
-@media (min-width: 62em) {
-  .profile-grid {
-    grid-template-columns: 340px 1fr;
-    gap: 24px;
-    align-items: start;
-  }
-  .profile-grid > .profile-aside {
-    position: sticky;
-    top: 84px;
-  }
-}
-
 /* ---------------------------------------------------------------------
  * Live console — split court. Full-bleed, two team-colored halves. iPad-first:
  * halves stack in portrait, sit side-by-side in landscape. Tap targets ≥70px.
@@ -303,6 +286,21 @@ body {
  * Both layouts render; this hides whichever one does not apply, so all the
  * state (scores, pending assist, cooldowns) stays in one component.
  * ------------------------------------------------------------------- */
+/* The split-court top bar is centred with a translate, so it has no natural
+ * limit and simply overflows both edges once its contents outgrow the screen —
+ * which they did as soon as Sub joined Undo, Feed and End match. A landscape
+ * phone (~844px) still gets this layout, so the bar has to survive it: cap the
+ * width, and below ~56em drop the word beside each glyph rather than dropping
+ * a control. There is no second Undo in this layout to fall back on. */
+.lc-toppill {
+  max-width: calc(100% - 16px);
+}
+@media (max-width: 55.99em) {
+  .lc-pill-label {
+    display: none;
+  }
+}
+
 .lc-phone {
   display: none;
 }

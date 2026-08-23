@@ -23,6 +23,7 @@ import {
   recordGoal,
   recordOwnGoal,
   resumeMatch,
+  substitutePlayer,
   undoLastEvent,
 } from "./actions";
 
@@ -53,6 +54,7 @@ export function LiveConsole({
   events,
   isFinished,
   matchLabel,
+  available,
   clock,
   serverNow,
 }: {
@@ -62,6 +64,8 @@ export function LiveConsole({
   awayTeam: TeamInfo;
   events: GoalEventT[];
   isFinished: boolean;
+  /** Attendees not currently on the pitch — who a substitution can bring on. */
+  available: { id: number; name: string }[];
   /** Eyebrow under the phone scoreboard, e.g. "Matchday 25 Jul · Match 4". */
   matchLabel: string;
   clock: MatchClock;
@@ -79,8 +83,11 @@ export function LiveConsole({
     { eventId: number; teamId: number; scorerName: string } | null
   >(null);
   const [confirmEnd, setConfirmEnd] = useState(false);
-  const [mvpId, setMvpId] = useState<number | null>(null);
   const [showFeed, setShowFeed] = useState(false);
+  const [showSubs, setShowSubs] = useState(false);
+  // Half a substitution: who's coming off, waiting on who comes on.
+  const [subOff, setSubOff] = useState<Player | null>(null);
+  const [subError, setSubError] = useState<string | null>(null);
   const [cooldownIds, setCooldownIds] = useState<Set<number>>(new Set());
   // Phone layout only: which roster is tappable, and whether the list area
   // shows that roster or the event feed.
@@ -229,14 +236,31 @@ export function LiveConsole({
     });
   }
 
+  function handleSub(onPlayerId: number) {
+    if (!subOff) return;
+    const offId = subOff.id;
+    setSubError(null);
+    startTransition(async () => {
+      const fd = new FormData();
+      fd.set("matchId", String(matchId));
+      fd.set("offPlayerId", String(offId));
+      fd.set("onPlayerId", String(onPlayerId));
+      const result = await substitutePlayer(undefined, fd);
+      if (result?.error) {
+        setSubError(result.error);
+        return;
+      }
+      setSubOff(null);
+      setShowSubs(false);
+      router.refresh();
+    });
+  }
+
   function handleEndMatch() {
     setConfirmEnd(false);
     startTransition(async () => {
       const fd = new FormData();
       fd.set("matchId", String(matchId));
-      // Omitted entirely when nobody was picked — the admin can still set an
-      // MVP later from the session page.
-      if (mvpId !== null) fd.set("mvpPlayerId", String(mvpId));
       await endMatch(undefined, fd); // redirects back to the session page on success
     });
   }
@@ -342,15 +366,34 @@ export function LiveConsole({
           {clockText}
         </span>
         <PillDivider />
-        <PillButton onClick={handleUndo} disabled={optimisticEvents.length === 0 || isFinished}>
-          ↺ Undo
+        {/* Glyph plus a label that CSS drops on a narrow screen — see
+            .lc-pill-label. Landscape on a phone still gets the split court, and
+            with six controls the row outgrew the viewport and clipped its own
+            end buttons. Nothing is removed: this bar is the only Undo the
+            split-court layout has (the phone layout's lives in its bottom bar),
+            so hiding the words is the right thing to lose, not the button. */}
+        <PillButton
+          onClick={handleUndo}
+          disabled={optimisticEvents.length === 0 || isFinished}
+          title="Undo last event"
+        >
+          ↺<span className="lc-pill-label"> Undo</span>
         </PillButton>
-        <PillButton onClick={() => setShowFeed(true)}>Feed</PillButton>
+        <PillButton onClick={() => setShowFeed(true)} title="Event feed">
+          ☰<span className="lc-pill-label"> Feed</span>
+        </PillButton>
+        <PillButton
+          onClick={() => setShowSubs(true)}
+          disabled={available.length === 0}
+          title="Substitute a player"
+        >
+          ⇄<span className="lc-pill-label"> Sub</span>
+        </PillButton>
         {!isFinished && (
           <>
             <PillDivider />
             <PillButton onClick={() => setConfirmEnd(true)} accent pulse={fullTime}>
-              End match
+              End<span className="lc-pill-label"> match</span>
             </PillButton>
           </>
         )}
@@ -441,6 +484,84 @@ export function LiveConsole({
       )}
 
       <Modal
+        opened={showSubs}
+        onClose={() => {
+          setShowSubs(false);
+          setSubOff(null);
+          setSubError(null);
+        }}
+        title="Substitution"
+        centered
+        zIndex={300}
+      >
+        <Stack gap="sm">
+          <Text fz={13} c="dimmed">
+            {subOff
+              ? `Who comes on for ${subOff.name}?`
+              : "Who's coming off? This only changes this match — goals already scored stay."}
+          </Text>
+
+          {subError && (
+            <Text fz={13} fw={600} c="red">
+              {subError}
+            </Text>
+          )}
+
+          {subOff ? (
+            <>
+              <Group gap={6}>
+                {available.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    className="lc-chip"
+                    disabled={isPending}
+                    onClick={() => handleSub(p.id)}
+                  >
+                    {p.name}
+                  </button>
+                ))}
+              </Group>
+              <Group justify="flex-end">
+                <Button variant="default" onClick={() => setSubOff(null)}>
+                  Back
+                </Button>
+              </Group>
+            </>
+          ) : (
+            [homeTeam, awayTeam].map((team) => (
+              <Stack key={team.id} gap={6}>
+                <Text fw={800} fz={12} style={{ color: team.color }}>
+                  {team.name}
+                </Text>
+                <Group gap={6}>
+                  {team.players.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      className="lc-chip"
+                      style={{ borderColor: team.color }}
+                      onClick={() => {
+                        setSubError(null);
+                        setSubOff(p);
+                      }}
+                    >
+                      {p.isKeeper ? `${KEEPER_GLYPH} ` : ""}
+                      {p.name}
+                    </button>
+                  ))}
+                </Group>
+              </Stack>
+            ))
+          )}
+
+          <Text fz={11} c="dimmed">
+            Subbing off the keeper hands the glove to whoever comes on.
+          </Text>
+        </Stack>
+      </Modal>
+
+      <Modal
         opened={confirmEnd}
         onClose={() => setConfirmEnd(false)}
         title="End match?"
@@ -459,86 +580,22 @@ export function LiveConsole({
             </Text>
           </Text>
 
-          <MvpPicker
-            homeTeam={homeTeam}
-            awayTeam={awayTeam}
-            goalsFor={goalsFor}
-            selectedId={mvpId}
-            onSelect={(id) => setMvpId((current) => (current === id ? null : id))}
-          />
+          <Text fz={12} c="dimmed">
+            There&apos;s no man of the match any more — pick one player of the day for the
+            whole session from the session page when you&apos;re done.
+          </Text>
 
           <Group justify="flex-end">
             <Button variant="default" onClick={() => setConfirmEnd(false)}>
               Cancel
             </Button>
             <Button loading={isPending} onClick={handleEndMatch}>
-              {mvpId === null ? "End match" : `End match · MVP ${playersById.get(mvpId)?.name}`}
+              End match
             </Button>
           </Group>
         </Stack>
       </Modal>
     </div>
-  );
-}
-
-/**
- * Man of the match: one player across both rosters, tapped on the way out.
- * Optional by design — skipping just leaves the match without an MVP, and it
- * can be set later from the session page. Each chip carries its team color and
- * that player's goal count, which is usually all the reminder needed.
- */
-function MvpPicker({
-  homeTeam,
-  awayTeam,
-  goalsFor,
-  selectedId,
-  onSelect,
-}: {
-  homeTeam: TeamInfo;
-  awayTeam: TeamInfo;
-  goalsFor: (playerId: number) => number;
-  selectedId: number | null;
-  onSelect: (playerId: number) => void;
-}) {
-  return (
-    <Stack gap={8}>
-      <Text fw={700} fz={11} c="dimmed" style={{ letterSpacing: "0.12em" }}>
-        MAN OF THE MATCH — OPTIONAL
-      </Text>
-      {[homeTeam, awayTeam].map((team) => (
-        <Group key={team.id} gap={6}>
-          {team.players.map((p) => {
-            const selected = p.id === selectedId;
-            const goals = goalsFor(p.id);
-            return (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => onSelect(p.id)}
-                aria-pressed={selected}
-                style={{
-                  border: `1px solid ${selected ? "var(--volt)" : team.color}`,
-                  background: selected ? "var(--volt)" : "transparent",
-                  color: selected ? "#0D0F14" : "var(--text)",
-                  borderRadius: 20,
-                  padding: "6px 12px",
-                  fontSize: 13,
-                  fontWeight: selected ? 800 : 600,
-                  cursor: "pointer",
-                }}
-              >
-                {p.isKeeper ? `${KEEPER_GLYPH} ` : ""}
-                {p.name}
-                {goals > 0 ? ` ${goals}⚽` : ""}
-              </button>
-            );
-          })}
-        </Group>
-      ))}
-      <Text fz={11} c="dimmed">
-        Tap again to clear. You can also set this later from the session page.
-      </Text>
-    </Stack>
   );
 }
 
@@ -936,17 +993,22 @@ function PillButton({
   disabled,
   accent,
   pulse,
+  title,
 }: {
   children: React.ReactNode;
   onClick: () => void;
   disabled?: boolean;
   accent?: boolean;
   pulse?: boolean;
+  /** Doubles as the accessible name once the label is hidden on a narrow screen. */
+  title?: string;
 }) {
   return (
     <button
       onClick={onClick}
       disabled={disabled}
+      title={title}
+      aria-label={title}
       className={pulse ? "lc-pulse" : undefined}
       style={{
         border: "none",

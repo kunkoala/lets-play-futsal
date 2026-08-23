@@ -12,6 +12,7 @@ import { TeamRosters } from "./TeamRosters";
 import { TeamRosterEditor } from "./TeamRosterEditor";
 import { NextMatchCard } from "./NextMatchCard";
 import { MatchesSoFar } from "./MatchesSoFar";
+import { SessionMvpControl } from "./SessionMvpControl";
 import { CompleteSessionButton, ReopenSessionButton } from "./CompleteSessionButton";
 import { ReshuffleBanner } from "./ReshuffleBanner";
 
@@ -67,12 +68,13 @@ export default async function SessionDetailPage({
     include: {
       season: true,
       attendances: true,
+      mvpPlayer: true,
       teams: {
         include: { players: { include: { player: true } } },
         orderBy: { id: "asc" },
       },
       matches: {
-        include: { homeTeam: true, awayTeam: true, goalEvents: true, mvpPlayer: true },
+        include: { homeTeam: true, awayTeam: true, goalEvents: true },
         orderBy: { seq: "asc" },
       },
     },
@@ -91,8 +93,7 @@ export default async function SessionDetailPage({
 
   // A reshuffle (see reshuffleTeams) adds a new generation of Team rows
   // rather than replacing the old ones, so roster/next-match UI only shows
-  // the latest round — MatchesSoFar still gets every team (all generations),
-  // since its MVP-candidate lookup is keyed by team id.
+  // the latest round.
   const currentGeneration = session.teams.reduce((max, t) => Math.max(max, t.generation), 1);
   const currentTeams = session.teams.filter((t) => t.generation === currentGeneration);
   const finishedMatches = session.matches
@@ -106,8 +107,19 @@ export default async function SessionDetailPage({
     );
   const rosteredIds = new Set(currentTeams.flatMap((t) => t.players.map((tp) => tp.player.id)));
   const assignablePlayers = activePlayers.filter((p) => !rosteredIds.has(p.id));
-  const playedTeamIds = new Set(finishedMatches.flatMap((m) => [m.home, m.away]));
   const status = STATUS_STYLE[session.status] ?? STATUS_STYLE.draft;
+
+  // Player-of-the-day candidates: everyone who turned up, dotted with their
+  // current team's colour where they have one (a latecomer who never got
+  // rostered is still eligible — they were here).
+  const teamColorByPlayer = new Map(
+    currentTeams.flatMap((t) => t.players.map((tp) => [tp.player.id, t.color] as const)),
+  );
+  const mvpCandidates = attending.map((p) => ({
+    id: p.id,
+    name: p.name,
+    teamColor: teamColorByPlayer.get(p.id) ?? null,
+  }));
 
   return (
     <Container fluid py={{ base: 20, sm: 32 }} pb={64} px={{ base: 16, sm: 28 }}>
@@ -199,19 +211,19 @@ export default async function SessionDetailPage({
                 sessionId={session.id}
                 teams={currentTeams}
                 assignablePlayers={assignablePlayers}
-                playedTeamIds={playedTeamIds}
               />
             </Panel>
             <Panel>
               <Eyebrow>Matches so far</Eyebrow>
               <Box mt={12}>
-                <MatchesSoFar
-                  sessionId={session.id}
-                  matches={session.matches}
-                  rosters={session.teams}
-                />
+                <MatchesSoFar sessionId={session.id} matches={session.matches} />
               </Box>
             </Panel>
+            <SessionMvpControl
+              sessionId={session.id}
+              mvp={session.mvpPlayer}
+              candidates={mvpCandidates}
+            />
             <CompleteSessionButton sessionId={session.id} disabled={Boolean(inProgressMatch)} />
           </Stack>
 
@@ -250,13 +262,14 @@ export default async function SessionDetailPage({
           <Panel>
             <Eyebrow>Matches</Eyebrow>
             <Box mt={12}>
-              <MatchesSoFar
-                sessionId={session.id}
-                matches={session.matches}
-                rosters={session.teams}
-              />
+              <MatchesSoFar sessionId={session.id} matches={session.matches} />
             </Box>
           </Panel>
+          <SessionMvpControl
+            sessionId={session.id}
+            mvp={session.mvpPlayer}
+            candidates={mvpCandidates}
+          />
           <ReopenSessionButton sessionId={session.id} />
         </Stack>
       )}

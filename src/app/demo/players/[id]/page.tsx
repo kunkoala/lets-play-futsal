@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getDemoLeaderboard, getDemoPlayerProfile } from "@/lib/demoData";
+import { getDemoLeaderboard, getDemoPlayerProfile, getDemoRatingHistory } from "@/lib/demoData";
 import { evaluateAchievements } from "@/lib/achievements";
 import { PlayerProfileView } from "@/components/views/PlayerProfileView";
 
@@ -37,12 +37,12 @@ export default async function DemoPlayerProfilePage({
           seasonId: 0,
         })),
         seasonAwards: [],
+        progress: getDemoRatingHistory().get(id)?.points ?? [],
         achievements,
         rating:
           rankIndex >= 0
             ? {
-                rating: ranked[rankIndex].rating,
-                components: ranked[rankIndex].ratingComponents,
+                rating: ranked[rankIndex].rating,
                 rank: rankIndex + 1,
                 fieldSize: ranked.length,
               }

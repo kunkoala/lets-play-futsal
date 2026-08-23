@@ -26,9 +26,9 @@ datasource db {
 //   table. All of that is derived from `GoalEvent` rows at query time. The
 //   extended stats (G+A, per-match rates, points, form, clean sheets, +/-,
 //   braces/hat-tricks, MVP counts) are derivations too — see src/lib/stats.ts.
-//   `Match.mvpPlayerId` and `TeamPlayer.isKeeper` are the exceptions that must
-//   be stored: they record human decisions (who was picked, who went in goal),
-//   which no amount of goal-event arithmetic can recover.
+//   `Session.mvpPlayerId` and `TeamPlayer.isKeeper` are the exceptions that
+//   must be stored: they record human decisions (who was picked, who went in
+//   goal), which no amount of goal-event arithmetic can recover.
 // - Referential actions: rows that only make sense as children of a
 //   session/team/match (Attendance, Team, TeamPlayer, Match, GoalEvent) use
 //   onDelete: Cascade on that parent link — including Match.homeTeam/
@@ -105,27 +105,40 @@ model Player {
 
   attendances     Attendance[]
   teamMemberships TeamPlayer[]
-  goalsScored     GoalEvent[]  @relation("GoalEventScorer")
-  assistsGiven    GoalEvent[]  @relation("GoalEventAssist")
+  matchLineups    MatchPlayer[]
+  goalsScored     GoalEvent[]   @relation("GoalEventScorer")
+  assistsGiven    GoalEvent[]   @relation("GoalEventAssist")
   awards          Award[]
-  matchMvps       Match[]      @relation("MatchMvp")
+  sessionMvps     Session[]     @relation("SessionMvp")
 
   @@map("player")
 }
 
 model Session {
-  id       Int           @id @default(autoincrement())
-  seasonId Int           @map("season_id")
-  date     DateTime      @db.Date
-  notes    String?
-  status   SessionStatus @default(draft)
+  id          Int           @id @default(autoincrement())
+  seasonId    Int           @map("season_id")
+  date        DateTime      @db.Date
+  notes       String?
+  status      SessionStatus @default(draft)
+  // Player of the day, picked by the admin from everyone who turned up, once
+  // per matchday rather than once per match. Optional — a session may finish
+  // without a pick, and the pick stays editable afterwards.
+  //
+  // Deliberately has no effect on anything derived: `rating.ts` does not read
+  // it, so this is a fun award that cannot be farmed into a better rating.
+  // Left at the Prisma default for an optional FK (SET NULL), like
+  // GoalEvent.scorer/assist. Distinct from `Award`/`AwardType.mvp`, which is
+  // the *season* MVP.
+  mvpPlayerId Int?          @map("mvp_player_id")
 
   season      Season       @relation(fields: [seasonId], references: [id])
+  mvpPlayer   Player?      @relation("SessionMvp", fields: [mvpPlayerId], references: [id])
   attendances Attendance[]
   teams       Team[]
   matches     Match[]
 
   @@index([seasonId])
+  @@index([mvpPlayerId])
   @@map("session")
 }
 
@@ -141,10 +154,10 @@ model Attendance {
 }
 
 model Team {
-  id        Int    @id @default(autoincrement())
-  sessionId Int    @map("session_id")
-  name      String
-  color     String
+  id         Int    @id @default(autoincrement())
+  sessionId  Int    @map("session_id")
+  name       String
+  color      String
   // Which shuffle round these teams belong to, within this one session.
   // Reshuffling mid-session (see reshuffleTeams in admin/sessions/actions.ts)
   // creates a NEW generation of Team rows rather than deleting the old ones —
@@ -157,22 +170,30 @@ model Team {
   // every generation a match was actually played under.
   generation Int    @default(1)
 
-  session     Session      @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  players     TeamPlayer[]
-  homeMatches Match[]      @relation("MatchHomeTeam")
-  awayMatches Match[]      @relation("MatchAwayTeam")
-  goalEvents  GoalEvent[]
+  session      Session       @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  players      TeamPlayer[]
+  matchLineups MatchPlayer[]
+  homeMatches  Match[]       @relation("MatchHomeTeam")
+  awayMatches  Match[]       @relation("MatchAwayTeam")
+  goalEvents   GoalEvent[]
 
   @@index([sessionId])
   @@map("team")
 }
 
+/// Who the shuffle put on this team — the team sheet, and the default lineup
+/// every match of theirs starts from.
+///
+/// Deliberately NOT the source of any stat. It used to be: every derivation
+/// read `Team.players` at query time, which meant substituting someone
+/// mid-session retroactively rewrote every match that team had already
+/// played. `MatchPlayer` records who was actually on the pitch for a given
+/// match; this stays the roster you edit between games.
 model TeamPlayer {
   teamId   Int     @map("team_id")
   playerId Int     @map("player_id")
-  // Set by the shuffle, not by the player's own preference: it records who
-  // actually went in goal for this team on this day, which is what the
-  // clean-sheet / goals-conceded stats are derived from.
+  // Set by the shuffle, not by the player's own preference: it records who is
+  // expected to go in goal for this team, and seeds MatchPlayer.isKeeper.
   isKeeper Boolean @default(false) @map("is_keeper")
 
   team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
@@ -182,15 +203,49 @@ model TeamPlayer {
   @@map("team_player")
 }
 
+/// Who actually played in one match, snapshotted when the match starts.
+///
+/// This exists so a substitution is a local fact. Before it, stats came from
+/// the session-scoped team roster, so dropping a tired player out after match
+/// 3 also removed them from matches 1-3 — their goals stayed (goal events
+/// point at players directly) but their appearances, results, clean sheets and
+/// +/- all silently changed. Now the lineup is copied from `TeamPlayer` at
+/// kick-off and never revisited, so editing the roster afterwards only affects
+/// matches that haven't started.
+///
+/// `isKeeper` is copied per match too: whoever went in goal for *this* game is
+/// what the clean-sheet and goals-conceded numbers need, and that can change
+/// between matches on the same matchday.
+///
+/// Cascades mirror GoalEvent for the same reason documented there — Team is a
+/// compositional child of Session, and a RESTRICT here would race the sibling
+/// Session -> Team cascade when a session is deleted.
+model MatchPlayer {
+  matchId  Int     @map("match_id")
+  playerId Int     @map("player_id")
+  teamId   Int     @map("team_id")
+  isKeeper Boolean @default(false) @map("is_keeper")
+
+  match  Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  player Player @relation(fields: [playerId], references: [id])
+
+  @@id([matchId, playerId])
+  @@index([matchId])
+  @@index([teamId])
+  @@index([playerId])
+  @@map("match_player")
+}
+
 model Match {
-  id         Int         @id @default(autoincrement())
-  sessionId  Int         @map("session_id")
-  seq        Int
-  homeTeamId Int         @map("home_team_id")
-  awayTeamId Int         @map("away_team_id")
-  status     MatchStatus @default(in_progress)
-  startedAt  DateTime    @default(now()) @map("started_at") @db.Timestamptz
-  endedAt    DateTime?   @map("ended_at") @db.Timestamptz
+  id             Int         @id @default(autoincrement())
+  sessionId      Int         @map("session_id")
+  seq            Int
+  homeTeamId     Int         @map("home_team_id")
+  awayTeamId     Int         @map("away_team_id")
+  status         MatchStatus @default(in_progress)
+  startedAt      DateTime    @default(now()) @map("started_at") @db.Timestamptz
+  endedAt        DateTime?   @map("ended_at") @db.Timestamptz
   // --- Match clock (see src/lib/matchClock.ts for the arithmetic) ---
   // The clock is derived from these timestamps rather than counted in the
   // browser, so it survives a reload, a sleeping iPad, or a second admin
@@ -199,36 +254,31 @@ model Match {
   // Planned length. Nullable because matches recorded before the timer
   // existed have no agreed duration — those count up instead of down rather
   // than being retro-fitted one.
-  durationSec    Int?      @map("duration_sec")
+  durationSec    Int?        @map("duration_sec")
   // Set while the clock is stopped for the water break, null while running.
-  pausedAt       DateTime? @map("paused_at") @db.Timestamptz
+  pausedAt       DateTime?   @map("paused_at") @db.Timestamptz
   // Seconds already spent paused, excluded from elapsed time so the second
   // half still gets its full share.
-  pausedTotalSec Int       @default(0) @map("paused_total_sec")
+  pausedTotalSec Int         @default(0) @map("paused_total_sec")
   // Stamped when the halfway water break is taken, so resuming play doesn't
   // immediately trip the break again.
-  breakTakenAt   DateTime? @map("break_taken_at") @db.Timestamptz
-  // Man of the match, chosen from either roster when the admin ends the
-  // match. Optional — a match may finish without anyone being picked. Left at
-  // the Prisma default for an optional FK (SET NULL), like scorer/assist.
-  mvpPlayerId Int?       @map("mvp_player_id")
+  breakTakenAt   DateTime?   @map("break_taken_at") @db.Timestamptz
 
-  session    Session     @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  mvpPlayer  Player?     @relation("MatchMvp", fields: [mvpPlayerId], references: [id])
+  session    Session       @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   // homeTeam/awayTeam cascade too: Team only ever exists as a child of the
   // same Session (never deleted independently), so when a Session is torn
   // down, Postgres's cascade from Session -> Team and Session -> Match fire
   // "in parallel" — a RESTRICT here would race against that and can reject
   // the delete depending on cascade resolution order. See GoalEvent.team.
-  homeTeam   Team        @relation("MatchHomeTeam", fields: [homeTeamId], references: [id], onDelete: Cascade)
-  awayTeam   Team        @relation("MatchAwayTeam", fields: [awayTeamId], references: [id], onDelete: Cascade)
+  homeTeam   Team          @relation("MatchHomeTeam", fields: [homeTeamId], references: [id], onDelete: Cascade)
+  awayTeam   Team          @relation("MatchAwayTeam", fields: [awayTeamId], references: [id], onDelete: Cascade)
   goalEvents GoalEvent[]
+  lineup     MatchPlayer[]
 
   @@unique([sessionId, seq])
   @@index([sessionId])
   @@index([homeTeamId])
   @@index([awayTeamId])
-  @@index([mvpPlayerId])
   @@map("match")
 }
 
@@ -296,7 +346,7 @@ enum AnalyticsEventType {
 model AnalyticsEvent {
   id Int @id @default(autoincrement())
 
-  type AnalyticsEventType
+  type  AnalyticsEventType
   /// Route pattern with dynamic segments collapsed, e.g. `/players/[id]` —
   /// this is what the dashboard groups by, so a hundred player profiles read
   /// as one popular route instead of a hundred one-view rows.

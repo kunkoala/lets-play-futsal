@@ -26,17 +26,15 @@ describe("METRICS", () => {
     expect(METRICS.reduce((sum, m) => sum + m.weight, 0)).toBe(100);
   });
 
-  it("gives match MVPs 20% — the largest single share", () => {
-    const mvp = METRICS.find((m) => m.key === "mvps")!;
-    expect(mvp.weight).toBe(20);
-    for (const other of METRICS) {
-      if (other.key !== "mvps") expect(other.weight).toBeLessThan(mvp.weight);
-    }
+  it("does not rate MVPs at all — the award is for fun, not for ranking", () => {
+    expect(METRICS.find((m) => m.key === "mvps")).toBeUndefined();
   });
 
-  it("splits the remaining 80% across the other stats", () => {
-    const rest = METRICS.filter((m) => m.key !== "mvps");
-    expect(rest.reduce((sum, m) => sum + m.weight, 0)).toBe(80);
+  it("gives goals + assists the largest single share", () => {
+    const top = METRICS.find((m) => m.key === "goalContributions")!;
+    for (const other of METRICS) {
+      if (other.key !== top.key) expect(other.weight).toBeLessThan(top.weight);
+    }
   });
 });
 
@@ -85,18 +83,11 @@ describe("ratePlayers", () => {
     expect(r.rating).toBeCloseTo(summed);
   });
 
-  it("ranks MVPs above an identical season without them", () => {
+  it("rates two identical seasons the same however many MVPs were won", () => {
     const withMvps = player(1, { goals: 5, assists: 3, wins: 5, matchesPlayed: 8, gamesPlayed: 4, mvps: 4 });
     const without = player(2, { goals: 5, assists: 3, wins: 5, matchesPlayed: 8, gamesPlayed: 4, mvps: 0 });
     const ratings = ratePlayers([withMvps, without]);
-    expect(ratings.get(1)!.rating).toBeGreaterThan(ratings.get(2)!.rating);
-  });
-
-  it("swings the rating by 20 points between most and no MVPs, all else equal", () => {
-    const withMvps = player(1, { goals: 5, wins: 4, matchesPlayed: 8, gamesPlayed: 4, mvps: 4 });
-    const without = player(2, { goals: 5, wins: 4, matchesPlayed: 8, gamesPlayed: 4, mvps: 0 });
-    const ratings = ratePlayers([withMvps, without]);
-    expect(ratings.get(1)!.rating - ratings.get(2)!.rating).toBeCloseTo(20);
+    expect(ratings.get(1)!.rating).toBeCloseTo(ratings.get(2)!.rating);
   });
 
   it("does not let a one-match hotshot out-rate a strong full season", () => {

@@ -19,11 +19,15 @@ export default async function LiveMatchPage({
   const { matchId: matchIdParam } = await searchParams;
 
   const include = {
-    homeTeam: { include: { players: { include: { player: true } } } },
-    awayTeam: { include: { players: { include: { player: true } } } },
+    homeTeam: true,
+    awayTeam: true,
+    // Who is actually on the pitch for THIS match — not the team's current
+    // roster, which may already have been edited for the next one.
+    lineup: { include: { player: true } },
     goalEvents: true,
-    // Only for the phone scoreboard's eyebrow ("Matchday … · Match n").
-    session: { select: { date: true } },
+    // The date is for the phone scoreboard's eyebrow ("Matchday … · Match n");
+    // attendances feed the substitution picker.
+    session: { select: { date: true, attendances: { include: { player: true } } } },
   } as const;
 
   const match = matchIdParam
@@ -37,26 +41,33 @@ export default async function LiveMatchPage({
     redirect(`/admin/sessions/${sessionId}`);
   }
 
+  const lineupFor = (teamId: number) =>
+    match.lineup
+      .filter((m) => m.teamId === teamId)
+      .map((m) => ({ id: m.player.id, name: m.player.name, isKeeper: m.isKeeper }))
+      .sort((a, b) => Number(b.isKeeper) - Number(a.isKeeper) || a.name.localeCompare(b.name));
+
   const homeTeam = {
     id: match.homeTeam.id,
     name: match.homeTeam.name,
     color: match.homeTeam.color,
-    players: match.homeTeam.players.map((tp) => ({
-      id: tp.player.id,
-      name: tp.player.name,
-      isKeeper: tp.isKeeper,
-    })),
+    players: lineupFor(match.homeTeam.id),
   };
   const awayTeam = {
     id: match.awayTeam.id,
     name: match.awayTeam.name,
     color: match.awayTeam.color,
-    players: match.awayTeam.players.map((tp) => ({
-      id: tp.player.id,
-      name: tp.player.name,
-      isKeeper: tp.isKeeper,
-    })),
+    players: lineupFor(match.awayTeam.id),
   };
+
+  // Anyone who turned up but isn't on the pitch right now — the pool a
+  // substitution can draw from. Includes players rostered to the third team
+  // sitting this one out, which is exactly who covers for someone tired.
+  const onPitch = new Set(match.lineup.map((m) => m.playerId));
+  const available = match.session.attendances
+    .filter((a) => !onPitch.has(a.playerId))
+    .map((a) => ({ id: a.player.id, name: a.player.name }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   // `toISOString` keeps this UTC on both server and client — a locale-aware
   // format would differ between the two and trip a hydration mismatch.
@@ -71,6 +82,7 @@ export default async function LiveMatchPage({
       events={match.goalEvents}
       isFinished={match.status === "finished"}
       matchLabel={matchLabel}
+      available={available}
       // Timestamps as epoch milliseconds: the clock is derived arithmetic, and
       // numbers cross the server/client boundary without a Date round-trip.
       clock={{

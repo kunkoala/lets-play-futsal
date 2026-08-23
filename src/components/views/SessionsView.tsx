@@ -1,52 +1,45 @@
 // Named cell components — Table.Thead/… statics don't survive the Server
 // Component boundary, and raw <td> misses Mantine's cell padding.
-import {
-  Box,
-  Container,
-  Stack,
-  Table,
-  TableTbody,
-  TableTd,
-  TableTh,
-  TableThead,
-  TableTr,
-  Text,
-} from "@mantine/core";
-import { NavLink } from "@/components/NavLink";
-import { impressionProps, IMPRESSION_SESSION_ROW } from "@/lib/analyticsMarks";
-
-const STATUS_STYLE: Record<string, { label: string; color: string; bg: string }> = {
-  draft: { label: "Upcoming", color: "var(--text-muted)", bg: "rgba(255,255,255,.06)" },
-  teams_set: { label: "In progress", color: "var(--team-blue)", bg: "rgba(77,139,255,.14)" },
-  completed: { label: "Completed", color: "var(--volt)", bg: "rgba(200,255,47,.12)" },
-};
-
-function StatusPill({ status }: { status: string }) {
-  const s = STATUS_STYLE[status] ?? STATUS_STYLE.draft;
-  return (
-    <Box
-      component="span"
-      style={{
-        display: "inline-block",
-        padding: "3px 10px",
-        borderRadius: 20,
-        fontWeight: 700,
-        fontSize: 11,
-        color: s.color,
-        background: s.bg,
-      }}
-    >
-      {s.label}
-    </Box>
-  );
-}
+import { Box, Container, Stack, Table, TableTh, TableThead, TableTr, Text } from "@mantine/core";
+import type { RecapLeader } from "@/lib/sessionRecap";
+import { SessionRows } from "./SessionRows";
 
 export type SessionsViewRow = {
   id: number;
   date: Date;
   status: string;
   attendeeCount: number;
+  /** Player of the day, when one was picked. */
+  mvpName?: string | null;
+  /**
+   * That matchday's leaders, shown in the expandable panel. Every tied name is
+   * included — which is exactly why they can't go in the collapsed row: ten
+   * players level on one goal is a normal Sunday and made an unreadable
+   * three-line wall of names on the index.
+   */
+  topScorer?: RecapLeader | null;
+  topAssister?: RecapLeader | null;
+  mostCleanSheets?: RecapLeader | null;
+  totalGoals?: number;
+  matchesPlayed?: number;
 };
+
+function Th({ children, align }: { children: React.ReactNode; align: "left" | "right" }) {
+  return (
+    <TableTh
+      style={{
+        textAlign: align,
+        fontWeight: 700,
+        fontSize: 10,
+        letterSpacing: "0.12em",
+        textTransform: "uppercase",
+        color: "var(--text-muted)",
+      }}
+    >
+      {children}
+    </TableTh>
+  );
+}
 
 /** Matchday list. Rows come from the caller, so `/demo/sessions` reuses it. */
 export function SessionsView({
@@ -92,69 +85,21 @@ export function SessionsView({
           }}
         >
           <div style={{ overflowX: "auto" }}>
-            <Table verticalSpacing={12} horizontalSpacing="lg" highlightOnHover w="100%">
+            <Table verticalSpacing={12} horizontalSpacing="md" w="100%">
               <TableThead>
                 <TableTr style={{ borderBottom: "1px solid var(--hairline)" }}>
                   <Th align="left">Date</Th>
                   <Th align="left">Status</Th>
                   <Th align="right">Players</Th>
+                  {/* Chevron column — no heading, the icon says what it does. */}
+                  <Th align="right"> </Th>
                 </TableTr>
               </TableThead>
-              <TableTbody>
-                {sessions.map((s) => (
-                  <TableTr key={s.id} {...impressionProps(IMPRESSION_SESSION_ROW, s.id)}>
-                    <TableTd>
-                      <NavLink
-                        href={`${basePath}/sessions/${s.id}`}
-                        fw={600}
-                        fz={14}
-                        c="inherit"
-                        underline="hover"
-                      >
-                        {s.date.toISOString().slice(0, 10)}
-                      </NavLink>
-                    </TableTd>
-                    <TableTd>
-                      <StatusPill status={s.status} />
-                    </TableTd>
-                    <TableTd style={{ textAlign: "right" }}>
-                      <Text className="tabular-nums" fw={700} fz={14}>
-                        {s.attendeeCount}
-                      </Text>
-                    </TableTd>
-                  </TableTr>
-                ))}
-                {sessions.length === 0 && (
-                  <TableTr>
-                    <TableTd colSpan={3}>
-                      <Text c="dimmed" py="md" ta="center" fz={14}>
-                        No sessions yet.
-                      </Text>
-                    </TableTd>
-                  </TableTr>
-                )}
-              </TableTbody>
+              <SessionRows sessions={sessions} basePath={basePath} />
             </Table>
           </div>
         </Box>
       </Stack>
     </Container>
-  );
-}
-
-function Th({ children, align }: { children: React.ReactNode; align: "left" | "right" }) {
-  return (
-    <TableTh
-      style={{
-        textAlign: align,
-        fontWeight: 700,
-        fontSize: 10,
-        letterSpacing: "0.12em",
-        textTransform: "uppercase",
-        color: "var(--text-muted)",
-      }}
-    >
-      {children}
-    </TableTh>
   );
 }

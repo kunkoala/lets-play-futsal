@@ -19,7 +19,6 @@ function contribution(overrides: Partial<MatchContribution> = {}): MatchContribu
     playerGoals: 0,
     assists: 0,
     keeper: false,
-    mvp: false,
     ...overrides,
   };
 }
@@ -54,8 +53,13 @@ describe("applyMatch", () => {
     });
   });
 
-  it("counts a clean sheet for everyone on a team that conceded nothing", () => {
-    const t = totalsOf({ goalsFor: 2, goalsAgainst: 0 }, { goalsFor: 1, goalsAgainst: 1 });
+  it("gives a clean sheet to the keeper only, not the whole team", () => {
+    const t = totalsOf(
+      // Shut out, but this player was outfield — no clean sheet for them.
+      { goalsFor: 2, goalsAgainst: 0 },
+      { goalsFor: 1, goalsAgainst: 0, keeper: true },
+      { goalsFor: 1, goalsAgainst: 1, keeper: true },
+    );
     expect(t.cleanSheets).toBe(1);
   });
 
@@ -69,17 +73,17 @@ describe("applyMatch", () => {
     expect(t.hatTricks).toBe(1);
   });
 
-  it("tracks keeper matches, goals conceded, and keeper clean sheets separately", () => {
+  it("tracks keeper matches, goals conceded and clean sheets from goal only", () => {
     const t = totalsOf(
       { goalsFor: 1, goalsAgainst: 0, keeper: true },
       { goalsFor: 2, goalsAgainst: 3, keeper: true },
-      // outfield match: conceding here doesn't touch the keeper columns
+      // outfield match: neither the conceding nor a shutout touches these
       { goalsFor: 0, goalsAgainst: 4 },
+      { goalsFor: 3, goalsAgainst: 0 },
     );
     expect(t).toMatchObject({
       keeperMatches: 2,
       keeperConceded: 3,
-      keeperCleanSheets: 1,
       cleanSheets: 1,
     });
   });
@@ -97,9 +101,9 @@ describe("applyMatch", () => {
     expect(t.form).toEqual(["L", "D", "W", "L", "W"]);
   });
 
-  it("counts MVP awards", () => {
-    const t = totalsOf({ goalsFor: 1, goalsAgainst: 0, mvp: true }, { goalsFor: 1, goalsAgainst: 2 });
-    expect(t.mvps).toBe(1);
+  it("leaves MVPs alone — they're a per-session award the caller counts, not a per-match one", () => {
+    const t = totalsOf({ goalsFor: 1, goalsAgainst: 0 }, { goalsFor: 1, goalsAgainst: 2 });
+    expect(t.mvps).toBe(0);
   });
 });
 
@@ -136,7 +140,6 @@ describe("deriveRates", () => {
       assistsPerMatch: 0,
       contributionsPerMatch: 0,
       winRate: 0,
-      mvpRate: 0,
       concededPerKeeperMatch: 0,
     });
   });

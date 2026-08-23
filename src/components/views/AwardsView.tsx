@@ -1,6 +1,7 @@
 import { Box, Container, Stack, Text } from "@mantine/core";
 import type { PlayerSeasonStats } from "@/lib/leaderboard";
 import { formatRating } from "@/lib/rating";
+import { MIN_SESSIONS_FOR_IMPROVEMENT, type ImprovedPlayer } from "@/lib/ratingHistory";
 import { MvpSpotlight } from "./MvpSpotlight";
 import { Podium } from "./Podium";
 
@@ -16,9 +17,10 @@ function top(
 }
 
 /**
- * Season MVP standings: highest overall rating, which already folds in match
- * MVPs (20% of it) alongside goals, assists, points, win rate and appearances.
- * Only players who have finished a match are ranked.
+ * Season MVP standings: highest overall rating, built from goals, assists,
+ * points, win rate and appearances. Session MVP awards are pointedly not part
+ * of it (see src/lib/rating.ts), so the season's biggest prize can't be won on
+ * popularity. Only players who have finished a match are ranked.
  */
 function ratingRanking(stats: PlayerSeasonStats[]): PlayerSeasonStats[] {
   return [...stats]
@@ -38,13 +40,21 @@ export function AwardsView({
   seasonName,
   adminPick = null,
   basePath = "",
+  improved = [],
 }: {
   stats: PlayerSeasonStats[];
   seasonName: string;
   adminPick?: { id: number; name: string } | null;
   basePath?: string;
+  /**
+   * Biggest rating gains over recent matchdays, best first — see
+   * `mostImproved` in src/lib/ratingHistory.ts for the qualification gate.
+   */
+  improved?: ImprovedPlayer[];
 }) {
   const activeSeason = { name: seasonName };
+  // `mostImproved` works in player ids, since it only ever sees the history.
+  const nameById = new Map(stats.map((s) => [s.playerId, s.name]));
 
   // Season MVP is the season's highest-rated player, unless an admin recorded a
   // hand-picked winner when closing the season — that overrides the rating.
@@ -62,7 +72,7 @@ export function AwardsView({
       ? {
           player: { id: ratedWinner.playerId, name: ratedWinner.name },
           source: "rating" as const,
-          subtitle: `Rating ${formatRating(ratedWinner.rating)} / 100 · ${ratedWinner.mvps} match MVP${ratedWinner.mvps === 1 ? "" : "s"}`,
+          subtitle: `Rating ${formatRating(ratedWinner.rating)} / 100 · ${ratedWinner.goalContributions} goal contribution${ratedWinner.goalContributions === 1 ? "" : "s"}`,
           runnerUp: ranking[1]
             ? { name: ranking[1].name, value: formatRating(ranking[1].rating) }
             : null,
@@ -131,7 +141,7 @@ export function AwardsView({
             basePath={basePath}
           />
           <Podium
-            title="Match MVPs"
+            title="Player of the Day"
             glyph="🏆"
             unit="MVPs"
             items={top(stats, "mvps")}
@@ -146,7 +156,25 @@ export function AwardsView({
             accent="var(--team-purple)"
             basePath={basePath}
           />
+          <Podium
+            title="Most Improved"
+            glyph="📈"
+            unit="rating"
+            items={improved.slice(0, 3).map((p) => ({
+              playerId: p.playerId,
+              name: nameById.get(p.playerId) ?? "Unknown",
+              value: `+${formatRating(p.gain)}`,
+            }))}
+            accent="var(--team-green)"
+            basePath={basePath}
+          />
         </Box>
+
+        <Text fz={11} c="dimmed" ta="center">
+          Most Improved compares each player&apos;s rating with where it was a few matchdays
+          ago, once they&apos;ve played {MIN_SESSIONS_FOR_IMPROVEMENT} sessions — before that a
+          rating swings too much for a gain to mean anything.
+        </Text>
       </Stack>
     </Container>
   );

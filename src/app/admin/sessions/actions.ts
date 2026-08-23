@@ -82,7 +82,7 @@ export async function deleteSession(formData: FormData): Promise<void> {
   // Session -> Team/Match/GoalEvent/Attendance all cascade (see schema.prisma
   // referential-action notes), so this is safe at any status, including
   // completed — the confirm dialog on the client is what guards against
-  // accidental loss of a night's recorded matches/stats.
+  // accidental loss of a matchday's recorded matches/stats.
   await prisma.session.delete({ where: { id } });
   revalidatePath("/admin/sessions");
 }
@@ -185,7 +185,7 @@ async function currentGenerationTeams(sessionId: number) {
 }
 
 /**
- * Reshuffles a session's teams mid-night — typically once the round robin
+ * Reshuffles a session's teams mid-matchday — typically once the round robin
  * is done (see roundRobinComplete in matchmaker.ts) and the admin wants a
  * fresh, still-balanced split rather than replaying the same match-ups.
  * Unlike the initial shuffle, this never deletes existing Team rows: they're
@@ -204,7 +204,7 @@ export async function reshuffleTeams(
   const session = await prisma.session.findUnique({ where: { id: sessionId } });
   if (!session) return { error: "Session not found." };
   if (session.status !== "teams_set") {
-    return { error: "Reshuffle only applies once teams are locked for the night." };
+    return { error: "Reshuffle only applies once teams are locked for the matchday." };
   }
 
   const currentTeams = await currentGenerationTeams(sessionId);
@@ -221,7 +221,7 @@ export async function reshuffleTeams(
     candidates.map((c) => c.id),
   );
 
-  // Keep the same number of teams the night already has, whatever attendance
+  // Keep the same number of teams the matchday already has, whatever attendance
   // happens to be now — `computeTeamSizes` derives team *count* from a target
   // size, so back-solve the size that yields today's team count.
   const teamSize = Math.max(1, Math.round(candidates.length / currentTeams.length));
@@ -352,8 +352,8 @@ export async function startMatch(
   if (inProgress) return { error: "A match is already in progress." };
 
   const [homeTeam, awayTeam] = await Promise.all([
-    prisma.team.findUnique({ where: { id: homeTeamId } }),
-    prisma.team.findUnique({ where: { id: awayTeamId } }),
+    prisma.team.findUnique({ where: { id: homeTeamId }, include: { players: true } }),
+    prisma.team.findUnique({ where: { id: awayTeamId }, include: { players: true } }),
   ]);
   if (!homeTeam || homeTeam.sessionId !== sessionId || !awayTeam || awayTeam.sessionId !== sessionId) {
     return { error: "Invalid teams for this session." };
@@ -365,8 +365,27 @@ export async function startMatch(
   });
   const seq = (lastMatch?.seq ?? 0) + 1;
 
+  // The lineup is snapshotted here, from the rosters as they stand at
+  // kick-off. Editing a roster afterwards changes who starts the *next* match
+  // and leaves this one alone — that's the whole point of MatchPlayer.
+  const lineup = [homeTeam, awayTeam].flatMap((team) =>
+    team.players.map((tp) => ({
+      playerId: tp.playerId,
+      teamId: team.id,
+      isKeeper: tp.isKeeper,
+    })),
+  );
+
   const match = await prisma.match.create({
-    data: { sessionId, seq, homeTeamId, awayTeamId, status: "in_progress", durationSec },
+    data: {
+      sessionId,
+      seq,
+      homeTeamId,
+      awayTeamId,
+      status: "in_progress",
+      durationSec,
+      lineup: { createMany: { data: lineup } },
+    },
   });
 
   redirect(`/admin/sessions/${sessionId}/live?matchId=${match.id}`);
@@ -421,6 +440,50 @@ export async function reopenSession(
   revalidatePath(`/admin/sessions/${sessionId}`);
 }
 
+/**
+ * Sets or clears the session MVP — the player of the day, picked once for the
+ * whole matchday rather than per match. Stays editable after the session is
+ * completed, since it's usually agreed on in the car park afterwards and a
+ * mis-tap shouldn't need the session reopening.
+ *
+ * The pick has no effect on any rating (see src/lib/rating.ts), so it needs no
+ * guard beyond "they were actually there".
+ */
+export async function setSessionMvp(
+  _prevState: SessionFormState,
+  formData: FormData,
+): Promise<SessionFormState> {
+  await requireAdmin();
+
+  const sessionId = Number(formData.get("sessionId"));
+  if (!Number.isInteger(sessionId)) return { error: "Invalid session." };
+
+  const session = await prisma.session.findUnique({ where: { id: sessionId } });
+  if (!session) return { error: "Session not found." };
+
+  const raw = formData.get("mvpPlayerId");
+  if (raw === null || raw === "") return { error: "Pick a player first." };
+
+  let mvpPlayerId: number | null = null;
+  if (raw !== "none") {
+    const id = Number(raw);
+    if (!Number.isInteger(id)) return { error: "Invalid player." };
+
+    const attended = await prisma.attendance.findUnique({
+      where: { sessionId_playerId: { sessionId, playerId: id } },
+    });
+    if (!attended) return { error: "MVP must be someone who turned up." };
+    mvpPlayerId = id;
+  }
+
+  await prisma.session.update({ where: { id: sessionId }, data: { mvpPlayerId } });
+
+  revalidatePath(`/admin/sessions/${sessionId}`);
+  revalidatePath(`/sessions/${sessionId}`);
+  revalidatePath("/awards");
+  revalidatePath("/");
+}
+
 export type RosterActionState = { error: string } | undefined;
 
 /**
@@ -429,11 +492,12 @@ export type RosterActionState = { error: string } | undefined;
  * here). Only ever touches the current shuffle generation: a player can be
  * on at most one of *this round's* teams at a time.
  *
- * Note this doesn't retroactively fix team-level stats for matches the
- * target team already played tonight (win/loss, clean sheets, keeper
- * numbers) — those are derived from whoever's currently rostered, not a
- * per-match snapshot. Accepted tradeoff: individual goals/assists stay
- * correctly attributed either way, and it only affects this one session.
+ * Safe to do mid-session. Stats come from each match's own `MatchPlayer`
+ * lineup, snapshotted at kick-off, so this changes who *starts the next
+ * match* and leaves everything already played untouched. (It used to rewrite
+ * the whole matchday — see the MatchPlayer comment in prisma/schema.prisma.)
+ * To change a match that has already started, use the live console's
+ * substitution instead.
  */
 export async function assignPlayerToTeam(
   _prevState: RosterActionState,
@@ -451,7 +515,7 @@ export async function assignPlayerToTeam(
   const session = await prisma.session.findUnique({ where: { id: sessionId } });
   if (!session) return { error: "Session not found." };
   if (session.status !== "teams_set") {
-    return { error: "Rosters can only be edited once teams are locked for the night." };
+    return { error: "Rosters can only be edited once teams are locked for the matchday." };
   }
 
   const currentTeams = await currentGenerationTeams(sessionId);
@@ -499,7 +563,7 @@ export async function setTeamPlayerKeeper(
   const session = await prisma.session.findUnique({ where: { id: sessionId } });
   if (!session) return { error: "Session not found." };
   if (session.status !== "teams_set") {
-    return { error: "Rosters can only be edited once teams are locked for the night." };
+    return { error: "Rosters can only be edited once teams are locked for the matchday." };
   }
 
   const currentTeams = await currentGenerationTeams(sessionId);
@@ -555,7 +619,7 @@ export async function benchPlayer(
   const session = await prisma.session.findUnique({ where: { id: sessionId } });
   if (!session) return { error: "Session not found." };
   if (session.status !== "teams_set") {
-    return { error: "Rosters can only be edited once teams are locked for the night." };
+    return { error: "Rosters can only be edited once teams are locked for the matchday." };
   }
 
   const currentTeams = await currentGenerationTeams(sessionId);

@@ -15,6 +15,7 @@ export default async function PublicSessionDetailPage({
     where: { id },
     include: {
       season: true,
+      mvpPlayer: true,
       teams: {
         include: { players: { include: { player: true } } },
         orderBy: { id: "asc" },
@@ -23,7 +24,7 @@ export default async function PublicSessionDetailPage({
         include: {
           homeTeam: true,
           awayTeam: true,
-          mvpPlayer: true,
+          lineup: { include: { player: true } },
           goalEvents: { include: { scorer: true, assist: true }, orderBy: { seq: "asc" } },
         },
         orderBy: { seq: "asc" },

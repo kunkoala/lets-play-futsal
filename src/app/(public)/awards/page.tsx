@@ -1,5 +1,6 @@
 import { Container, Text } from "@mantine/core";
-import { getActiveSeason, getSeasonLeaderboard } from "@/lib/leaderboard";
+import { getActiveSeason, getSeasonLeaderboard, getSeasonRatingHistory } from "@/lib/leaderboard";
+import { mostImproved } from "@/lib/ratingHistory";
 import { prisma } from "@/lib/prisma";
 import { AwardsView } from "@/components/views/AwardsView";
 
@@ -29,12 +30,14 @@ export default async function AwardsPage() {
     where: { seasonId: activeSeason.id, type: "mvp" },
     include: { player: true },
   });
+  const improved = mostImproved(await getSeasonRatingHistory(activeSeason.id));
 
   return (
     <AwardsView
       stats={stats}
       seasonName={activeSeason.name}
       adminPick={adminPick ? { id: adminPick.player.id, name: adminPick.player.name } : null}
+      improved={improved}
     />
   );
 }

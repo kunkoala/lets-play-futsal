@@ -45,3 +45,5 @@ next-env.d.ts
 
 db/
 logfile
+# Screenshots pasted into Claude Code sessions — local scratch, not project files.
+.claude/screenshots/
