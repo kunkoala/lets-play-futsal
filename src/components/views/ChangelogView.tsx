@@ -70,9 +70,11 @@ function KindSection({ kind, items }: { kind: ChangeKind; items: string[] }) {
   return (
     <Box>
       <Group gap={8} align="center" mb={8}>
+        {/* A bar, not a dot — the items below use dots, and the heading has to
+            read as a heading rather than the first bullet. */}
         <Box
           aria-hidden
-          style={{ width: 5, height: 5, borderRadius: 999, background: accent, flexShrink: 0 }}
+          style={{ width: 14, height: 3, borderRadius: 2, background: accent, flexShrink: 0 }}
         />
         <Text
           fw={800}
@@ -83,11 +85,29 @@ function KindSection({ kind, items }: { kind: ChangeKind; items: string[] }) {
         </Text>
       </Group>
 
-      <Stack gap={7} component="ul" style={{ margin: 0, paddingLeft: 17 }}>
+      {/* Markers are drawn rather than left to `list-style`: Tailwind's
+          preflight strips it from every list, so a plain <li> renders bare.
+          Drawing them also lets each bullet carry its section's accent, which
+          ties a line back to its heading when the eye lands mid-list. */}
+      <Stack gap={8} component="ul" style={{ margin: 0, padding: 0, listStyle: "none" }}>
         {items.map((text, i) => (
-          <Text key={i} component="li" fz={14} style={{ lineHeight: 1.55 }}>
-            {text}
-          </Text>
+          <Group key={i} component="li" gap={10} wrap="nowrap" align="flex-start">
+            <Box
+              aria-hidden
+              style={{
+                width: 5,
+                height: 5,
+                borderRadius: 999,
+                background: accent,
+                flexShrink: 0,
+                // Centres the dot on the first line of 14px/1.55 text.
+                marginTop: 8,
+              }}
+            />
+            <Text fz={14} style={{ lineHeight: 1.55 }}>
+              {text}
+            </Text>
+          </Group>
         ))}
       </Stack>
     </Box>
