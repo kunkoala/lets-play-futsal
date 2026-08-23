@@ -6,29 +6,37 @@ source of truth for the domain model; this file is the queue of changes *against
 Ordering below is the recommended build order, not priority order. Items are independent
 unless a **Depends on** line says otherwise.
 
-| # | Item | Size | Schema change | Depends on | Status |
-|---|------|------|---------------|------------|--------|
-| 1 | [Match MVP → Session MVP, out of the rating](#1--match-mvp--session-mvp-and-out-of-the-rating) | L | yes | — | **done** |
-| 2 | [Per-match lineups + in-session substitutions](#2--per-match-lineups--in-session-substitutions) | XL | yes | — | todo |
-| 3 | [Games played column on the leaderboard](#3--games-played-column-on-the-leaderboard) | S | no | — | todo |
-| 4 | [Add-player combobox + players page responsiveness](#4--add-player-combobox--players-page-responsiveness) | M | no | — | **combobox done**, responsiveness todo |
-| 5 | [Session recap cards](#5--session-recap-cards) | M | no | 1 (for the MVP card) | todo |
-| 6 | [Rank/rating movement, player graphs, Most Improved](#6--rankrating-movement-player-graphs-most-improved) | L | no | — | todo |
-| 7 | [Public changelog page](#7--public-changelog-page) | S | no | — | todo |
+**All seven items are shipped.** Details and the decisions taken are under each heading.
+
+> ⚠️ **Two migrations are written but not applied** — the dev database wasn't
+> running while this was built. Run `npx prisma migrate deploy` before starting the app,
+> or Prisma will report drift:
+> - `20260823000000_session_mvp` — backfills the session MVP, then drops `match.mvp_player_id`.
+> - `20260823010000_match_lineups` — creates `match_player` and backfills every existing
+>   match from its two team rosters, so no existing figure changes.
+>
+> Both backfill before they destroy anything, so they are safe on live data. Back up first
+> regardless: the first one drops a column, and there is no down migration.
+
+| # | Item | Size | Schema change | Status |
+|---|------|------|---------------|--------|
+| 1 | [Match MVP → Session MVP, out of the rating](#1--match-mvp--session-mvp-and-out-of-the-rating) | L | yes | done |
+| 2 | [Per-match lineups + in-session substitutions](#2--per-match-lineups--in-session-substitutions) | XL | yes | done |
+| 3 | [Games played column on the leaderboard](#3--games-played-column-on-the-leaderboard) | S | no | done |
+| 4 | [Add-player combobox + players page responsiveness](#4--add-player-combobox--players-page-responsiveness) | M | no | done |
+| 5 | [Session recap cards](#5--session-recap-cards) | M | no | done |
+| 6 | [Rank/rating movement, player graphs, Most Improved](#6--rankrating-movement-player-graphs-most-improved) | L | no | done |
+| 7 | [Public changelog page](#7--public-changelog-page) | S | no | done |
 
 ---
 
 ## 1 · Match MVP → Session MVP, and out of the rating
 
-> **Status: done.** Shipped as described below. Decisions taken: weights redistributed by
-> proportional scale-up rounded to integers (`goalContributions` 14 → 18 now leads);
-> user-facing copy is **"Player of the Day"** (session) vs **"Season MVP"** (the `Award`
-> row); achievement thresholds rescaled to 1 / 3 / 2-in-a-season. `mvpRate` was deleted
-> rather than redefined — nothing outside the tests read it.
->
-> ⚠️ **The migration has not been applied** — the dev database wasn't running. Run
-> `npx prisma migrate deploy` (or `migrate dev`) before starting the app, or Prisma will
-> report drift. The migration backfills before it drops, so it is safe on live data.
+> **Status: done.** Decisions taken: weights redistributed by proportional scale-up
+> rounded to integers (`goalContributions` 14 → 18 now leads); user-facing copy is
+> **"Player of the Day"** (session) vs **"Season MVP"** (the `Award` row); achievement
+> thresholds rescaled to 1 / 3 / 2-in-a-season. `mvpRate` was deleted rather than
+> redefined — nothing outside the tests read it.
 
 **Ask:** remove MVP from individual matches; keep exactly one MVP per session. MVP no
 longer feeds the rating at all — match performance alone is enough.
@@ -131,6 +139,19 @@ players with identical match stats and different MVP counts get identical rating
 ---
 
 ## 2 · Per-match lineups + in-session substitutions
+
+> **Status: done.** `MatchPlayer` added and snapshotted in `startMatch`; every derivation
+> (`seasonAggregate`, `playerProfile`, `achievements`, `sessionRecap`, and the live
+> console's `assertRostered`) now reads it instead of `Team.players`. Substitutions live
+> behind **⇄ Sub** in the live console, and stay editable after a match finishes — a sub
+> the admin missed while refereeing is exactly what gets fixed afterwards. The glove
+> follows the shirt: subbing off a keeper makes the replacement the keeper, otherwise a
+> team silently plays with nobody in goal and the clean-sheet numbers stop meaning
+> anything. `TeamRosterEditor`'s "⚠ played" warning is gone — it stopped being true.
+> `src/lib/seasonAggregate.test.ts` pins the behaviour the whole item exists for.
+>
+> Decision taken on bench semantics: a player left out of a match simply has no
+> `MatchPlayer` row, so "attending but not in this match" needed no new state.
 
 **Ask:** let a player drop in and out of teams mid-session — someone gets tired, someone
 arrives late — and have the live console still record their stats correctly.

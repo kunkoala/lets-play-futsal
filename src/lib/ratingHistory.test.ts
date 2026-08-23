@@ -40,12 +40,17 @@ function session(
     date: new Date(2026, 0, id),
     mvpPlayerId: null,
     attendances: [{ playerId: 1 }, { playerId: 2 }],
-    teams: [
-      { id: 10, players: [{ playerId: 1, isKeeper: false }] },
-      { id: 20, players: [{ playerId: 2, isKeeper: false }] },
-    ],
     matches: [
-      { homeTeamId: 10, awayTeamId: 20, status: "finished", goalEvents: events },
+      {
+        homeTeamId: 10,
+        awayTeamId: 20,
+        status: "finished",
+        lineup: [
+          { playerId: 1, teamId: 10, isKeeper: false },
+          { playerId: 2, teamId: 20, isKeeper: false },
+        ],
+        goalEvents: events,
+      },
     ],
   };
 }

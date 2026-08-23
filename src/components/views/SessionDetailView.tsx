@@ -167,6 +167,8 @@ export type SessionDetail = {
     awayTeamId: number;
     homeTeam: { name: string; color: string };
     awayTeam: { name: string; color: string };
+    /** Who played in this match — see MatchPlayer in prisma/schema.prisma. */
+    lineup: readonly { teamId: number; player: { id: number; name: string } }[];
     goalEvents: readonly GoalEventDetail[];
   }[];
 };

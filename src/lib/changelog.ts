@@ -61,6 +61,10 @@ export const CHANGELOG: readonly ChangelogEntry[] = [
       },
       { kind: "added", text: "A Most Improved award on the season awards page." },
       {
+        kind: "added",
+        text: "Players can be swapped in and out mid-session. Each match now records who was actually on the pitch, so if you come on for match 4 you're credited with matches 4 onward and nothing before — subbing no longer quietly rewrites the results of games that already finished.",
+      },
+      {
         kind: "fixed",
         text: "Adding a player now suggests people who already exist while you type, and says so if the name is already taken — including by someone who's been deactivated. That's what was creating duplicate players.",
       },

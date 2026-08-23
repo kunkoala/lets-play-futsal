@@ -13,14 +13,12 @@
  */
 
 export type RecapSession = {
-  teams: readonly {
-    id: number;
-    players: readonly { isKeeper: boolean; player: { id: number; name: string } }[];
-  }[];
   matches: readonly {
     status: string;
     homeTeamId: number;
     awayTeamId: number;
+    /** Who was on the pitch — see MatchPlayer in prisma/schema.prisma. */
+    lineup: readonly { teamId: number; player: { id: number; name: string } }[];
     goalEvents: readonly {
       teamId: number;
       scorer: { id: number; name: string } | null;
@@ -60,11 +58,9 @@ function leaderOf(counts: ReadonlyMap<number, number>, nameOf: (id: number) => s
 
 export function summariseSession(session: RecapSession): SessionRecap {
   const nameById = new Map<number, string>();
-  for (const team of session.teams) {
-    for (const tp of team.players) nameById.set(tp.player.id, tp.player.name);
+  for (const match of session.matches) {
+    for (const spot of match.lineup) nameById.set(spot.player.id, spot.player.name);
   }
-
-  const rosters = new Map(session.teams.map((t) => [t.id, t.players]));
 
   const goals = new Map<number, number>();
   const assists = new Map<number, number>();
@@ -99,14 +95,16 @@ export function summariseSession(session: RecapSession): SessionRecap {
     totalGoals += home + away;
 
     // A clean sheet belongs to everyone who played, not just the keeper —
-    // same rule the season leaderboard uses.
+    // same rule the season leaderboard uses. Credited off this match's own
+    // lineup, so a substitute gets the matches they were actually on for.
     for (const [teamId, conceded] of [
       [match.homeTeamId, away],
       [match.awayTeamId, home],
     ] as const) {
       if (conceded !== 0) continue;
-      for (const tp of rosters.get(teamId) ?? []) {
-        cleanSheets.set(tp.player.id, (cleanSheets.get(tp.player.id) ?? 0) + 1);
+      for (const spot of match.lineup) {
+        if (spot.teamId !== teamId) continue;
+        cleanSheets.set(spot.player.id, (cleanSheets.get(spot.player.id) ?? 0) + 1);
       }
     }
 

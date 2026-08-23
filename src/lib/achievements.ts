@@ -74,6 +74,8 @@ export type AchievementSession = {
     homeTeamId: number;
     awayTeamId: number;
     status: string;
+    /** Who was actually on the pitch — see MatchPlayer in prisma/schema.prisma. */
+    lineup: readonly { playerId: number; teamId: number }[];
     /** Planned match length; null on untimed/legacy matches — the
      *  last-minute check simply never fires for those. */
     durationSec: number | null;
@@ -120,16 +122,18 @@ export function deriveExtraSignals(
 
     for (const match of session.matches) {
       if (match.status !== "finished") continue;
-      const onHome = match.homeTeamId === team.id;
-      const onAway = match.awayTeamId === team.id;
-      if (!onHome && !onAway) continue;
+      // Which side they played for comes from this match's own lineup, not the
+      // team sheet — a substitute can be on a different team from the one they
+      // were shuffled into (see MatchPlayer in prisma/schema.prisma).
+      const spot = match.lineup.find((m) => m.playerId === playerId);
+      if (!spot) continue;
 
       let goalsFor = 0;
       let goalsAgainst = 0;
       let playerGoals = 0;
       let playerAssists = 0;
       for (const e of match.goalEvents) {
-        if (e.teamId === team.id) goalsFor++;
+        if (e.teamId === spot.teamId) goalsFor++;
         else goalsAgainst++;
         if (e.scorerId === playerId) {
           playerGoals++;

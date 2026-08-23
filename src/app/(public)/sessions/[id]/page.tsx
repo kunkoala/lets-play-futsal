@@ -24,6 +24,7 @@ export default async function PublicSessionDetailPage({
         include: {
           homeTeam: true,
           awayTeam: true,
+          lineup: { include: { player: true } },
           goalEvents: { include: { scorer: true, assist: true }, orderBy: { seq: "asc" } },
         },
         orderBy: { seq: "asc" },

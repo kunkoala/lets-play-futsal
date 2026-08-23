@@ -26,11 +26,22 @@ function currentMatchSec(match: MatchClock): number {
   return elapsedSec(match, Date.now());
 }
 
-async function assertRostered(teamId: number, playerId: number): Promise<boolean> {
-  const rostered = await prisma.teamPlayer.findUnique({
-    where: { teamId_playerId: { teamId, playerId } },
+/**
+ * Whether this player was on the pitch for this team in this match.
+ *
+ * Checked against the match lineup rather than the team roster: after a
+ * substitution the two differ, and a goal has to be creditable to whoever was
+ * actually playing at the time.
+ */
+async function assertRostered(
+  matchId: number,
+  teamId: number,
+  playerId: number,
+): Promise<boolean> {
+  const spot = await prisma.matchPlayer.findUnique({
+    where: { matchId_playerId: { matchId, playerId } },
   });
-  return rostered !== null;
+  return spot !== null && spot.teamId === teamId;
 }
 
 export async function recordGoal(
@@ -52,8 +63,8 @@ export async function recordGoal(
   if (teamId !== match.homeTeamId && teamId !== match.awayTeamId) {
     return { error: "Invalid team for this match." };
   }
-  if (!(await assertRostered(teamId, scorerId))) {
-    return { error: "Player is not on that team's roster." };
+  if (!(await assertRostered(matchId, teamId, scorerId))) {
+    return { error: "Player is not in that team's lineup for this match." };
   }
 
   const seq = await nextEventSeq(matchId);
@@ -117,7 +128,7 @@ export async function attachAssist(formData: FormData): Promise<void> {
   const event = await prisma.goalEvent.findUnique({ where: { id: eventId } });
   if (!event) return;
   if (assistId === event.scorerId) return; // can't assist your own goal
-  if (!(await assertRostered(event.teamId, assistId))) return;
+  if (!(await assertRostered(event.matchId, event.teamId, assistId))) return;
 
   await prisma.goalEvent.update({ where: { id: eventId }, data: { assistId } });
 
@@ -213,6 +224,72 @@ export async function resumeMatch(formData: FormData): Promise<void> {
   });
 
   revalidatePath(`/admin/sessions/${match.sessionId}/live`);
+}
+
+/**
+ * Swaps a player off the pitch for one who isn't on it, in this match only.
+ *
+ * The whole point of `MatchPlayer` (see prisma/schema.prisma): before it,
+ * "subbing" meant editing the session-scoped team roster, which retroactively
+ * rewrote the results of every match that team had already played. Now the
+ * change is confined to one match, and the next match starts from the team
+ * roster again unless it is also subbed.
+ *
+ * Goals already scored are untouched — `goal_event` points at players
+ * directly, so someone who scored and then went off keeps the goal, which is
+ * what actually happened.
+ *
+ * The glove goes with the shirt: subbing off a keeper makes the replacement
+ * the keeper, otherwise the team quietly plays a match with nobody in goal and
+ * the clean-sheet numbers stop meaning anything.
+ */
+export async function substitutePlayer(
+  _prevState: MatchFormState,
+  formData: FormData,
+): Promise<MatchFormState> {
+  await requireAdmin();
+
+  const matchId = Number(formData.get("matchId"));
+  const offId = Number(formData.get("offPlayerId"));
+  const onId = Number(formData.get("onPlayerId"));
+  if (![matchId, offId, onId].every(Number.isInteger)) return { error: "Invalid input." };
+  if (offId === onId) return { error: "Pick two different players." };
+
+  const match = await prisma.match.findUnique({ where: { id: matchId } });
+  if (!match) return { error: "Match not found." };
+  // Finished matches stay editable: a sub the admin forgot to record while
+  // refereeing is exactly the kind of thing fixed afterwards.
+  if (match.status !== "in_progress" && match.status !== "finished") {
+    return { error: "Match cannot be edited." };
+  }
+
+  const off = await prisma.matchPlayer.findUnique({
+    where: { matchId_playerId: { matchId, playerId: offId } },
+  });
+  if (!off) return { error: "That player isn't in this match." };
+
+  const alreadyOn = await prisma.matchPlayer.findUnique({
+    where: { matchId_playerId: { matchId, playerId: onId } },
+  });
+  if (alreadyOn) return { error: "That player is already in this match." };
+
+  const attended = await prisma.attendance.findUnique({
+    where: { sessionId_playerId: { sessionId: match.sessionId, playerId: onId } },
+  });
+  if (!attended) return { error: "Only players marked present can come on." };
+
+  await prisma.$transaction([
+    prisma.matchPlayer.delete({
+      where: { matchId_playerId: { matchId, playerId: offId } },
+    }),
+    prisma.matchPlayer.create({
+      data: { matchId, playerId: onId, teamId: off.teamId, isKeeper: off.isKeeper },
+    }),
+  ]);
+
+  revalidatePath(`/admin/sessions/${match.sessionId}/live`);
+  revalidatePath(`/admin/sessions/${match.sessionId}`);
+  return undefined;
 }
 
 export async function endMatch(

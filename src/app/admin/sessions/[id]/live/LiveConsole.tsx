@@ -23,6 +23,7 @@ import {
   recordGoal,
   recordOwnGoal,
   resumeMatch,
+  substitutePlayer,
   undoLastEvent,
 } from "./actions";
 
@@ -53,6 +54,7 @@ export function LiveConsole({
   events,
   isFinished,
   matchLabel,
+  available,
   clock,
   serverNow,
 }: {
@@ -62,6 +64,8 @@ export function LiveConsole({
   awayTeam: TeamInfo;
   events: GoalEventT[];
   isFinished: boolean;
+  /** Attendees not currently on the pitch — who a substitution can bring on. */
+  available: { id: number; name: string }[];
   /** Eyebrow under the phone scoreboard, e.g. "Matchday 25 Jul · Match 4". */
   matchLabel: string;
   clock: MatchClock;
@@ -80,6 +84,10 @@ export function LiveConsole({
   >(null);
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [showFeed, setShowFeed] = useState(false);
+  const [showSubs, setShowSubs] = useState(false);
+  // Half a substitution: who's coming off, waiting on who comes on.
+  const [subOff, setSubOff] = useState<Player | null>(null);
+  const [subError, setSubError] = useState<string | null>(null);
   const [cooldownIds, setCooldownIds] = useState<Set<number>>(new Set());
   // Phone layout only: which roster is tappable, and whether the list area
   // shows that roster or the event feed.
@@ -228,6 +236,26 @@ export function LiveConsole({
     });
   }
 
+  function handleSub(onPlayerId: number) {
+    if (!subOff) return;
+    const offId = subOff.id;
+    setSubError(null);
+    startTransition(async () => {
+      const fd = new FormData();
+      fd.set("matchId", String(matchId));
+      fd.set("offPlayerId", String(offId));
+      fd.set("onPlayerId", String(onPlayerId));
+      const result = await substitutePlayer(undefined, fd);
+      if (result?.error) {
+        setSubError(result.error);
+        return;
+      }
+      setSubOff(null);
+      setShowSubs(false);
+      router.refresh();
+    });
+  }
+
   function handleEndMatch() {
     setConfirmEnd(false);
     startTransition(async () => {
@@ -342,6 +370,9 @@ export function LiveConsole({
           ↺ Undo
         </PillButton>
         <PillButton onClick={() => setShowFeed(true)}>Feed</PillButton>
+        <PillButton onClick={() => setShowSubs(true)} disabled={available.length === 0}>
+          ⇄ Sub
+        </PillButton>
         {!isFinished && (
           <>
             <PillDivider />
@@ -435,6 +466,84 @@ export function LiveConsole({
           onClose={() => setShowFeed(false)}
         />
       )}
+
+      <Modal
+        opened={showSubs}
+        onClose={() => {
+          setShowSubs(false);
+          setSubOff(null);
+          setSubError(null);
+        }}
+        title="Substitution"
+        centered
+        zIndex={300}
+      >
+        <Stack gap="sm">
+          <Text fz={13} c="dimmed">
+            {subOff
+              ? `Who comes on for ${subOff.name}?`
+              : "Who's coming off? This only changes this match — goals already scored stay."}
+          </Text>
+
+          {subError && (
+            <Text fz={13} fw={600} c="red">
+              {subError}
+            </Text>
+          )}
+
+          {subOff ? (
+            <>
+              <Group gap={6}>
+                {available.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    className="lc-chip"
+                    disabled={isPending}
+                    onClick={() => handleSub(p.id)}
+                  >
+                    {p.name}
+                  </button>
+                ))}
+              </Group>
+              <Group justify="flex-end">
+                <Button variant="default" onClick={() => setSubOff(null)}>
+                  Back
+                </Button>
+              </Group>
+            </>
+          ) : (
+            [homeTeam, awayTeam].map((team) => (
+              <Stack key={team.id} gap={6}>
+                <Text fw={800} fz={12} style={{ color: team.color }}>
+                  {team.name}
+                </Text>
+                <Group gap={6}>
+                  {team.players.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      className="lc-chip"
+                      style={{ borderColor: team.color }}
+                      onClick={() => {
+                        setSubError(null);
+                        setSubOff(p);
+                      }}
+                    >
+                      {p.isKeeper ? `${KEEPER_GLYPH} ` : ""}
+                      {p.name}
+                    </button>
+                  ))}
+                </Group>
+              </Stack>
+            ))
+          )}
+
+          <Text fz={11} c="dimmed">
+            Subbing off the keeper hands the glove to whoever comes on.
+          </Text>
+        </Stack>
+      </Modal>
 
       <Modal
         opened={confirmEnd}

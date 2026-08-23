@@ -107,7 +107,6 @@ export default async function SessionDetailPage({
     );
   const rosteredIds = new Set(currentTeams.flatMap((t) => t.players.map((tp) => tp.player.id)));
   const assignablePlayers = activePlayers.filter((p) => !rosteredIds.has(p.id));
-  const playedTeamIds = new Set(finishedMatches.flatMap((m) => [m.home, m.away]));
   const status = STATUS_STYLE[session.status] ?? STATUS_STYLE.draft;
 
   // Player-of-the-day candidates: everyone who turned up, dotted with their
@@ -212,7 +211,6 @@ export default async function SessionDetailPage({
                 sessionId={session.id}
                 teams={currentTeams}
                 assignablePlayers={assignablePlayers}
-                playedTeamIds={playedTeamIds}
               />
             </Panel>
             <Panel>

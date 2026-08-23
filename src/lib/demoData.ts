@@ -106,6 +106,13 @@ export type DemoMatch = {
   awayTeamId: number;
   homeTeam: DemoTeam;
   awayTeam: DemoTeam;
+  /**
+   * Who was on the pitch, mirroring the real `match_player` snapshot — the
+   * joined `player` included, like the Prisma queries that feed the recap. The
+   * demo never substitutes, so this is always both rosters, but it goes through
+   * the same field so the derivations it feeds are the production ones.
+   */
+  lineup: { playerId: number; teamId: number; isKeeper: boolean; player: DemoPlayer }[];
   /** Every demo match plays the same fixed length — see DEMO_MATCH_DURATION_SEC. */
   durationSec: number;
   goalEvents: DemoGoalEvent[];
@@ -259,6 +266,14 @@ function buildSeason() {
           awayTeamId: awayTeam.id,
           homeTeam,
           awayTeam,
+          lineup: [homeTeam, awayTeam].flatMap((team) =>
+            team.players.map((tp) => ({
+              playerId: tp.playerId,
+              teamId: team.id,
+              isKeeper: tp.isKeeper,
+              player: tp.player,
+            })),
+          ),
           durationSec: DEMO_MATCH_DURATION_SEC,
           goalEvents,
         });
@@ -407,9 +422,10 @@ export function getDemoPlayerProfile(playerId: number): DemoPlayerProfile | null
     };
 
     for (const match of session.matches) {
-      const onHome = team !== null && match.homeTeamId === team.id;
-      const onAway = team !== null && match.awayTeamId === team.id;
-      if (!onHome && !onAway) continue;
+      // Read off the match lineup, like the real profile does.
+      const spot = match.lineup.find((m) => m.playerId === playerId);
+      if (!spot) continue;
+      const onHome = spot.teamId === match.homeTeamId;
 
       let home = 0;
       let away = 0;
@@ -427,7 +443,7 @@ export function getDemoPlayerProfile(playerId: number): DemoPlayerProfile | null
         goalsAgainst: onHome ? away : home,
         playerGoals,
         assists,
-        keeper,
+        keeper: spot.isKeeper,
       });
 
       row.goals += playerGoals;

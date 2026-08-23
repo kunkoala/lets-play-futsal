@@ -7,26 +7,17 @@ const cara = { id: 3, name: "Cara" };
 const dan = { id: 4, name: "Dan" };
 
 /** Two teams of two, the smallest shape that still exercises clean sheets. */
-function session(matches: RecapSession["matches"]): RecapSession {
-  return {
-    teams: [
-      {
-        id: 10,
-        players: [
-          { isKeeper: true, player: alice },
-          { isKeeper: false, player: bob },
-        ],
-      },
-      {
-        id: 20,
-        players: [
-          { isKeeper: true, player: cara },
-          { isKeeper: false, player: dan },
-        ],
-      },
-    ],
-    matches,
-  };
+const LINEUP = [
+  { teamId: 10, player: alice },
+  { teamId: 10, player: bob },
+  { teamId: 20, player: cara },
+  { teamId: 20, player: dan },
+];
+
+function session(
+  matches: readonly Omit<RecapSession["matches"][number], "lineup">[],
+): RecapSession {
+  return { matches: matches.map((m) => ({ ...m, lineup: LINEUP })) };
 }
 
 function goal(teamId: number, scorer: typeof alice | null, assist: typeof alice | null = null) {

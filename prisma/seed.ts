@@ -156,6 +156,7 @@ async function createSession(params: {
   };
 
   const teams = {} as Record<"Red" | "Blue" | "Green", { id: number }>;
+  const keepers = {} as Record<"Red" | "Blue" | "Green", Player | null>;
   for (const [name, color] of Object.entries(TEAM_COLORS) as [
     "Red" | "Blue" | "Green",
     string,
@@ -170,6 +171,7 @@ async function createSession(params: {
       rosters[name].find((p) => p.keeperPref === "goalkeeper") ??
       rosters[name].find((p) => p.keeperPref === "flexible") ??
       null;
+    keepers[name] = keeper;
     await prisma.teamPlayer.createMany({
       data: rosters[name].map((p) => ({
         teamId: team.id,
@@ -192,6 +194,19 @@ async function createSession(params: {
         status: "finished",
         startedAt: new Date(params.date),
         endedAt: new Date(params.date),
+        // Every match snapshots its own lineup — the seed has no
+        // substitutions, so each is just the two team sheets.
+        lineup: {
+          createMany: {
+            data: ([result.home, result.away] as const).flatMap((name) =>
+              rosters[name].map((p) => ({
+                playerId: p.id,
+                teamId: teams[name].id,
+                isKeeper: p.id === keepers[name]?.id,
+              })),
+            ),
+          },
+        },
       },
     });
 

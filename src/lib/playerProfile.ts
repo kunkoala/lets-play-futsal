@@ -57,7 +57,10 @@ export async function getPlayerProfile(playerId: number): Promise<PlayerProfile 
         include: {
           season: true,
           teams: { include: { players: true } },
-          matches: { include: { goalEvents: true }, orderBy: { seq: "asc" } },
+          matches: {
+            include: { goalEvents: true, lineup: true },
+            orderBy: { seq: "asc" },
+          },
         },
       },
     },
@@ -83,10 +86,11 @@ export async function getPlayerProfile(playerId: number): Promise<PlayerProfile 
       if (inActiveSeason) thisSeason.mvps += 1;
     }
 
-    // The team this player was shuffled onto — absent if the session was
-    // completed without them being rostered.
+    // The team shown against this matchday is still the roster one — it's the
+    // shirt they turned up in. Which side they played for in a given match
+    // comes from that match's own lineup, since a substitution can move them.
     const team = session.teams.find((t) => t.players.some((tp) => tp.playerId === playerId)) ?? null;
-    const keeper = team?.players.find((tp) => tp.playerId === playerId)?.isKeeper ?? false;
+    const teamById = new Map(session.teams.map((t) => [t.id, t]));
 
     const row: PlayerSessionHistoryRow = {
       sessionId: session.id,
@@ -94,7 +98,7 @@ export async function getPlayerProfile(playerId: number): Promise<PlayerProfile 
       seasonId: session.seasonId,
       seasonName: session.season.name,
       team: team ? { id: team.id, name: team.name, color: team.color } : null,
-      keeper,
+      keeper: false,
       goals: 0,
       assists: 0,
       mvp: sessionMvp,
@@ -102,9 +106,16 @@ export async function getPlayerProfile(playerId: number): Promise<PlayerProfile 
 
     for (const match of session.matches) {
       if (match.status !== "finished") continue;
-      const onHome = team !== null && match.homeTeamId === team.id;
-      const onAway = team !== null && match.awayTeamId === team.id;
+      const spot = match.lineup.find((m) => m.playerId === playerId);
+      if (!spot) continue;
+
+      const onHome = spot.teamId === match.homeTeamId;
+      const onAway = spot.teamId === match.awayTeamId;
       if (!onHome && !onAway) continue;
+
+      // Kept goal in at least one match that night — enough for the glove on
+      // the matchday row, which isn't a per-match view.
+      if (spot.isKeeper) row.keeper = true;
 
       let home = 0;
       let away = 0;
@@ -122,9 +133,15 @@ export async function getPlayerProfile(playerId: number): Promise<PlayerProfile 
         goalsAgainst: onHome ? away : home,
         playerGoals,
         assists,
-        keeper,
+        keeper: spot.isKeeper,
       };
       for (const totals of accumulators) applyMatch(totals, contribution);
+
+      // A sub who moved teams mid-session shows the team they last played for.
+      const playedFor = teamById.get(spot.teamId);
+      if (playedFor && row.team?.id !== playedFor.id) {
+        row.team = { id: playedFor.id, name: playedFor.name, color: playedFor.color };
+      }
 
       row.goals += playerGoals;
       row.assists += assists;

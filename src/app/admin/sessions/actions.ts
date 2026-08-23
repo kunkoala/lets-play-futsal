@@ -352,8 +352,8 @@ export async function startMatch(
   if (inProgress) return { error: "A match is already in progress." };
 
   const [homeTeam, awayTeam] = await Promise.all([
-    prisma.team.findUnique({ where: { id: homeTeamId } }),
-    prisma.team.findUnique({ where: { id: awayTeamId } }),
+    prisma.team.findUnique({ where: { id: homeTeamId }, include: { players: true } }),
+    prisma.team.findUnique({ where: { id: awayTeamId }, include: { players: true } }),
   ]);
   if (!homeTeam || homeTeam.sessionId !== sessionId || !awayTeam || awayTeam.sessionId !== sessionId) {
     return { error: "Invalid teams for this session." };
@@ -365,8 +365,27 @@ export async function startMatch(
   });
   const seq = (lastMatch?.seq ?? 0) + 1;
 
+  // The lineup is snapshotted here, from the rosters as they stand at
+  // kick-off. Editing a roster afterwards changes who starts the *next* match
+  // and leaves this one alone — that's the whole point of MatchPlayer.
+  const lineup = [homeTeam, awayTeam].flatMap((team) =>
+    team.players.map((tp) => ({
+      playerId: tp.playerId,
+      teamId: team.id,
+      isKeeper: tp.isKeeper,
+    })),
+  );
+
   const match = await prisma.match.create({
-    data: { sessionId, seq, homeTeamId, awayTeamId, status: "in_progress", durationSec },
+    data: {
+      sessionId,
+      seq,
+      homeTeamId,
+      awayTeamId,
+      status: "in_progress",
+      durationSec,
+      lineup: { createMany: { data: lineup } },
+    },
   });
 
   redirect(`/admin/sessions/${sessionId}/live?matchId=${match.id}`);
@@ -473,11 +492,12 @@ export type RosterActionState = { error: string } | undefined;
  * here). Only ever touches the current shuffle generation: a player can be
  * on at most one of *this round's* teams at a time.
  *
- * Note this doesn't retroactively fix team-level stats for matches the
- * target team already played tonight (win/loss, clean sheets, keeper
- * numbers) — those are derived from whoever's currently rostered, not a
- * per-match snapshot. Accepted tradeoff: individual goals/assists stay
- * correctly attributed either way, and it only affects this one session.
+ * Safe to do mid-session. Stats come from each match's own `MatchPlayer`
+ * lineup, snapshotted at kick-off, so this changes who *starts the next
+ * match* and leaves everything already played untouched. (It used to rewrite
+ * the whole night — see the MatchPlayer comment in prisma/schema.prisma.)
+ * To change a match that has already started, use the live console's
+ * substitution instead.
  */
 export async function assignPlayerToTeam(
   _prevState: RosterActionState,

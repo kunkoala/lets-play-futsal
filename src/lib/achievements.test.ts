@@ -19,12 +19,17 @@ function goal(overrides: Partial<AchievementSession["matches"][number]["goalEven
   return { teamId: 10, scorerId: PLAYER, assistId: null, matchSec: null, ...overrides };
 }
 
+/** PLAYER lines up for team 10, OPPONENT for team 20, unless overridden. */
 function match(overrides: Partial<AchievementSession["matches"][number]> = {}) {
   return {
     homeTeamId: 10,
     awayTeamId: 20,
     status: "finished",
     durationSec: null,
+    lineup: [
+      { playerId: PLAYER, teamId: 10 },
+      { playerId: OPPONENT, teamId: 20 },
+    ],
     goalEvents: [],
     ...overrides,
   };

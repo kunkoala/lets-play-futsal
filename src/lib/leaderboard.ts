@@ -25,7 +25,12 @@ async function completedSeason(seasonId: number) {
     include: {
       attendances: true,
       teams: { include: { players: true } },
-      matches: { include: { goalEvents: true }, orderBy: { seq: "asc" } },
+      // `lineup` rather than the team rosters is what the stats come from —
+      // see the MatchPlayer comment in prisma/schema.prisma.
+      matches: {
+        include: { goalEvents: true, lineup: true },
+        orderBy: { seq: "asc" },
+      },
     },
     orderBy: { date: "asc" },
   });
