@@ -12,6 +12,7 @@ import { TeamRosters } from "./TeamRosters";
 import { TeamRosterEditor } from "./TeamRosterEditor";
 import { NextMatchCard } from "./NextMatchCard";
 import { MatchesSoFar } from "./MatchesSoFar";
+import { AddPastMatchForm } from "./AddPastMatchForm";
 import { SessionMvpControl } from "./SessionMvpControl";
 import { CompleteSessionButton, ReopenSessionButton } from "./CompleteSessionButton";
 import { ReshuffleBanner } from "./ReshuffleBanner";
@@ -74,7 +75,17 @@ export default async function SessionDetailPage({
         orderBy: { id: "asc" },
       },
       matches: {
-        include: { homeTeam: true, awayTeam: true, goalEvents: true },
+        include: {
+          homeTeam: true,
+          awayTeam: true,
+          // Scorers, assisters and the lineup all come along so a match row
+          // can be corrected in place — see MatchCorrections.
+          goalEvents: {
+            include: { scorer: true, assist: true },
+            orderBy: { seq: "asc" },
+          },
+          lineup: { include: { player: true } },
+        },
         orderBy: { seq: "asc" },
       },
     },
@@ -218,6 +229,9 @@ export default async function SessionDetailPage({
               <Box mt={12}>
                 <MatchesSoFar sessionId={session.id} matches={session.matches} />
               </Box>
+              <Box mt={12}>
+                <AddPastMatchForm sessionId={session.id} teams={currentTeams} />
+              </Box>
             </Panel>
             <SessionMvpControl
               sessionId={session.id}
@@ -263,6 +277,12 @@ export default async function SessionDetailPage({
             <Eyebrow>Matches</Eyebrow>
             <Box mt={12}>
               <MatchesSoFar sessionId={session.id} matches={session.matches} />
+            </Box>
+            {/* Available on a completed session too: "we forgot to log one"
+                is usually noticed after the fact, and reopening the whole
+                session to add it would be a heavier tool than the job needs. */}
+            <Box mt={12}>
+              <AddPastMatchForm sessionId={session.id} teams={currentTeams} />
             </Box>
           </Panel>
           <SessionMvpControl

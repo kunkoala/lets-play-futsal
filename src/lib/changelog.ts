@@ -36,6 +36,27 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    date: "2026-08-24",
+    title: "Fixing a scoreline after the fact",
+    summary: "Admin-side only — nothing changes for you unless a match was recorded wrong.",
+    items: [
+      {
+        kind: "added",
+        text: "Goals in a finished match can be corrected: wrong scorer, missing assist, wrong minute.",
+      },
+      { kind: "added", text: "Goals nobody logged at the time can be added afterwards." },
+      { kind: "added", text: "A match that was played but never started in the app can be entered." },
+      {
+        kind: "added",
+        text: "Who kept goal is editable per match, which is what clean sheets are counted from.",
+      },
+      {
+        kind: "changed",
+        text: "A goal added late slots back into its own minute in the match report, rather than showing up last.",
+      },
+    ],
+  },
+  {
     date: "2026-08-23",
     title: "MVP is just for fun now",
     summary: "First round of changes from your feedback after launch.",
