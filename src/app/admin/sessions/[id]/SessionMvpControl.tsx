@@ -107,7 +107,7 @@ export function SessionMvpControl({
       </Group>
 
       <Text fz={11} c="dimmed" mt={8}>
-        Just for fun — the MVP pick doesn&apos;t affect anyone&apos;s rating.
+        Doesn&apos;t affect anyone&apos;s rating.
       </Text>
     </Box>
   );

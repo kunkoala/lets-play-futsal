@@ -87,7 +87,7 @@ export default async function SessionsPage() {
           </Box>
         ) : (
           <Text c="dimmed" fz={14}>
-            No active season — <NavLink href="/admin/seasons">create/activate one</NavLink> first.
+            No active season. <NavLink href="/admin/seasons">Create or activate one</NavLink> first.
           </Text>
         )}
 

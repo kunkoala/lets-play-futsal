@@ -54,7 +54,7 @@ export async function createSession(
     where: { isActive: true },
   });
   if (!activeSeason) {
-    return { error: "No active season — create and activate a season first." };
+    return { error: "No active season. Create and activate one first." };
   }
   if (date < activeSeason.startsOn || date > activeSeason.endsOn) {
     return {
@@ -99,7 +99,7 @@ export async function saveAttendance(
   const session = await prisma.session.findUnique({ where: { id: sessionId } });
   if (!session) return { error: "Session not found." };
   if (session.status !== "draft") {
-    return { error: "Attendance is locked — unlock the session first." };
+    return { error: "Attendance is locked. Unlock the session first." };
   }
 
   const playerIds = formData
@@ -136,7 +136,7 @@ export async function shuffleTeams(
   const session = await prisma.session.findUnique({ where: { id: sessionId } });
   if (!session) return { error: "Session not found." };
   if (session.status !== "draft") {
-    return { error: "Teams are locked — unlock the session first." };
+    return { error: "Teams are locked. Unlock the session first." };
   }
 
   const attendance = await prisma.attendance.findMany({
@@ -299,7 +299,7 @@ export async function unlockTeams(
 
   const matchCount = await prisma.match.count({ where: { sessionId } });
   if (matchCount > 0) {
-    return { error: "Can't unlock — matches have already been recorded for this session." };
+    return { error: "Can't unlock. Matches have already been recorded for this session." };
   }
 
   await prisma.session.update({

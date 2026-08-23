@@ -85,7 +85,7 @@ export async function SiteFooter({ basePath = "" }: { basePath?: string }) {
           <Stack gap={10}>
             <FooterHeading>Want to play?</FooterHeading>
             <Text c="dimmed" fz={13} style={{ lineHeight: 1.55 }}>
-              New players are welcome — no team, no commitment, just turn up. Email us and
+              New players are welcome. No team, no commitment, just turn up. Email us and
               we&apos;ll add you to the list.
             </Text>
             <Box

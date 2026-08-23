@@ -4,7 +4,6 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { useOptimistic } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Group, Modal, Stack, Text } from "@mantine/core";
-import { KEEPER_GLYPH } from "@/lib/keeperPref";
 import { gradientDarkFor } from "@/lib/teamPalette";
 import {
   breakAtSec,
@@ -40,6 +39,27 @@ type GoalEventT = {
 };
 
 let optimisticIdCounter = -1;
+
+/** The one line of instruction a sheet section gets. Keep it to a short imperative. */
+function SheetLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <Text fz={13} fw={600} c="dimmed">
+      {children}
+    </Text>
+  );
+}
+
+/** A team's name over its row of player chips. */
+function TeamChips({ team, children }: { team: TeamInfo; children: React.ReactNode }) {
+  return (
+    <Stack gap={10}>
+      <Text fw={800} fz={12} style={{ color: team.color }}>
+        {team.name}
+      </Text>
+      <Group gap={8}>{children}</Group>
+    </Stack>
+  );
+}
 
 /** `11'` — floor rather than round, matching the clock's own mm:ss floor. */
 function formatMinute(matchSec: number | null): string | null {
@@ -512,13 +532,7 @@ export function LiveConsole({
         centered
         zIndex={300}
       >
-        <Stack gap="sm">
-          <Text fz={13} c="dimmed">
-            {subOff
-              ? `Who comes on for ${subOff.name}?`
-              : "Who's coming off? This only changes this match — goals already scored stay."}
-          </Text>
-
+        <Stack gap={22}>
           {subError && (
             <Text fz={13} fw={600} c="red">
               {subError}
@@ -526,8 +540,9 @@ export function LiveConsole({
           )}
 
           {subOff ? (
-            <>
-              <Group gap={6}>
+            <Stack gap={16}>
+              <SheetLabel>Coming on for {subOff.name}</SheetLabel>
+              <Group gap={8}>
                 {available.map((p) => (
                   <button
                     key={p.id}
@@ -545,48 +560,38 @@ export function LiveConsole({
                   Back
                 </Button>
               </Group>
-            </>
+            </Stack>
           ) : (
-            [homeTeam, awayTeam].map((team) => (
-              <Stack key={team.id} gap={6}>
-                <Text fw={800} fz={12} style={{ color: team.color }}>
-                  {team.name}
-                </Text>
-                <Group gap={6}>
-                  {team.players.map((p) => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      className="lc-chip"
-                      style={{ borderColor: team.color }}
-                      onClick={() => {
-                        setSubError(null);
-                        setSubOff(p);
-                      }}
-                    >
-                      {p.isKeeper ? `${KEEPER_GLYPH} ` : ""}
-                      {p.name}
-                    </button>
-                  ))}
-                </Group>
+            <>
+              <Stack gap={16}>
+                <SheetLabel>Select a player to substitute</SheetLabel>
+                {[homeTeam, awayTeam].map((team) => (
+                  <TeamChips key={team.id} team={team}>
+                    {team.players.map((p) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        className="lc-chip"
+                        style={{ borderColor: team.color }}
+                        onClick={() => {
+                          setSubError(null);
+                          setSubOff(p);
+                        }}
+                      >
+                        {p.name}
+                      </button>
+                    ))}
+                  </TeamChips>
+                ))}
               </Stack>
-            ))
-          )}
 
-          {/* Kept out of the substitution flow above: rotating the gloves is
-              its own thing, and forcing it through a swap would mean subbing
-              someone off and back on to change who keeps. */}
-          {!subOff && (
-            <Stack gap={8} pt={8} style={{ borderTop: "1px solid var(--hairline)" }}>
-              <Text fw={800} fz={12} c="dimmed" style={{ letterSpacing: "0.1em" }}>
-                {KEEPER_GLYPH} WHO&apos;S IN GOAL
-              </Text>
-              {[homeTeam, awayTeam].map((team) => (
-                <Stack key={team.id} gap={6}>
-                  <Text fw={800} fz={12} style={{ color: team.color }}>
-                    {team.name}
-                  </Text>
-                  <Group gap={6}>
+              {/* Kept out of the substitution flow above: rotating the gloves is
+                  its own thing, and forcing it through a swap would mean subbing
+                  someone off and back on to change who keeps. */}
+              <Stack gap={16} pt={20} style={{ borderTop: "1px solid var(--hairline)" }}>
+                <SheetLabel>Select a goalkeeper</SheetLabel>
+                {[homeTeam, awayTeam].map((team) => (
+                  <TeamChips key={team.id} team={team}>
                     {team.players.map((p) => (
                       <button
                         key={p.id}
@@ -601,18 +606,13 @@ export function LiveConsole({
                             : { borderColor: team.color }
                         }
                       >
-                        {p.isKeeper ? `${KEEPER_GLYPH} ` : ""}
                         {p.name}
                       </button>
                     ))}
-                  </Group>
-                </Stack>
-              ))}
-              <Text fz={11} c="dimmed">
-                Tap the keeper again to leave the team without one. Clean sheets are counted from
-                this — subbing off the keeper hands the glove to whoever comes on.
-              </Text>
-            </Stack>
+                  </TeamChips>
+                ))}
+              </Stack>
+            </>
           )}
         </Stack>
       </Modal>
@@ -630,15 +630,10 @@ export function LiveConsole({
             <Text span fw={700} style={{ color: homeTeam.color }}>
               {homeTeam.name}
             </Text>{" "}
-            {homeScore} — {awayScore}{" "}
+            {homeScore}–{awayScore}{" "}
             <Text span fw={700} style={{ color: awayTeam.color }}>
               {awayTeam.name}
             </Text>
-          </Text>
-
-          <Text fz={12} c="dimmed">
-            There&apos;s no man of the match any more — pick one player of the day for the
-            whole session from the session page when you&apos;re done.
           </Text>
 
           <Group justify="flex-end">
@@ -715,8 +710,7 @@ function TeamHalf({
               onClick={() => onScore(p)}
             >
               <span style={{ textAlign: "center", lineHeight: 1.1 }}>
-                {p.isKeeper ? `${KEEPER_GLYPH} ` : ""}
-                {p.name}
+                                {p.name}
               </span>
               <span
                 className="tabular-nums"
@@ -938,7 +932,7 @@ function PhoneConsole({
           </>
         ) : isFinished ? (
           <Text c="dimmed" fz={14} ta="center" py="lg">
-            Match finished — open the feed to review the goals.
+            Match finished. Open the feed to review the goals.
           </Text>
         ) : (
           <div className="lcp-list">
@@ -965,7 +959,6 @@ function PhoneConsole({
                     onClick={() => onScore(activeTeam, p)}
                   >
                     <span style={{ minWidth: 0 }}>
-                      {p.isKeeper ? `${KEEPER_GLYPH} ` : ""}
                       {p.name}
                       {scored && <span className="lcp-scored-note"> · scored</span>}
                     </span>

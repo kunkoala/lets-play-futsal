@@ -1,5 +1,5 @@
 import { Box, Group, Stack, Text } from "@mantine/core";
-import { KEEPER_GLYPH } from "@/lib/keeperPref";
+import { KeeperChip } from "@/components/KeeperChip";
 
 type Team = {
   id: number;
@@ -62,11 +62,7 @@ export function TeamRosters({ teams, reveal }: { teams: Team[]; reveal?: boolean
                   <Text fz={13} fw={tp.isKeeper ? 700 : 500} truncate>
                     {tp.player.name}
                   </Text>
-                  {tp.isKeeper && (
-                    <Text fz={11} title="Goalkeeper" style={{ flexShrink: 0 }}>
-                      {KEEPER_GLYPH}
-                    </Text>
-                  )}
+                  {tp.isKeeper && <KeeperChip />}
                 </Group>
               ))}
             </Stack>

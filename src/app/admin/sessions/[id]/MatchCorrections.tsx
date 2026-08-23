@@ -3,7 +3,6 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Box, Button, Group, Modal, NumberInput, Select, Stack, Text } from "@mantine/core";
-import { KEEPER_GLYPH } from "@/lib/keeperPref";
 import { addGoal, editGoal, removeGoal, setMatchKeeper } from "./corrections";
 
 type Player = { id: number; name: string };
@@ -101,8 +100,7 @@ function GoalForm({
 
       <Select
         label="Scorer"
-        description="Leave as Own goal if nobody on this team put it in."
-        data={[{ value: NO_PLAYER, label: "Own goal — nobody credited" }, ...playerOptions]}
+        data={[{ value: NO_PLAYER, label: "Own goal" }, ...playerOptions]}
         value={scorerId}
         allowDeselect={false}
         searchable
@@ -124,7 +122,7 @@ function GoalForm({
 
       <NumberInput
         label="Minute"
-        description="Optional — leave blank if nobody noted it."
+        description="Optional"
         placeholder="—"
         min={0}
         max={240}
@@ -264,7 +262,7 @@ export function MatchCorrections({
       </Stack>
 
       <Button size="xs" variant="light" onClick={() => setAdding(true)} disabled={isPending}>
-        + Add a goal nobody logged
+        + Add goal
       </Button>
 
       <Stack gap={8}>
@@ -274,7 +272,7 @@ export function MatchCorrections({
           c="var(--text-muted)"
           style={{ letterSpacing: "0.12em", textTransform: "uppercase" }}
         >
-          {KEEPER_GLYPH} Who kept goal
+          Goalkeeper
         </Text>
         <Group gap={10} wrap="wrap">
           {sides.map((side) => (
@@ -295,8 +293,7 @@ export function MatchCorrections({
           ))}
         </Group>
         <Text fz={11} c="dimmed">
-          Clean sheets follow from this and the goals above — there&apos;s nothing separate to
-          adjust, so the totals can never disagree with the score.
+          Clean sheets are counted from this.
         </Text>
       </Stack>
 
@@ -331,7 +328,7 @@ export function MatchCorrections({
             {confirmDelete?.scorer?.name ?? "Own goal"}
             {confirmDelete?.matchSec != null &&
               ` at ${Math.floor(confirmDelete.matchSec / 60)}'`}
-            . This changes the score, and every total derived from it.
+.
           </Text>
           <Group justify="flex-end" gap="sm">
             <Button variant="default" onClick={() => setConfirmDelete(null)}>

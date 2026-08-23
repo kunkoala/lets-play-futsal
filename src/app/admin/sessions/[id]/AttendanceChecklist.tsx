@@ -60,7 +60,7 @@ export function AttendanceChecklist({
 
       {players.length === 0 ? (
         <Text fz={14} c="dimmed">
-          No active players — add some on the Players page first.
+          No active players. Add some on the Players page first.
         </Text>
       ) : (
         <Box className="checkin-grid">

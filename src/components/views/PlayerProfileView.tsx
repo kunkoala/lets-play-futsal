@@ -22,7 +22,8 @@ import type { RatingPoint } from "@/lib/ratingHistory";
 import { PlayerProgressCharts } from "@/components/PlayerProgressCharts";
 import type { EvaluatedAchievement } from "@/lib/achievements";
 import type { KeeperPref } from "@/lib/shuffle";
-import { keeperPrefBadge, keeperPrefLabel, KEEPER_GLYPH } from "@/lib/keeperPref";
+import { keeperPrefBadge, keeperPrefLabel } from "@/lib/keeperPref";
+import { KeeperChip } from "@/components/KeeperChip";
 import { AchievementBadges } from "@/components/AchievementBadges";
 
 import { NavLink } from "@/components/NavLink";
@@ -402,7 +403,7 @@ export function PlayerProfileView({
                   {totals.keeperMatches > 0 && (
                     <Card>
                       <Stack gap={9}>
-                        <Eyebrow>{KEEPER_GLYPH} In goal</Eyebrow>
+                        <Eyebrow>In goal</Eyebrow>
                         <StatLine label="Matches kept" value={totals.keeperMatches} />
                         <StatLine label="Goals conceded" value={totals.keeperConceded} />
                         <StatLine
@@ -508,11 +509,7 @@ function SessionHistory({
                         <Text fz={13} fw={600}>
                           {row.team.name}
                         </Text>
-                        {row.keeper && (
-                          <Text fz={11} title="Kept goal that day">
-                            {KEEPER_GLYPH}
-                          </Text>
-                        )}
+                        {row.keeper && <KeeperChip title="Kept goal that matchday" />}
                       </Group>
                     ) : (
                       <Text c="dimmed">—</Text>

@@ -171,7 +171,7 @@ function HourBars({ hours }: { hours: HourPoint[] }) {
         {hours.map((hour) => (
           <Box
             key={hour.hour}
-            title={`${String(hour.hour).padStart(2, "0")}:00 — ${hour.views} views`}
+            title={`${String(hour.hour).padStart(2, "0")}:00 · ${hour.views} views`}
             style={{
               flex: 1,
               // 4px rounded data-end, anchored to the baseline.
@@ -278,7 +278,7 @@ export default async function AnalyticsPage({
           <Eyebrow>No data yet</Eyebrow>
           <Text fz={14} mt={8}>
             Nothing has been recorded. Open the public site in another browser (or a private
-            window) — your own admin session is excluded from every figure here, and so are
+            window). Your own admin session is excluded from every figure here, and so are
             /admin and /login themselves.
           </Text>
         </Panel>
@@ -379,7 +379,7 @@ export default async function AnalyticsPage({
               <Eyebrow>Traffic sources</Eyebrow>
               <BarList
                 rows={snapshot.referrers}
-                empty="Everyone arrived directly — no external referrers yet."
+                empty="Everyone arrived directly. No external referrers yet."
               />
             </Panel>
 

@@ -171,9 +171,8 @@ export function AwardsView({
         </Box>
 
         <Text fz={11} c="dimmed" ta="center">
-          Most Improved compares each player&apos;s rating with where it was a few matchdays
-          ago, once they&apos;ve played {MIN_SESSIONS_FOR_IMPROVEMENT} sessions — before that a
-          rating swings too much for a gain to mean anything.
+          Most Improved is the biggest rating gain over recent matchdays. Needs{" "}
+          {MIN_SESSIONS_FOR_IMPROVEMENT} sessions played to qualify.
         </Text>
       </Stack>
     </Container>

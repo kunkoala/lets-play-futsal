@@ -56,22 +56,22 @@ function sortValue(s: PlayerSeasonStats, field: SortField): number {
 const COLUMN_HELP: Record<string, string> = {
   rank: "Position in this season's standings, by whichever column is currently highlighted.",
   movement:
-    "Places gained or lost since the last matchday, in whichever column is currently highlighted. NEW means this is their first matchday with a result.",
+    "Places gained or lost since the last matchday, in whichever column is highlighted. NEW means it's their first.",
   player: "Tap a name for that player's full profile and match-by-match history.",
-  rating: `Overall rating out of 100, blending every stat on this page: goals, assists, points, win rate and matchdays. MVP awards are deliberately left out — the rating is about what you did on the pitch. Per-match rates are steadied against the league average for the first ${PRIOR_MATCHES} matches, so one big game doesn't top the table.`,
+  rating: `Your score out of 100, from goals, assists, points, win rate and matchdays. MVP awards don't count toward it. Per-match rates are steadied for your first ${PRIOR_MATCHES} matches so one big game can't top the table.`,
   matchesPlayed:
-    "Matches played. Sits next to the rating because it's what makes a rating mean something — 90 off two games isn't 90 off a season.",
+    "Matches played. Sits next to the rating so you can tell a 90 off two games from a 90 off a season.",
   goals: "Goals scored. Own goals count on the scoreboard but aren't credited to anyone.",
-  assists: "Assists — the pass before a goal, when there was one.",
+  assists: "Assists. The pass before a goal, when there was one.",
   goalContributions: "Goals plus assists: total attacking output, counting a goal and an assist equally.",
   wins: "Matches won. Individual matches, not whole matchdays.",
   draws: "Matches that finished level.",
   losses: "Matches lost.",
   points: "Football scoring: 3 points for a win, 1 for a draw, nothing for a loss.",
   plusMinus:
-    "Goal difference while you were on the pitch — your team's goals scored minus goals conceded, added up across every match.",
+    "Goal difference while you were on the pitch. Your team's goals scored minus goals conceded, across every match.",
   cleanSheets:
-    "Matches you kept goal in and conceded nothing. The keeper's alone — crediting the whole team meant an outfielder collected them at the same rate as the person actually stopping the shots.",
+    "Matches you kept goal in and conceded nothing. Only the keeper gets one.",
   winRate: "Share of matches won. Draws count as neither a win nor a loss here.",
   form: "Your last five results, oldest on the left. Green is a win, yellow a draw, red a loss.",
 };

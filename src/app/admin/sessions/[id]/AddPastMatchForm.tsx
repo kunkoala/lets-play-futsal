@@ -54,7 +54,7 @@ export function AddPastMatchForm({
   if (!open) {
     return (
       <Button size="xs" variant="subtle" onClick={() => setOpen(true)}>
-        + Record a match we forgot to start
+        + Add a past match
       </Button>
     );
   }
@@ -98,8 +98,7 @@ export function AddPastMatchForm({
       )}
 
       <Text fz={11} c="dimmed">
-        Added as finished with no goals and no clock. Use Fix on the new row to enter what was
-        scored.
+        Added with no goals. Use Fix on the new row to enter them.
       </Text>
     </Stack>
   );

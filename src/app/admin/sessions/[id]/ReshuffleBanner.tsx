@@ -34,7 +34,7 @@ export function ReshuffleBanner({ sessionId }: { sessionId: number }) {
             Everyone&apos;s played everyone once
           </Text>
           <Text fz={12} c="dimmed" mt={2}>
-            Reshuffle for a fresh, balanced split — this matchday&apos;s results so far stay recorded.
+            Reshuffle for a fresh, balanced split. Results so far stay recorded.
           </Text>
         </Box>
         <Group gap={8} wrap="nowrap">
@@ -61,9 +61,8 @@ export function ReshuffleBanner({ sessionId }: { sessionId: number }) {
       >
         <Stack>
           <Text fz={14}>
-            This deals a brand new, balanced split from this matchday&apos;s check-in. Matches already
-            played keep their results and stats — they stay attached to the teams that played
-            them.
+            Deals a new, balanced split from this matchday&apos;s check-in. Matches already played
+            keep their results, attached to the teams that played them.
           </Text>
           <form
             action={(fd) => {

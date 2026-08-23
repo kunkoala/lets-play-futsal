@@ -52,7 +52,7 @@ export function Podium({
 
       {items.length === 0 ? (
         <Text size="sm" c="dimmed" pb={10}>
-          No data yet — play some matches this season!
+          No data yet.
         </Text>
       ) : (
         <Stack gap={0}>

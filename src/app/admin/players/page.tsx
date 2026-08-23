@@ -49,7 +49,7 @@ export default async function PlayersPage() {
 
         {players.length === 0 ? (
           <Text c="dimmed" fz={14}>
-            No players yet — add the first one above.
+            No players yet. Add the first one above.
           </Text>
         ) : (
           <PlayerDirectory players={players} />

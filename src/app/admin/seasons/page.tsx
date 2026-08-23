@@ -105,7 +105,7 @@ export default async function SeasonsPage() {
                   <TableTr>
                     <TableTd colSpan={6}>
                       <Text c="dimmed" fz={14} py="sm">
-                        No seasons yet — create the first one above.
+                        No seasons yet. Create the first one above.
                       </Text>
                     </TableTd>
                   </TableTr>
@@ -125,7 +125,7 @@ export default async function SeasonsPage() {
             ))}
             {seasons.length === 0 && (
               <Text c="dimmed" fz={14} p="md">
-                No seasons yet — create the first one above.
+                No seasons yet. Create the first one above.
               </Text>
             )}
           </Box>

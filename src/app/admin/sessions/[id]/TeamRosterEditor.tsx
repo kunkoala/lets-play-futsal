@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Box, Group, Select, Stack, Text } from "@mantine/core";
-import { KEEPER_GLYPH } from "@/lib/keeperPref";
+import { KeeperChip } from "@/components/KeeperChip";
 import { assignPlayerToTeam, benchPlayer, setTeamPlayerKeeper } from "../actions";
 
 type Team = {
@@ -117,20 +117,21 @@ export function TeamRosterEditor({
                   <Group key={tp.player.id} gap={6} wrap="nowrap" align="center">
                     <button
                       type="button"
-                      title={tp.isKeeper ? "Keeper — tap to clear" : "Tap to make keeper"}
                       onClick={() => toggleKeeper(team.id, tp.player.id, !tp.isKeeper)}
                       disabled={isPending}
                       style={{
                         border: "none",
                         background: "transparent",
                         cursor: "pointer",
-                        opacity: tp.isKeeper ? 1 : 0.3,
-                        fontSize: 13,
                         flexShrink: 0,
                         padding: 0,
+                        lineHeight: 1,
                       }}
                     >
-                      {KEEPER_GLYPH}
+                      <KeeperChip
+                        active={tp.isKeeper}
+                        title={tp.isKeeper ? "Goalkeeper. Tap to clear" : "Make goalkeeper"}
+                      />
                     </button>
                     <Text fz={13} fw={tp.isKeeper ? 700 : 500} truncate style={{ flex: 1 }}>
                       {tp.player.name}
@@ -149,7 +150,7 @@ export function TeamRosterEditor({
                     />
                     <button
                       type="button"
-                      title={`Bench ${tp.player.name} — off the roster, no replacement`}
+                      title={`Bench ${tp.player.name}`}
                       aria-label={`Bench ${tp.player.name}`}
                       onClick={() => bench(tp.player.id)}
                       disabled={isPending}
@@ -211,10 +212,7 @@ export function TeamRosterEditor({
         </Group>
       )}
       <Text fz={11} c="dimmed">
-        Tap the glove to make someone the keeper, × to bench them (no replacement — the team plays
-        a player short). Changes apply from the next match on; matches already played keep the
-        lineup they were played with. To swap someone during a match, use ⇄ Sub in the live
-        console.
+        Tap GK to set the goalkeeper, × to bench. Changes apply from the next match on.
       </Text>
     </Stack>
   );

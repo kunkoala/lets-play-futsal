@@ -101,7 +101,7 @@ export function AddPlayerForm({ players }: { players: ExistingPlayer[] }) {
             <Text fz={13} fw={600}>
               {blocking.isActive
                 ? `${blocking.name} is already on the list.`
-                : `${blocking.name} already exists, but is deactivated — that's why they're missing from the shuffle.`}
+                : `${blocking.name} already exists but is deactivated, so they don't show up in the shuffle.`}
             </Text>
             {!blocking.isActive && (
               <Button

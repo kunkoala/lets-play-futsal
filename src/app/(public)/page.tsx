@@ -13,7 +13,7 @@ export default async function LeaderboardPage({
   if (seasons.length === 0) {
     return (
       <Container size="lg" py={48}>
-        <Text c="dimmed">No seasons yet — check back once the admin sets one up.</Text>
+        <Text c="dimmed">No seasons yet. Check back once the admin sets one up.</Text>
       </Container>
     );
   }

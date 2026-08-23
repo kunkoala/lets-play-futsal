@@ -92,9 +92,9 @@ function DurationPicker({
       </Group>
       <Text fz={12} c="dimmed" mt={6}>
         {minutes === null
-          ? "No timer — the clock will count up."
+          ? "No timer. The clock counts up."
           : breakAt === null
-            ? `${minutes} min straight through — no water break at or under 10.`
+            ? `${minutes} min straight through. No water break at or under 10.`
             : `Water break at ${formatClock(breakAt)}.`}
       </Text>
     </Box>

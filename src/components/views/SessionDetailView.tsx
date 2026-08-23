@@ -1,6 +1,6 @@
 import { Box, Container, Group, Stack, Text } from "@mantine/core";
 import { computeScore } from "@/lib/matchScore";
-import { KEEPER_GLYPH } from "@/lib/keeperPref";
+import { KeeperChip } from "@/components/KeeperChip";
 import {
   summariseSession,
   type RecapLeader,
@@ -406,7 +406,7 @@ export function SessionDetailView({
             <Stack gap="xl">
               {recap.matchesPlayed === 0 && (
                 <Text fz={14} c="dimmed">
-                  Nothing to total up yet — stats appear once a match has finished.
+                  Stats appear once a match has finished.
                 </Text>
               )}
 
@@ -443,7 +443,7 @@ export function SessionDetailView({
                         a top three is most of the keepers. */}
                     <RecapCard
                       label="Most clean sheets"
-                      glyph={KEEPER_GLYPH}
+                      glyph="GK"
                       unit="matches"
                       leader={recap.mostCleanSheets}
                       accent="var(--team-purple)"
@@ -526,7 +526,12 @@ function MatchesPanel({
                           underline="hover"
                         >
                           {tp.player.name}
-                          {tp.isKeeper ? ` ${KEEPER_GLYPH}` : ""}
+                          {tp.isKeeper && (
+                            <>
+                              {" "}
+                              <KeeperChip />
+                            </>
+                          )}
                         </NavLink>
                       ))}
                   </Stack>

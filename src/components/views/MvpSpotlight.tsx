@@ -79,7 +79,7 @@ export function MvpSpotlight({
           {mvp.name}
         </Text>
         <Text fw={600} fz={14} style={{ opacity: 0.82 }}>
-          {subtitle} — {seasonName}
+          {subtitle} · {seasonName}
         </Text>
         {runnerUp && (
           <Text fw={600} fz={12} style={{ opacity: 0.68 }}>

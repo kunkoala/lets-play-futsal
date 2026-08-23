@@ -3,7 +3,6 @@
 import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { Box, Button, Group, Text } from "@mantine/core";
 import { computeTeamSizes, keeperCoverage, type ShuffleCandidate } from "@/lib/shuffle";
-import { KEEPER_GLYPH } from "@/lib/keeperPref";
 import { paletteFor } from "@/lib/teamPalette";
 import { shuffleTeams, type SessionFormState } from "../actions";
 
@@ -157,7 +156,7 @@ export function ShuffleControls({
       {coverage && (
         <Group gap={8} mt={12} wrap="wrap" align="center">
           <Text fz={12} fw={600} c="dimmed">
-            {KEEPER_GLYPH} Keepers
+            Keepers
           </Text>
           {coverage.dedicated > 0 && (
             <CoveragePill color="var(--team-green)">

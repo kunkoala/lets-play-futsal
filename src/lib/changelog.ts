@@ -38,7 +38,7 @@ export const CHANGELOG: readonly ChangelogEntry[] = [
   {
     date: "2026-08-24",
     title: "Fixing a scoreline after the fact",
-    summary: "Admin-side only — nothing changes for you unless a match was recorded wrong.",
+    summary: "Admin tools. Nothing changes for you unless a match was recorded wrong.",
     items: [
       {
         kind: "added",
@@ -48,7 +48,7 @@ export const CHANGELOG: readonly ChangelogEntry[] = [
       { kind: "added", text: "A match that was played but never started in the app can be entered." },
       {
         kind: "added",
-        text: "Who kept goal is editable per match — during it from the live console, or afterwards. That's what clean sheets are counted from.",
+        text: "The goalkeeper can be changed per match, during it or afterwards. Clean sheets are counted from that.",
       },
       {
         kind: "fixed",
@@ -67,27 +67,27 @@ export const CHANGELOG: readonly ChangelogEntry[] = [
     headsUp: [
       {
         title: "Every rating has shifted",
-        text: "MVP awards used to be 20% of your rating — the single biggest ingredient. That made the rating partly a popularity vote and gave people a reason to farm MVPs. It's now built purely from what you do on the pitch, with goals + assists carrying the most weight.",
+        text: "MVP awards used to be 20% of your rating, which made it partly a popularity vote. Your rating now comes only from what you do on the pitch, and goals + assists counts for the most.",
       },
       {
         title: "Clean sheets are the keeper's now",
-        text: "Crediting the whole team meant an outfielder collected them as fast as the person actually stopping the shots. Unless you go in goal, your clean-sheet total has dropped to zero.",
+        text: "They used to count for the whole team, so outfielders collected them as fast as the keeper. Unless you go in goal, your clean-sheet total is now zero.",
       },
     ],
     items: [
       { kind: "changed", text: "One player of the day per session, instead of a man of the match for every game." },
       { kind: "changed", text: "MVP awards don't affect your rating at all." },
       { kind: "changed", text: "Goals + assists is now the heaviest part of the rating." },
-      { kind: "added", text: "Matches played sits next to your rating, so a 90 off two games reads differently from a 90 off a season." },
-      { kind: "added", text: "A column beside the rank shows how many places you moved since last matchday — and it follows whichever tab you're sorting by." },
+      { kind: "added", text: "Matches played sits next to your rating, so you can tell a 90 off two games from a 90 off a season." },
+      { kind: "added", text: "A column beside the rank shows how many places you moved since last matchday. It follows whichever tab you're sorting by." },
       { kind: "added", text: "Session pages split into Matches and Statistics, with a top-three podium and a table of what everyone did." },
-      { kind: "added", text: "That table sorts by any column — tap G, A, G+A, CS or MP to reorder it." },
+      { kind: "added", text: "That table sorts by any column. Tap G, A, G+A, CS or MP to reorder it." },
       { kind: "added", text: "Player profiles split into Overview and Progress, with a rating graph and goals per matchday." },
       { kind: "added", text: "A Most Improved award on the season awards page." },
       { kind: "added", text: "Players can be subbed in and out mid-session, and only get credit for the matches they actually played." },
-      { kind: "added", text: "Player names are links almost everywhere — tap one to see their season." },
+      { kind: "added", text: "Player names are links almost everywhere. Tap one to see their season." },
       { kind: "changed", text: "The sessions list is a clean list of dates again; each row expands for that matchday's leaders." },
-      { kind: "fixed", text: "Adding a player now warns you if the name already exists — including someone who's been deactivated. That's what was creating duplicates." },
+      { kind: "fixed", text: "Adding a player now warns you if the name already exists, including someone who's been deactivated. That's what was creating duplicates." },
       { kind: "fixed", text: "The admin player list is searchable." },
     ],
   },
