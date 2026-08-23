@@ -56,6 +56,7 @@ export const CHANGELOG: readonly ChangelogEntry[] = [
       { kind: "added", text: "Matches played sits next to your rating, so a 90 off two games reads differently from a 90 off a season." },
       { kind: "added", text: "A column beside the rank shows how many places you moved since last matchday — and it follows whichever tab you're sorting by." },
       { kind: "added", text: "Session pages split into Matches and Statistics, with a top-three podium and a table of what everyone did." },
+      { kind: "added", text: "That table sorts by any column — tap G, A, G+A, CS or MP to reorder it." },
       { kind: "added", text: "Player profiles split into Overview and Progress, with a rating graph and goals per matchday." },
       { kind: "added", text: "A Most Improved award on the season awards page." },
       { kind: "added", text: "Players can be subbed in and out mid-session, and only get credit for the matches they actually played." },

@@ -1,28 +1,16 @@
-import {
-  Box,
-  Container,
-  Group,
-  Stack,
-  Table,
-  TableTbody,
-  TableTd,
-  TableTh,
-  TableThead,
-  TableTr,
-  Text,
-} from "@mantine/core";
+import { Box, Container, Group, Stack, Text } from "@mantine/core";
 import { computeScore } from "@/lib/matchScore";
 import { KEEPER_GLYPH } from "@/lib/keeperPref";
 import {
   summariseSession,
   type RecapLeader,
-  type RecapPlayerLine,
   type RecapPodiumPlace,
 } from "@/lib/sessionRecap";
 import { NavLink } from "@/components/NavLink";
 import { PlayerNameList } from "@/components/PlayerNameList";
 import { ArrowLeft } from "@/components/icons";
 import { PanelTabs } from "@/components/PanelTabs";
+import { SessionStatsTable } from "./SessionStatsTable";
 
 function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
@@ -289,112 +277,6 @@ function SessionPodium({
   );
 }
 
-function StatTh({ children }: { children: React.ReactNode }) {
-  return (
-    <TableTh
-      style={{
-        textAlign: "center",
-        fontWeight: 700,
-        fontSize: 10,
-        letterSpacing: "0.12em",
-        textTransform: "uppercase",
-        color: "var(--text-muted)",
-        whiteSpace: "nowrap",
-      }}
-    >
-      {children}
-    </TableTh>
-  );
-}
-
-/**
- * Everyone's matchday in one table — the point being that a player who scored
- * nothing can still find their own row and see what they did. Ordered by goal
- * contributions, so the podium's names are the ones at the top.
- */
-function SessionStatsTable({
-  players,
-  basePath,
-}: {
-  players: RecapPlayerLine[];
-  basePath: string;
-}) {
-  return (
-    <Box
-      style={{
-        border: "1px solid var(--hairline)",
-        borderRadius: 16,
-        overflow: "hidden",
-        background: "var(--panel)",
-      }}
-    >
-      <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
-        <Table verticalSpacing={12} horizontalSpacing="md" highlightOnHover style={{ minWidth: 460 }}>
-          <TableThead>
-            <TableTr style={{ borderBottom: "1px solid var(--hairline)" }}>
-              <TableTh
-                style={{
-                  textAlign: "left",
-                  fontWeight: 700,
-                  fontSize: 10,
-                  letterSpacing: "0.12em",
-                  textTransform: "uppercase",
-                  color: "var(--text-muted)",
-                }}
-              >
-                Player
-              </TableTh>
-              <StatTh>MP</StatTh>
-              <StatTh>G</StatTh>
-              <StatTh>A</StatTh>
-              <StatTh>G+A</StatTh>
-              <StatTh>CS</StatTh>
-              <StatTh>W–D–L</StatTh>
-            </TableTr>
-          </TableThead>
-          <TableTbody>
-            {players.map((player) => (
-              <TableTr key={player.playerId}>
-                <TableTd>
-                  <NavLink
-                    href={`${basePath}/players/${player.playerId}`}
-                    fw={600}
-                    fz={14}
-                    c="inherit"
-                    underline="hover"
-                  >
-                    {player.name}
-                  </NavLink>
-                </TableTd>
-                <SessionStat value={player.matchesPlayed} />
-                <SessionStat value={player.goals} accent={player.goals > 0} />
-                <SessionStat value={player.assists} />
-                <SessionStat value={player.contributions} />
-                <SessionStat value={player.cleanSheets} />
-                <SessionStat value={`${player.wins}–${player.draws}–${player.losses}`} />
-              </TableTr>
-            ))}
-          </TableTbody>
-        </Table>
-      </div>
-    </Box>
-  );
-}
-
-function SessionStat({ value, accent }: { value: string | number; accent?: boolean }) {
-  return (
-    <TableTd style={{ textAlign: "center" }}>
-      <Text
-        className="tabular-nums"
-        fw={accent ? 800 : 500}
-        fz={14}
-        style={accent ? { color: "var(--volt)" } : undefined}
-      >
-        {value}
-      </Text>
-    </TableTd>
-  );
-}
 
 /**
  * Shape shared by the Prisma query on `/sessions/[id]` and the generated demo
