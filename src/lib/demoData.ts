@@ -17,6 +17,7 @@
 import { shuffleIntoTeamsWithKeepers, type KeeperPref } from "@/lib/shuffle";
 import { paletteFor } from "@/lib/teamPalette";
 import { aggregateSeason, type PlayerSeasonStats } from "@/lib/seasonAggregate";
+import { buildRatingHistory, movementsFrom, type PlayerRatingHistory } from "@/lib/ratingHistory";
 import { applyMatch, emptyTotals, withRates, type PlayerStats } from "@/lib/stats";
 import { DEFAULT_DURATION_MIN } from "@/lib/matchClock";
 import { deriveExtraSignals, type ExtraSignals } from "@/lib/achievements";
@@ -315,6 +316,27 @@ export function getDemoSeason() {
 
 export function getDemoLeaderboard(): PlayerSeasonStats[] {
   return demo().standings;
+}
+
+/**
+ * Rating/rank history for the demo season, built through the same replay the
+ * real leaderboard uses. Memoised alongside the season itself — it is the one
+ * O(sessions²) derivation here, and the demo is regenerated per process.
+ */
+let cachedHistory: Map<number, PlayerRatingHistory> | null = null;
+
+export function getDemoRatingHistory(): Map<number, PlayerRatingHistory> {
+  const { sessions, players } = demo();
+  cachedHistory ??= buildRatingHistory(
+    // Oldest first: the replay only means anything in chronological order.
+    [...sessions].sort((a, b) => a.date.getTime() - b.date.getTime()),
+    [...players].sort((a, b) => a.name.localeCompare(b.name)),
+  );
+  return cachedHistory;
+}
+
+export function getDemoMovements() {
+  return movementsFrom(getDemoRatingHistory());
 }
 
 /** Newest matchday first, matching the real sessions list. */

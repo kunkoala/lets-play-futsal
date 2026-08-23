@@ -17,7 +17,9 @@ import type { PlayerSessionHistoryRow } from "@/lib/playerProfile";
 
 import { RatingBreakdown } from "@/components/RatingBreakdown";
 import { formatPlusMinus, formatRate, type PlayerStats } from "@/lib/stats";
-import type { RatingComponent } from "@/lib/rating";
+import { formatRating, type RatingComponent } from "@/lib/rating";
+import type { RatingPoint } from "@/lib/ratingHistory";
+import { PlayerProgressCharts } from "@/components/PlayerProgressCharts";
 import type { EvaluatedAchievement } from "@/lib/achievements";
 import type { KeeperPref } from "@/lib/shuffle";
 import { keeperPrefBadge, keeperPrefLabel, KEEPER_GLYPH } from "@/lib/keeperPref";
@@ -155,6 +157,47 @@ function usualTeam(
   return best ? { name: best.name, color: best.color } : null;
 }
 
+/**
+ * Rating and rank change since the previous matchday, in words. The
+ * leaderboard only has room for the rank arrow; here both halves fit, and the
+ * rating half is the one that actually says whether you played better.
+ */
+function MovementLine({
+  movement,
+}: {
+  movement: { ratingDelta: number; rankDelta: number };
+}) {
+  const ratingUp = movement.ratingDelta >= 0;
+  const color = ratingUp ? "var(--team-green)" : "var(--team-red, #ff5c5c)";
+
+  return (
+    <Box
+      style={{
+        border: "1px solid var(--hairline)",
+        borderRadius: 14,
+        background: "var(--deep-panel)",
+        padding: "10px 14px",
+      }}
+    >
+      <Group justify="space-between" wrap="wrap" gap={8}>
+        <Text fz={12} c="dimmed" fw={600}>
+          Since last matchday
+        </Text>
+        <Text className="tabular-nums" fz={13} fw={800} style={{ color }}>
+          {ratingUp ? "▲" : "▼"} {formatRating(Math.abs(movement.ratingDelta))}
+          {movement.rankDelta !== 0 && (
+            <Text span fz={12} fw={700} c="dimmed">
+              {" "}
+              · {movement.rankDelta > 0 ? "up" : "down"} {Math.abs(movement.rankDelta)} place
+              {Math.abs(movement.rankDelta) === 1 ? "" : "s"}
+            </Text>
+          )}
+        </Text>
+      </Group>
+    </Box>
+  );
+}
+
 /** Where the rating panel's numbers come from; omitted when the player has no rating. */
 export type ProfileRating = {
   rating: number;
@@ -176,6 +219,11 @@ export type ProfileData = {
   /** Season-MVP trophies won, shown as chips by the name. */
   seasonAwards: { id: number; seasonName: string }[];
   rating: ProfileRating | null;
+  /**
+   * Rating/rank at each matchday this season, oldest first — feeds the charts
+   * and the "since last session" line. Empty for a player with no history.
+   */
+  progress: RatingPoint[];
   /** All 23 achievements, all-time scope, locked and unlocked alike. */
   achievements: EvaluatedAchievement[];
 };
@@ -195,6 +243,19 @@ export function PlayerProfileView({
   const usual = usualTeam(profile.sessionHistory);
   const at = profile.allTime;
   const keeperBadge = keeperPrefBadge(profile.player.keeperPref);
+  // Derived here rather than passed in: the profile already has the full
+  // series, and "the last two points" is not worth a second prop.
+  const movement =
+    data.progress.length >= 2
+      ? {
+          ratingDelta:
+            data.progress[data.progress.length - 1].rating -
+            data.progress[data.progress.length - 2].rating,
+          rankDelta:
+            data.progress[data.progress.length - 2].rank -
+            data.progress[data.progress.length - 1].rank,
+        }
+      : null;
 
   return (
     <Container size="lg" py={{ base: 20, sm: 32 }} pb={64}>
@@ -279,6 +340,8 @@ export function PlayerProfileView({
                 fieldSize={seasonEntry.fieldSize}
               />
             )}
+
+            {movement && <MovementLine movement={movement} />}
 
             <Eyebrow>{data.totalsLabel}</Eyebrow>
             <Group gap={10} wrap="nowrap">
@@ -386,6 +449,13 @@ export function PlayerProfileView({
 
         {/* History */}
         <div>
+          {data.progress.length >= 2 && (
+            <Stack gap={12} mb={22}>
+              <Eyebrow>Progress</Eyebrow>
+              <PlayerProgressCharts points={data.progress} />
+            </Stack>
+          )}
+
           <Eyebrow>Session history</Eyebrow>
           <Box
             mt={10}

@@ -1,6 +1,7 @@
 import { Box, Container, Group, Stack, Text } from "@mantine/core";
 import { computeScore } from "@/lib/matchScore";
 import { KEEPER_GLYPH } from "@/lib/keeperPref";
+import { summariseSession, type RecapLeader } from "@/lib/sessionRecap";
 import { NavLink } from "@/components/NavLink";
 import { ArrowLeft } from "@/components/icons";
 
@@ -21,8 +22,8 @@ function Eyebrow({ children }: { children: React.ReactNode }) {
 type GoalEventDetail = {
   id: number;
   teamId: number;
-  scorer: { name: string } | null;
-  assist: { name: string } | null;
+  scorer: { id: number; name: string } | null;
+  assist: { id: number; name: string } | null;
   matchSec: number | null;
 };
 
@@ -81,6 +82,65 @@ function GoalLine({
 }
 
 /**
+ * One recap figure. Renders every tied name rather than a winner, which at a
+ * five-a-side sample size is usually two or three people.
+ */
+function RecapCard({
+  label,
+  leader,
+  glyph,
+  unit,
+  accent,
+}: {
+  label: string;
+  leader: RecapLeader | null;
+  glyph: string;
+  unit: string;
+  accent: string;
+}) {
+  return (
+    <Box
+      style={{
+        flex: "1 1 150px",
+        minWidth: 150,
+        border: "1px solid var(--hairline)",
+        borderRadius: 14,
+        background: "var(--panel)",
+        padding: "12px 14px",
+      }}
+    >
+      <Group gap={6} wrap="nowrap" align="center">
+        <Text fz={12} aria-hidden>
+          {glyph}
+        </Text>
+        <Text
+          fz={9}
+          fw={800}
+          c="var(--text-muted)"
+          style={{ letterSpacing: "0.12em", textTransform: "uppercase" }}
+        >
+          {label}
+        </Text>
+      </Group>
+      {leader ? (
+        <>
+          <Text fw={800} fz={15} mt={6} style={{ lineHeight: 1.25 }}>
+            {leader.names.join(", ")}
+          </Text>
+          <Text className="tabular-nums" fz={12} fw={700} mt={2} style={{ color: accent }}>
+            {leader.value} {unit}
+          </Text>
+        </>
+      ) : (
+        <Text c="dimmed" fz={14} mt={6}>
+          —
+        </Text>
+      )}
+    </Box>
+  );
+}
+
+/**
  * Shape shared by the Prisma query on `/sessions/[id]` and the generated demo
  * session — declared structurally so both satisfy it without conversion.
  */
@@ -107,15 +167,7 @@ export type SessionDetail = {
     awayTeamId: number;
     homeTeam: { name: string; color: string };
     awayTeam: { name: string; color: string };
-    goalEvents: readonly {
-      id: number;
-      teamId: number;
-      scorer: { name: string } | null;
-      assist: { name: string } | null;
-      /** Elapsed match clock when the goal went in, in seconds. Null for
-       *  goals recorded before the clock existed. */
-      matchSec: number | null;
-    }[];
+    goalEvents: readonly GoalEventDetail[];
   }[];
 };
 
@@ -132,6 +184,10 @@ export function SessionDetailView({
   // who scored regardless of which generation's roster they were on.
   const currentGeneration = session.teams.reduce((max, t) => Math.max(max, t.generation ?? 1), 1);
   const currentTeams = session.teams.filter((t) => (t.generation ?? 1) === currentGeneration);
+
+  // Every generation, not just the current one: the recap covers the whole
+  // night, including matches played before a mid-session reshuffle.
+  const recap = summariseSession(session);
 
   return (
     <Container size="md" py={{ base: 20, sm: 32 }} pb={64}>
@@ -187,6 +243,43 @@ export function SessionDetailView({
               </Text>
             </NavLink>
           </Box>
+        )}
+
+        {recap.matchesPlayed > 0 && (
+          <Stack gap={12} className="fs-fade-up" style={{ animationDelay: "0.04s" }}>
+            <Group justify="space-between" align="baseline" gap={10} wrap="wrap">
+              <Eyebrow>Matchday recap</Eyebrow>
+              <Text className="tabular-nums" fz={12} c="dimmed" fw={600}>
+                {recap.matchesPlayed} match{recap.matchesPlayed === 1 ? "" : "es"} ·{" "}
+                {recap.totalGoals} goal{recap.totalGoals === 1 ? "" : "s"}
+                {recap.biggestWin &&
+                  ` · biggest win ${recap.biggestWin.home}–${recap.biggestWin.away}`}
+              </Text>
+            </Group>
+            <Group align="stretch" gap={12} wrap="wrap">
+              <RecapCard
+                label="Most goals"
+                glyph="⚽"
+                unit="goals"
+                leader={recap.topScorer}
+                accent="var(--volt)"
+              />
+              <RecapCard
+                label="Most assists"
+                glyph="🅰"
+                unit="assists"
+                leader={recap.topAssister}
+                accent="var(--team-blue)"
+              />
+              <RecapCard
+                label="Clean sheets"
+                glyph={KEEPER_GLYPH}
+                unit="matches"
+                leader={recap.mostCleanSheets}
+                accent="var(--team-purple)"
+              />
+            </Group>
+          </Stack>
         )}
 
         <Stack gap={12} className="fs-fade-up" style={{ animationDelay: "0.05s" }}>

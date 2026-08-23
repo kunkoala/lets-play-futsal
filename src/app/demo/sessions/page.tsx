@@ -1,4 +1,5 @@
 import { getDemoSeason, getDemoSessions } from "@/lib/demoData";
+import { summariseSession } from "@/lib/sessionRecap";
 import { SessionsView } from "@/components/views/SessionsView";
 
 export default function DemoSessionsPage() {
@@ -9,6 +10,8 @@ export default function DemoSessionsPage() {
         date: s.date,
         status: s.status,
         attendeeCount: s.attendances.length,
+        mvpName: s.mvpPlayer?.name ?? null,
+        topScorer: summariseSession(s).topScorer,
       }))}
       seasonName={getDemoSeason().name}
       basePath="/demo"

@@ -23,9 +23,11 @@ import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { FormGuide } from "@/components/FormGuide";
 import { StatTooltip } from "@/components/StatTooltip";
 import { impressionProps, IMPRESSION_PLAYER_ROW } from "@/lib/analyticsMarks";
+import type { RatingMovement } from "@/lib/ratingHistory";
 
 const SORT_OPTIONS = [
   { value: "rating", label: "Rating" },
+  { value: "gamesPlayed", label: "Games" },
   { value: "goals", label: "Goals" },
   { value: "assists", label: "Assists" },
   { value: "goalContributions", label: "G+A" },
@@ -52,6 +54,10 @@ const COLUMN_HELP: Record<string, string> = {
   rank: "Position in this season's standings, by whichever column is currently highlighted.",
   player: "Tap a name for that player's full profile and match-by-match history.",
   rating: `Overall rating out of 100, blending every stat on this page: goals, assists, points, win rate and matchdays. MVP awards are deliberately left out — the rating is about what you did on the pitch. Per-match rates are steadied against the league average for the first ${PRIOR_MATCHES} matches, so one big game doesn't top the table.`,
+  gamesPlayed:
+    "Matchdays turned up to. Sits next to the rating because it's what makes a rating mean something — 90 across one night isn't 90 across a season.",
+  matchesPlayed:
+    "Individual matches played, several per matchday. Every per-match rate on this page divides by this.",
   goals: "Goals scored. Own goals count on the scoreboard but aren't credited to anyone.",
   assists: "Assists — the pass before a goal, when there was one.",
   goalContributions: "Goals plus assists: total attacking output, counting a goal and an assist equally.",
@@ -290,6 +296,47 @@ function Th({
   );
 }
 
+/**
+ * Places gained or lost since the previous matchday, under the rank number.
+ *
+ * Rank movement rather than rating movement, because rank is what people
+ * argue about — the profile page shows both. A player with no previous
+ * session gets "NEW" rather than a misleading zero.
+ */
+function RankMovement({ movement }: { movement: RatingMovement | undefined }) {
+  // No entry at all means this player has only ever appeared in one session,
+  // so there is nothing to have moved from.
+  if (!movement) {
+    return (
+      <Text fz={9} fw={800} c="dimmed" mt={1}>
+        NEW
+      </Text>
+    );
+  }
+  if (movement.rankDelta === 0) {
+    return (
+      <Text fz={9} fw={700} c="dimmed" mt={1} aria-label="unchanged">
+        –
+      </Text>
+    );
+  }
+
+  const up = movement.rankDelta > 0;
+  return (
+    <Text
+      className="tabular-nums"
+      fz={9}
+      fw={800}
+      mt={1}
+      style={{ color: up ? "var(--team-green)" : "var(--team-red, #ff5c5c)" }}
+      aria-label={`${up ? "up" : "down"} ${Math.abs(movement.rankDelta)} places`}
+    >
+      {up ? "▲" : "▼"}
+      {Math.abs(movement.rankDelta)}
+    </Text>
+  );
+}
+
 function Stat({ value, active }: { value: string | number; active?: boolean }) {
   return (
     <TableTd style={{ textAlign: "center" }}>
@@ -316,12 +363,15 @@ function StandingsTable({
   sort,
   startRank,
   basePath,
+  movements,
 }: {
   rows: PlayerSeasonStats[];
   sort: SortField;
   /** 0-based index of the first row, so rank numbers survive pagination. */
   startRank: number;
   basePath: string;
+  /** Change since the previous matchday. A missing entry means "no previous session". */
+  movements: ReadonlyMap<number, RatingMovement>;
 }) {
   return (
     <Box
@@ -339,7 +389,7 @@ function StandingsTable({
           verticalSpacing={10}
           horizontalSpacing="sm"
           highlightOnHover
-          style={{ minWidth: 780 }}
+          style={{ minWidth: 860 }}
         >
           <TableThead>
             <TableTr style={{ borderBottom: "1px solid var(--hairline)" }}>
@@ -351,6 +401,12 @@ function StandingsTable({
               </Th>
               <Th help="rating" sorted={sort === "rating"}>
                 RTG
+              </Th>
+              {/* Sits directly after the rating on purpose: a 92 next to
+                  "1 matchday" explains itself, where the same 92 alone reads
+                  as a season's work. */}
+              <Th help="gamesPlayed" sorted={sort === "gamesPlayed"}>
+                GP
               </Th>
               <Th help="goals" sorted={sort === "goals"}>
                 G
@@ -371,6 +427,7 @@ function StandingsTable({
               </Th>
               <Th help="plusMinus">+/−</Th>
               <Th help="cleanSheets">CS</Th>
+              <Th help="matchesPlayed">MP</Th>
               <Th help="mvps" sorted={sort === "mvps"}>
                 🏆
               </Th>
@@ -397,6 +454,12 @@ function StandingsTable({
                     >
                       {rank}
                     </Text>
+                    {/* Only meaningful while the table is in its default
+                        rating order — under any other sort the row's position
+                        isn't the rank the movement was measured against. */}
+                    {sort === "rating" && s.matchesPlayed > 0 && (
+                      <RankMovement movement={movements.get(s.playerId)} />
+                    )}
                   </TableTd>
                   <TableTd>
                     <Group gap={10} wrap="nowrap">
@@ -422,6 +485,7 @@ function StandingsTable({
                       {s.matchesPlayed > 0 ? formatRating(s.rating) : "—"}
                     </Text>
                   </TableTd>
+                  <Stat value={s.gamesPlayed} active={sort === "gamesPlayed"} />
                   <Stat value={s.goals} active={sort === "goals"} />
                   <Stat value={s.assists} active={sort === "assists"} />
                   <Stat value={s.goalContributions} active={sort === "goalContributions"} />
@@ -431,6 +495,7 @@ function StandingsTable({
                   <Stat value={s.points} active={sort === "points"} />
                   <Stat value={formatPlusMinus(s.plusMinus)} />
                   <Stat value={s.cleanSheets} />
+                  <Stat value={s.matchesPlayed} />
                   <Stat value={s.mvps} active={sort === "mvps"} />
                   <Stat value={`${Math.round(s.winRate * 100)}%`} active={sort === "winRate"} />
                   <TableTd style={{ textAlign: "center" }}>
@@ -441,7 +506,7 @@ function StandingsTable({
             })}
             {rows.length === 0 && (
               <TableTr>
-                <TableTd colSpan={15}>
+                <TableTd colSpan={17}>
                   <Text c="dimmed" py="md" ta="center" fz={14}>
                     No completed sessions yet this season.
                   </Text>
@@ -471,12 +536,19 @@ export function LeaderboardView({
   selectedSeason,
   searchParams: { sort: sortParam, per: perParam, page: pageParam },
   basePath = "",
+  movements = new Map(),
 }: {
   stats: PlayerSeasonStats[];
   seasons: LeaderboardSeason[];
   selectedSeason: LeaderboardSeason;
   searchParams: { sort?: string; per?: string; page?: string };
   basePath?: string;
+  /**
+   * Rank/rating change since the previous matchday, keyed by player id.
+   * Defaults to empty, which renders every row as NEW — fine for a caller
+   * that hasn't got history to show yet.
+   */
+  movements?: ReadonlyMap<number, RatingMovement>;
 }) {
   const sort: SortField = SORT_OPTIONS.some((o) => o.value === sortParam)
     ? (sortParam as SortField)
@@ -592,7 +664,13 @@ export function LeaderboardView({
         </Group>
 
         <Box className="fs-fade-up" style={{ animationDelay: "0.1s" }}>
-          <StandingsTable rows={visible} sort={sort} startRank={startRank} basePath={basePath} />
+          <StandingsTable
+            rows={visible}
+            sort={sort}
+            startRank={startRank}
+            basePath={basePath}
+            movements={movements}
+          />
         </Box>
 
         <Group justify="space-between" align="center" wrap="wrap" gap="sm">

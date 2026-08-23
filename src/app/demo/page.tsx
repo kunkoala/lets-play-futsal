@@ -1,4 +1,4 @@
-import { getDemoLeaderboard, getDemoSeason } from "@/lib/demoData";
+import { getDemoLeaderboard, getDemoMovements, getDemoSeason } from "@/lib/demoData";
 import { LeaderboardView } from "@/components/views/LeaderboardView";
 
 export default async function DemoLeaderboardPage({
@@ -17,6 +17,7 @@ export default async function DemoLeaderboardPage({
       selectedSeason={season}
       searchParams={params}
       basePath="/demo"
+      movements={getDemoMovements()}
     />
   );
 }

@@ -2,7 +2,11 @@ import { Box, Group, Stack, Text } from "@mantine/core";
 import { NavLink } from "@/components/NavLink";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 
-type Item = { playerId: number; name: string; value: number };
+/**
+ * `value` accepts a string so an award whose figure isn't a plain count can
+ * bring its own formatting — Most Improved shows "+4.2", not "4.2".
+ */
+type Item = { playerId: number; name: string; value: number | string };
 
 /**
  * One award (Top Scorer / Top Assists / Most Wins): glyph + title over a top-3

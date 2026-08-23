@@ -1,5 +1,5 @@
 import { Container, Text } from "@mantine/core";
-import { getAllSeasons, getSeasonLeaderboard } from "@/lib/leaderboard";
+import { getAllSeasons, getSeasonLeaderboard, getSeasonMovements } from "@/lib/leaderboard";
 import { LeaderboardView } from "@/components/views/LeaderboardView";
 
 export default async function LeaderboardPage({
@@ -22,6 +22,7 @@ export default async function LeaderboardPage({
     Number(params.season) || seasons.find((s) => s.isActive)?.id || seasons[0].id;
   const selectedSeason = seasons.find((s) => s.id === selectedSeasonId) ?? seasons[0];
   const stats = await getSeasonLeaderboard(selectedSeason.id);
+  const movements = await getSeasonMovements(selectedSeason.id);
 
   return (
     <LeaderboardView
@@ -29,6 +30,7 @@ export default async function LeaderboardPage({
       seasons={seasons}
       selectedSeason={selectedSeason}
       searchParams={params}
+      movements={movements}
     />
   );
 }

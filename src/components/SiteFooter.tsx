@@ -115,6 +115,9 @@ export async function SiteFooter({ basePath = "" }: { basePath?: string }) {
             <FooterLink href={basePath || "/"}>Leaderboard</FooterLink>
             <FooterLink href={`${basePath}/sessions`}>Sessions</FooterLink>
             <FooterLink href={`${basePath}/awards`}>Season awards</FooterLink>
+            {/* Not prefixed with basePath — there is one changelog for the app,
+                and the demo has no changes of its own to list. */}
+            <FooterLink href="/changelog">What&apos;s new</FooterLink>
             {basePath === "" && <FooterLink href="/demo">Demo with sample data</FooterLink>}
             {isAdmin ? (
               <>

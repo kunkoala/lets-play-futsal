@@ -14,6 +14,7 @@ import {
 } from "@mantine/core";
 import { NavLink } from "@/components/NavLink";
 import { impressionProps, IMPRESSION_SESSION_ROW } from "@/lib/analyticsMarks";
+import type { RecapLeader } from "@/lib/sessionRecap";
 
 const STATUS_STYLE: Record<string, { label: string; color: string; bg: string }> = {
   draft: { label: "Upcoming", color: "var(--text-muted)", bg: "rgba(255,255,255,.06)" },
@@ -46,6 +47,10 @@ export type SessionsViewRow = {
   date: Date;
   status: string;
   attendeeCount: number;
+  /** Player of the day, when one was picked. */
+  mvpName?: string | null;
+  /** Whoever scored most that night — every name, when it was a tie. */
+  topScorer?: RecapLeader | null;
 };
 
 /** Matchday list. Rows come from the caller, so `/demo/sessions` reuses it. */
@@ -113,6 +118,19 @@ export function SessionsView({
                       >
                         {s.date.toISOString().slice(0, 10)}
                       </NavLink>
+                      {/* One line of "what happened that night", so the index
+                          is scannable without opening every matchday. */}
+                      {(s.mvpName || s.topScorer) && (
+                        <Text fz={11} c="dimmed" mt={3} style={{ lineHeight: 1.3 }}>
+                          {s.mvpName && <>🏆 {s.mvpName}</>}
+                          {s.mvpName && s.topScorer && " · "}
+                          {s.topScorer && (
+                            <>
+                              ⚽ {s.topScorer.names.join(", ")} {s.topScorer.value}
+                            </>
+                          )}
+                        </Text>
+                      )}
                     </TableTd>
                     <TableTd>
                       <StatusPill status={s.status} />
