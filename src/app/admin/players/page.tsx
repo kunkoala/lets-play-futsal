@@ -58,7 +58,10 @@ export default async function PlayersPage() {
             padding: "18px 20px",
           }}
         >
-          <AddPlayerForm key={players.length} />
+          <AddPlayerForm
+            key={players.length}
+            players={players.map((p) => ({ id: p.id, name: p.name, isActive: p.isActive }))}
+          />
         </Box>
 
         <Box
