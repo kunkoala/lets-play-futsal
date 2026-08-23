@@ -52,8 +52,20 @@ export const CHANGELOG: readonly ChangelogEntry[] = [
         text: "A column beside the rank shows how many places you moved since last matchday — and it follows whichever tab you're sorting by, so switch to Goals and it's your movement up the scoring charts.",
       },
       {
+        kind: "changed",
+        text: "Clean sheets now belong to whoever was in goal, not the whole team. Crediting all five meant an outfielder collected them at the same rate as the person actually stopping the shots, and at this squad size most of the pitch \"kept a clean sheet\" every other match — so the number meant nothing. Your total will have dropped unless you keep.",
+      },
+      {
         kind: "added",
-        text: "Every session page now has a top-three podium for goals and assists, plus a table of what everyone did that night — matches, goals, assists, clean sheets and results, so you can find your own row even on a quiet week.",
+        text: "Session pages are split into Matches and Statistics tabs. Statistics has a top-three podium for goals and assists plus a table of what everyone did that night, so you can find your own row even on a quiet week.",
+      },
+      {
+        kind: "added",
+        text: "Player names are links almost everywhere now — scorers and assisters in a match, team sheets, podiums — so you can jump straight to someone's profile.",
+      },
+      {
+        kind: "changed",
+        text: "The sessions list is back to being a clean list of dates. Each row expands to show that night's top scorer, top assists and clean sheets, instead of cramming ten tied names into the row itself.",
       },
       {
         kind: "added",

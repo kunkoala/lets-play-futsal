@@ -265,10 +265,16 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
   },
 
   // --- Defense ---
+  // A clean sheet now belongs to whoever was in goal (see PlayerTotals in
+  // stats.ts), so these three are a single ladder rather than the old
+  // "anyone on the team" / "the keeper" split, which after the change would
+  // have been two badges for exactly the same condition. Thresholds are lower
+  // than the old team-wide ones because only one player per team per match
+  // can earn one now.
   {
     id: "iron_wall",
     name: "Iron Wall",
-    description: "Keep a clean sheet.",
+    description: "Keep a clean sheet in goal.",
     category: "Defense",
     glyph: "🧱",
     ...tier("bronze", (s) => s.cleanSheets > 0),
@@ -276,18 +282,18 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
   {
     id: "the_wall",
     name: "The Wall",
-    description: "Keep a clean sheet as goalkeeper.",
+    description: "Keep 3 clean sheets in goal.",
     category: "Defense",
     glyph: "🧤",
-    ...tier("silver", (s) => s.keeperCleanSheets > 0),
+    ...tier("silver", (s) => s.cleanSheets >= 3),
   },
   {
     id: "shutout_specialist",
     name: "Shutout Specialist",
-    description: "Keep 5+ clean sheets in a single season.",
+    description: "Keep 6+ clean sheets in goal.",
     category: "Defense",
     glyph: "🛡️",
-    ...tier("gold", (s) => s.cleanSheets >= 5),
+    ...tier("gold", (s) => s.cleanSheets >= 6),
   },
 
   // --- Team results ---

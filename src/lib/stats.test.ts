@@ -53,8 +53,13 @@ describe("applyMatch", () => {
     });
   });
 
-  it("counts a clean sheet for everyone on a team that conceded nothing", () => {
-    const t = totalsOf({ goalsFor: 2, goalsAgainst: 0 }, { goalsFor: 1, goalsAgainst: 1 });
+  it("gives a clean sheet to the keeper only, not the whole team", () => {
+    const t = totalsOf(
+      // Shut out, but this player was outfield — no clean sheet for them.
+      { goalsFor: 2, goalsAgainst: 0 },
+      { goalsFor: 1, goalsAgainst: 0, keeper: true },
+      { goalsFor: 1, goalsAgainst: 1, keeper: true },
+    );
     expect(t.cleanSheets).toBe(1);
   });
 
@@ -68,17 +73,17 @@ describe("applyMatch", () => {
     expect(t.hatTricks).toBe(1);
   });
 
-  it("tracks keeper matches, goals conceded, and keeper clean sheets separately", () => {
+  it("tracks keeper matches, goals conceded and clean sheets from goal only", () => {
     const t = totalsOf(
       { goalsFor: 1, goalsAgainst: 0, keeper: true },
       { goalsFor: 2, goalsAgainst: 3, keeper: true },
-      // outfield match: conceding here doesn't touch the keeper columns
+      // outfield match: neither the conceding nor a shutout touches these
       { goalsFor: 0, goalsAgainst: 4 },
+      { goalsFor: 3, goalsAgainst: 0 },
     );
     expect(t).toMatchObject({
       keeperMatches: 2,
       keeperConceded: 3,
-      keeperCleanSheets: 1,
       cleanSheets: 1,
     });
   });

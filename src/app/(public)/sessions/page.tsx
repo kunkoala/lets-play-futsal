@@ -27,14 +27,21 @@ export default async function PublicSessionsPage() {
 
   return (
     <SessionsView
-      sessions={sessions.map((s) => ({
-        id: s.id,
-        date: s.date,
-        status: s.status,
-        attendeeCount: s._count.attendances,
-        mvpName: s.mvpPlayer?.name ?? null,
-        topScorer: summariseSession(s).topScorer,
-      }))}
+      sessions={sessions.map((s) => {
+        const recap = summariseSession(s);
+        return {
+          id: s.id,
+          date: s.date,
+          status: s.status,
+          attendeeCount: s._count.attendances,
+          mvpName: s.mvpPlayer?.name ?? null,
+          topScorer: recap.topScorer,
+          topAssister: recap.topAssister,
+          mostCleanSheets: recap.mostCleanSheets,
+          totalGoals: recap.totalGoals,
+          matchesPlayed: recap.matchesPlayed,
+        };
+      })}
       seasonName={activeSeason?.name ?? null}
     />
   );

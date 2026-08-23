@@ -303,6 +303,21 @@ body {
  * Both layouts render; this hides whichever one does not apply, so all the
  * state (scores, pending assist, cooldowns) stays in one component.
  * ------------------------------------------------------------------- */
+/* The split-court top bar is centred with a translate, so it has no natural
+ * limit and simply overflows both edges once its contents outgrow the screen —
+ * which they did as soon as Sub joined Undo, Feed and End match. A landscape
+ * phone (~844px) still gets this layout, so the bar has to survive it: cap the
+ * width, and below ~56em drop the word beside each glyph rather than dropping
+ * a control. There is no second Undo in this layout to fall back on. */
+.lc-toppill {
+  max-width: calc(100% - 16px);
+}
+@media (max-width: 55.99em) {
+  .lc-pill-label {
+    display: none;
+  }
+}
+
 .lc-phone {
   display: none;
 }

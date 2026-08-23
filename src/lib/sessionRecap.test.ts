@@ -8,10 +8,10 @@ const dan = { id: 4, name: "Dan" };
 
 /** Two teams of two, the smallest shape that still exercises clean sheets. */
 const LINEUP = [
-  { teamId: 10, player: alice },
-  { teamId: 10, player: bob },
-  { teamId: 20, player: cara },
-  { teamId: 20, player: dan },
+  { teamId: 10, isKeeper: true, player: alice },
+  { teamId: 10, isKeeper: false, player: bob },
+  { teamId: 20, isKeeper: true, player: cara },
+  { teamId: 20, isKeeper: false, player: dan },
 ];
 
 function session(
@@ -45,8 +45,8 @@ describe("summariseSession", () => {
 
     expect(recap.matchesPlayed).toBe(2);
     expect(recap.totalGoals).toBe(4);
-    expect(recap.topScorer).toEqual({ names: ["Bob", "Dan"], value: 2 });
-    expect(recap.topAssister).toEqual({ names: ["Alice", "Cara"], value: 1 });
+    expect(recap.topScorer).toEqual({ players: [bob, dan], value: 2 });
+    expect(recap.topAssister).toEqual({ players: [alice, cara], value: 1 });
     expect(recap.biggestWin).toEqual({ margin: 1, home: 2, away: 1 });
   });
 
@@ -61,16 +61,17 @@ describe("summariseSession", () => {
         },
       ]),
     );
-    expect(recap.topScorer).toEqual({ names: ["Alice", "Cara"], value: 1 });
+    expect(recap.topScorer).toEqual({ players: [alice, cara], value: 1 });
   });
 
-  it("gives a clean sheet to the whole team, not just the keeper", () => {
+  it("gives a clean sheet to the keeper only, not the whole team", () => {
     const recap = summariseSession(
       session([
         { status: "finished", homeTeamId: 10, awayTeamId: 20, goalEvents: [goal(10, bob)] },
       ]),
     );
-    expect(recap.mostCleanSheets).toEqual({ names: ["Alice", "Bob"], value: 1 });
+    // Alice kept for team 10 and conceded nothing; Bob played out and scored.
+    expect(recap.mostCleanSheets).toEqual({ players: [alice], value: 1 });
   });
 
   it("counts an own goal on the scoreboard but credits it to nobody", () => {
@@ -83,8 +84,8 @@ describe("summariseSession", () => {
     );
     expect(recap.totalGoals).toBe(1);
     expect(recap.topScorer).toBeNull();
-    // Team 10 conceded nothing, so the clean sheet is still theirs.
-    expect(recap.mostCleanSheets).toEqual({ names: ["Alice", "Bob"], value: 1 });
+    // Team 10 conceded nothing, so their keeper still gets the clean sheet.
+    expect(recap.mostCleanSheets).toEqual({ players: [alice], value: 1 });
   });
 
   it("ignores a match that is still in progress", () => {
@@ -148,9 +149,9 @@ describe("summariseSession · podium", () => {
       ]),
     );
     expect(recap.scorerPodium).toEqual([
-      { place: 1, names: ["Alice"], value: 3 },
-      { place: 2, names: ["Bob"], value: 2 },
-      { place: 3, names: ["Cara"], value: 1 },
+      { place: 1, players: [alice], value: 3 },
+      { place: 2, players: [bob], value: 2 },
+      { place: 3, players: [cara], value: 1 },
     ]);
   });
 
@@ -167,8 +168,8 @@ describe("summariseSession · podium", () => {
     );
     // Alice and Cara share first on 2; Dan is second, not third.
     expect(recap.scorerPodium).toEqual([
-      { place: 1, names: ["Alice", "Cara"], value: 2 },
-      { place: 2, names: ["Dan"], value: 1 },
+      { place: 1, players: [alice, cara], value: 2 },
+      { place: 2, players: [dan], value: 1 },
     ]);
   });
 
@@ -178,7 +179,7 @@ describe("summariseSession · podium", () => {
         { status: "finished", homeTeamId: 10, awayTeamId: 20, goalEvents: [goal(10, alice)] },
       ]),
     );
-    expect(recap.scorerPodium).toEqual([{ place: 1, names: ["Alice"], value: 1 }]);
+    expect(recap.scorerPodium).toEqual([{ place: 1, players: [alice], value: 1 }]);
     expect(recap.assistPodium).toEqual([]);
   });
 });
@@ -204,9 +205,16 @@ describe("summariseSession · player table", () => {
       contributions: 2,
       matchesPlayed: 1,
       wins: 1,
+      // Bob played out, so the shutout isn't his.
+      cleanSheets: 0,
+    });
+    expect(recap.players[1]).toMatchObject({
+      name: "Alice",
+      goals: 0,
+      assists: 1,
+      wins: 1,
       cleanSheets: 1,
     });
-    expect(recap.players[1]).toMatchObject({ name: "Alice", goals: 0, assists: 1, wins: 1 });
     expect(recap.players[3]).toMatchObject({ name: "Dan", losses: 1, cleanSheets: 0 });
   });
 

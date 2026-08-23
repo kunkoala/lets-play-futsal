@@ -383,8 +383,9 @@ export function PlayerProfileView({
                   hint="per match"
                   value={formatRate(totals.pointsPerMatch)}
                 />
+                {/* Clean sheets live in the keeper card below, now that they
+                    belong to whoever was in goal rather than the whole team. */}
                 <StatLine label="Goal difference" value={formatPlusMinus(totals.plusMinus)} />
-                <StatLine label="Clean sheets" value={totals.cleanSheets} />
                 <StatLine
                   label="Record"
                   value={`${totals.wins}W ${totals.draws}D ${totals.losses}L · ${winRate}%`}
@@ -412,7 +413,7 @@ export function PlayerProfileView({
                     hint="per match"
                     value={formatRate(totals.concededPerKeeperMatch)}
                   />
-                  <StatLine label="Clean sheets" value={totals.keeperCleanSheets} />
+                  <StatLine label="Clean sheets" value={totals.cleanSheets} />
                 </Stack>
               </Card>
             )}

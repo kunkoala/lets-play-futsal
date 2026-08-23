@@ -70,7 +70,8 @@ const COLUMN_HELP: Record<string, string> = {
   points: "Football scoring: 3 points for a win, 1 for a draw, nothing for a loss.",
   plusMinus:
     "Goal difference while you were on the pitch — your team's goals scored minus goals conceded, added up across every match.",
-  cleanSheets: "Matches where your team conceded nothing. Counts for the whole team, not just the keeper.",
+  cleanSheets:
+    "Matches you kept goal in and conceded nothing. The keeper's alone — crediting the whole team meant an outfielder collected them at the same rate as the person actually stopping the shots.",
   winRate: "Share of matches won. Draws count as neither a win nor a loss here.",
   form: "Your last five results, oldest on the left. Green is a win, yellow a draw, red a loss.",
 };

@@ -29,7 +29,15 @@ export type PlayerTotals = {
   gamesPlayed: number;
   /** Individual matches played within those sessions. */
   matchesPlayed: number;
-  /** Matches where the player's team conceded nothing. */
+  /**
+   * Matches this player kept goal in and conceded nothing.
+   *
+   * Keeper-only on purpose. This used to credit the whole team for every 0-0
+   * or 3-0, which meant an outfielder who never went near the goal collected
+   * clean sheets at the same rate as the person who actually stopped the
+   * shots — and at five-a-side, most of the pitch "kept a clean sheet" in any
+   * given match, so the number said nothing about anyone.
+   */
   cleanSheets: number;
   /** Team goals for minus against, across matches played. */
   plusMinus: number;
@@ -48,8 +56,6 @@ export type PlayerTotals = {
   keeperMatches: number;
   /** Goals let in while keeping. */
   keeperConceded: number;
-  /** Clean sheets kept while in goal. */
-  keeperCleanSheets: number;
   /** Last few results, oldest first — reads left-to-right like a league table. */
   form: MatchResult[];
 };
@@ -87,7 +93,6 @@ export function emptyTotals(): PlayerTotals {
     mvps: 0,
     keeperMatches: 0,
     keeperConceded: 0,
-    keeperCleanSheets: 0,
     form: [],
   };
 }
@@ -123,14 +128,14 @@ export function applyMatch(totals: PlayerTotals, c: MatchContribution): void {
   totals.assists += c.assists;
   totals.plusMinus += c.goalsFor - c.goalsAgainst;
 
-  if (c.goalsAgainst === 0) totals.cleanSheets += 1;
   if (c.playerGoals === 2) totals.braces += 1;
   if (c.playerGoals >= 3) totals.hatTricks += 1;
 
+  // A clean sheet is the keeper's, not the team's — see PlayerTotals.cleanSheets.
   if (c.keeper) {
     totals.keeperMatches += 1;
     totals.keeperConceded += c.goalsAgainst;
-    if (c.goalsAgainst === 0) totals.keeperCleanSheets += 1;
+    if (c.goalsAgainst === 0) totals.cleanSheets += 1;
   }
 
   const result = resultOf(c.goalsFor, c.goalsAgainst);

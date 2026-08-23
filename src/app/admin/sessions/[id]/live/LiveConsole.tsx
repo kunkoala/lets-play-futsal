@@ -366,18 +366,34 @@ export function LiveConsole({
           {clockText}
         </span>
         <PillDivider />
-        <PillButton onClick={handleUndo} disabled={optimisticEvents.length === 0 || isFinished}>
-          ↺ Undo
+        {/* Glyph plus a label that CSS drops on a narrow screen — see
+            .lc-pill-label. Landscape on a phone still gets the split court, and
+            with six controls the row outgrew the viewport and clipped its own
+            end buttons. Nothing is removed: this bar is the only Undo the
+            split-court layout has (the phone layout's lives in its bottom bar),
+            so hiding the words is the right thing to lose, not the button. */}
+        <PillButton
+          onClick={handleUndo}
+          disabled={optimisticEvents.length === 0 || isFinished}
+          title="Undo last event"
+        >
+          ↺<span className="lc-pill-label"> Undo</span>
         </PillButton>
-        <PillButton onClick={() => setShowFeed(true)}>Feed</PillButton>
-        <PillButton onClick={() => setShowSubs(true)} disabled={available.length === 0}>
-          ⇄ Sub
+        <PillButton onClick={() => setShowFeed(true)} title="Event feed">
+          ☰<span className="lc-pill-label"> Feed</span>
+        </PillButton>
+        <PillButton
+          onClick={() => setShowSubs(true)}
+          disabled={available.length === 0}
+          title="Substitute a player"
+        >
+          ⇄<span className="lc-pill-label"> Sub</span>
         </PillButton>
         {!isFinished && (
           <>
             <PillDivider />
             <PillButton onClick={() => setConfirmEnd(true)} accent pulse={fullTime}>
-              End match
+              End<span className="lc-pill-label"> match</span>
             </PillButton>
           </>
         )}
@@ -977,17 +993,22 @@ function PillButton({
   disabled,
   accent,
   pulse,
+  title,
 }: {
   children: React.ReactNode;
   onClick: () => void;
   disabled?: boolean;
   accent?: boolean;
   pulse?: boolean;
+  /** Doubles as the accessible name once the label is hidden on a narrow screen. */
+  title?: string;
 }) {
   return (
     <button
       onClick={onClick}
       disabled={disabled}
+      title={title}
+      aria-label={title}
       className={pulse ? "lc-pulse" : undefined}
       style={{
         border: "none",

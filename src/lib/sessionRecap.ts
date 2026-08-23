@@ -18,7 +18,11 @@ export type RecapSession = {
     homeTeamId: number;
     awayTeamId: number;
     /** Who was on the pitch — see MatchPlayer in prisma/schema.prisma. */
-    lineup: readonly { teamId: number; player: { id: number; name: string } }[];
+    lineup: readonly {
+      teamId: number;
+      isKeeper: boolean;
+      player: { id: number; name: string };
+    }[];
     goalEvents: readonly {
       teamId: number;
       scorer: { id: number; name: string } | null;
@@ -27,9 +31,13 @@ export type RecapSession = {
   }[];
 };
 
-/** A stat leader — plural because ties are shared, never broken arbitrarily. */
+/**
+ * A stat leader — plural because ties are shared, never broken arbitrarily.
+ * Carries ids as well as names so every name rendered from one can link to
+ * that player's profile.
+ */
 export type RecapLeader = {
-  names: string[];
+  players: { id: number; name: string }[];
   value: number;
 };
 
@@ -43,6 +51,7 @@ export type RecapPlayerLine = {
   assists: number;
   /** Goals + assists — what the table sorts by. */
   contributions: number;
+  /** Matches this player kept goal in and conceded nothing. Keeper-only. */
   cleanSheets: number;
   wins: number;
   draws: number;
@@ -53,7 +62,7 @@ export type RecapPlayerLine = {
 export type RecapPodiumPlace = {
   /** 1, 2 or 3 — shared by everyone tied at that value. */
   place: number;
-  names: string[];
+  players: { id: number; name: string }[];
   value: number;
 };
 
@@ -86,21 +95,22 @@ function podiumOf(
   lines: readonly RecapPlayerLine[],
   value: (line: RecapPlayerLine) => number,
 ): RecapPodiumPlace[] {
-  const byValue = new Map<number, string[]>();
+  const byValue = new Map<number, { id: number; name: string }[]>();
   for (const line of lines) {
     const n = value(line);
     if (n <= 0) continue;
-    const names = byValue.get(n);
-    if (names) names.push(line.name);
-    else byValue.set(n, [line.name]);
+    const players = byValue.get(n);
+    const entry = { id: line.playerId, name: line.name };
+    if (players) players.push(entry);
+    else byValue.set(n, [entry]);
   }
 
   return [...byValue.entries()]
     .sort(([a], [b]) => b - a)
     .slice(0, 3)
-    .map(([n, names], index) => ({
+    .map(([n, players], index) => ({
       place: index + 1,
-      names: [...names].sort((a, b) => a.localeCompare(b)),
+      players: [...players].sort((a, b) => a.name.localeCompare(b.name)),
       value: n,
     }));
 }
@@ -111,10 +121,10 @@ function leaderOf(counts: ReadonlyMap<number, number>, nameOf: (id: number) => s
   for (const value of counts.values()) if (value > best) best = value;
   if (best === 0) return null;
 
-  const names: string[] = [];
-  for (const [id, value] of counts) if (value === best) names.push(nameOf(id));
-  names.sort((a, b) => a.localeCompare(b));
-  return { names, value: best };
+  const players: { id: number; name: string }[] = [];
+  for (const [id, value] of counts) if (value === best) players.push({ id, name: nameOf(id) });
+  players.sort((a, b) => a.name.localeCompare(b.name));
+  return { players, value: best };
 }
 
 export function summariseSession(session: RecapSession): SessionRecap {
@@ -198,10 +208,9 @@ export function summariseSession(session: RecapSession): SessionRecap {
       else if (goalsFor < goalsAgainst) line.losses += 1;
       else line.draws += 1;
 
-      // A clean sheet belongs to everyone who played, not just the keeper —
-      // same rule the season leaderboard uses. Credited off this match's own
-      // lineup, so a substitute gets the matches they were actually on for.
-      if (goalsAgainst === 0) {
+      // The keeper's clean sheet, not the team's — same rule as the season
+      // leaderboard (see PlayerTotals.cleanSheets in stats.ts).
+      if (spot.isKeeper && goalsAgainst === 0) {
         line.cleanSheets += 1;
         cleanSheets.set(spot.player.id, (cleanSheets.get(spot.player.id) ?? 0) + 1);
       }
