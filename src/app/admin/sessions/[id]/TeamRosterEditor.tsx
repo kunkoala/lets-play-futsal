@@ -91,8 +91,11 @@ export function TeamRosterEditor({
     <Stack gap={16}>
       <Group align="stretch" gap={12} wrap="wrap">
         {teams.map((team) => {
-          const roster = [...team.players].sort(
-            (a, b) => Number(b.isKeeper) - Number(a.isKeeper),
+          // Keeper is not sorted to the top: their GK badge lights up in
+          // place, so a name stays where you last saw it rather than jumping
+          // to the front the moment someone takes the gloves.
+          const roster = [...team.players].sort((a, b) =>
+            a.player.name.localeCompare(b.player.name),
           );
           return (
             <Box

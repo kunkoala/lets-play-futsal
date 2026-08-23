@@ -45,7 +45,9 @@ export default async function LiveMatchPage({
     match.lineup
       .filter((m) => m.teamId === teamId)
       .map((m) => ({ id: m.player.id, name: m.player.name, isKeeper: m.isKeeper }))
-      .sort((a, b) => Number(b.isKeeper) - Number(a.isKeeper) || a.name.localeCompare(b.name));
+      // Alphabetical, and only that: a keeper change mid-match must not
+      // reshuffle the tiles someone is tapping to record goals.
+      .sort((a, b) => a.name.localeCompare(b.name));
 
   const homeTeam = {
     id: match.homeTeam.id,

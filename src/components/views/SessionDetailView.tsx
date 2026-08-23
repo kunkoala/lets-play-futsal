@@ -514,8 +514,10 @@ function MatchesPanel({
                     {team.name}
                   </Text>
                   <Stack gap={2} mt={8}>
+                    {/* Keeper is not sorted to the top; the GK badge marks
+                        them in place. */}
                     {[...team.players]
-                      .sort((a, b) => Number(b.isKeeper) - Number(a.isKeeper))
+                      .sort((a, b) => a.player.name.localeCompare(b.player.name))
                       .map((tp) => (
                         <NavLink
                           key={tp.player.id}

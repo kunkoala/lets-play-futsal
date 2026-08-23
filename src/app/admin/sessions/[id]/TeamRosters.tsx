@@ -26,8 +26,9 @@ export function TeamRosters({ teams, reveal }: { teams: Team[]; reveal?: boolean
   return (
     <Group align="stretch" gap={12} wrap="wrap">
       {teams.map((team) => {
-        const roster = [...team.players].sort(
-          (a, b) => Number(b.isKeeper) - Number(a.isKeeper),
+        // Keeper is not sorted to the top; the GK badge marks them in place.
+        const roster = [...team.players].sort((a, b) =>
+          a.player.name.localeCompare(b.player.name),
         );
         return (
           <Box
