@@ -42,8 +42,7 @@ export default async function DemoPlayerProfilePage({
         rating:
           rankIndex >= 0
             ? {
-                rating: ranked[rankIndex].rating,
-                components: ranked[rankIndex].ratingComponents,
+                rating: ranked[rankIndex].rating,
                 rank: rankIndex + 1,
                 fieldSize: ranked.length,
               }
