@@ -293,6 +293,13 @@ body {
  * width, and below ~56em drop the word beside each glyph rather than dropping
  * a control. There is no second Undo in this layout to fall back on. */
 .lc-toppill {
+  /* Owned here rather than inline so the phone breakpoint below can hide it —
+   * an inline `display` beats any media query, and while this bar set its own
+   * it floated over the phone layout, duplicating that layout's Exit, Undo and
+   * End match a few pixels above them. */
+  display: flex;
+  align-items: center;
+  gap: 4px;
   max-width: calc(100% - 16px);
 }
 @media (max-width: 55.99em) {
@@ -333,6 +340,10 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  /* Exactly two children either way — Exit plus Lineup while the match runs,
+   * Exit plus the finished badge afterwards — so space-between does the work
+   * and the gap only matters if they ever grow to meet. */
+  gap: 8px;
   margin-bottom: 10px;
 }
 

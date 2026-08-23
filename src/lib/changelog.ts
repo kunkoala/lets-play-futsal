@@ -48,7 +48,11 @@ export const CHANGELOG: readonly ChangelogEntry[] = [
       { kind: "added", text: "A match that was played but never started in the app can be entered." },
       {
         kind: "added",
-        text: "Who kept goal is editable per match, which is what clean sheets are counted from.",
+        text: "Who kept goal is editable per match — during it from the live console, or afterwards. That's what clean sheets are counted from.",
+      },
+      {
+        kind: "fixed",
+        text: "The live console on a phone was showing two sets of controls at once, one floating over the other.",
       },
       {
         kind: "changed",

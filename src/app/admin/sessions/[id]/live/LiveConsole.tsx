@@ -26,6 +26,7 @@ import {
   substitutePlayer,
   undoLastEvent,
 } from "./actions";
+import { setMatchKeeper } from "../corrections";
 
 type Player = { id: number; name: string; isKeeper: boolean };
 type TeamInfo = { id: number; name: string; color: string; players: Player[] };
@@ -256,6 +257,22 @@ export function LiveConsole({
     });
   }
 
+  function handleKeeper(teamId: number, playerId: number | null) {
+    setSubError(null);
+    startTransition(async () => {
+      const fd = new FormData();
+      fd.set("matchId", String(matchId));
+      fd.set("teamId", String(teamId));
+      fd.set("playerId", playerId === null ? "none" : String(playerId));
+      const result = await setMatchKeeper(undefined, fd);
+      if (result?.error) {
+        setSubError(result.error);
+        return;
+      }
+      router.refresh();
+    });
+  }
+
   function handleEndMatch() {
     setConfirmEnd(false);
     startTransition(async () => {
@@ -329,21 +346,23 @@ export function LiveConsole({
         onDeleteEvent={handleDeleteEvent}
         onUndo={handleUndo}
         onEnd={() => setConfirmEnd(true)}
+        onLineup={() => setShowSubs(true)}
         onExit={() => router.push(`/admin/sessions/${sessionId}`)}
       />
 
       {/* Floating control pill — top-center */}
       <div
         className="lc-toppill"
+        // `display` deliberately lives in the stylesheet, not here: an inline
+        // `display: flex` outranks any media query, which is how this bar ended
+        // up floating over the phone layout's own Exit and action bar for
+        // months. See .lc-toppill in globals.css.
         style={{
           position: "absolute",
           top: 12,
           left: "50%",
           transform: "translateX(-50%)",
           zIndex: 20,
-          display: "flex",
-          alignItems: "center",
-          gap: 4,
           padding: 4,
           borderRadius: 24,
           background: "rgba(10,11,14,0.86)",
@@ -384,10 +403,9 @@ export function LiveConsole({
         </PillButton>
         <PillButton
           onClick={() => setShowSubs(true)}
-          disabled={available.length === 0}
-          title="Substitute a player"
+          title="Substitutions and keeper"
         >
-          ⇄<span className="lc-pill-label"> Sub</span>
+          ⇄<span className="lc-pill-label"> Lineup</span>
         </PillButton>
         {!isFinished && (
           <>
@@ -490,7 +508,7 @@ export function LiveConsole({
           setSubOff(null);
           setSubError(null);
         }}
-        title="Substitution"
+        title="Lineup"
         centered
         zIndex={300}
       >
@@ -555,9 +573,47 @@ export function LiveConsole({
             ))
           )}
 
-          <Text fz={11} c="dimmed">
-            Subbing off the keeper hands the glove to whoever comes on.
-          </Text>
+          {/* Kept out of the substitution flow above: rotating the gloves is
+              its own thing, and forcing it through a swap would mean subbing
+              someone off and back on to change who keeps. */}
+          {!subOff && (
+            <Stack gap={8} pt={8} style={{ borderTop: "1px solid var(--hairline)" }}>
+              <Text fw={800} fz={12} c="dimmed" style={{ letterSpacing: "0.1em" }}>
+                {KEEPER_GLYPH} WHO&apos;S IN GOAL
+              </Text>
+              {[homeTeam, awayTeam].map((team) => (
+                <Stack key={team.id} gap={6}>
+                  <Text fw={800} fz={12} style={{ color: team.color }}>
+                    {team.name}
+                  </Text>
+                  <Group gap={6}>
+                    {team.players.map((p) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        className="lc-chip"
+                        aria-pressed={p.isKeeper}
+                        disabled={isPending}
+                        onClick={() => handleKeeper(team.id, p.isKeeper ? null : p.id)}
+                        style={
+                          p.isKeeper
+                            ? { borderColor: "var(--volt)", background: "var(--volt)", color: "#0D0F14" }
+                            : { borderColor: team.color }
+                        }
+                      >
+                        {p.isKeeper ? `${KEEPER_GLYPH} ` : ""}
+                        {p.name}
+                      </button>
+                    ))}
+                  </Group>
+                </Stack>
+              ))}
+              <Text fz={11} c="dimmed">
+                Tap the keeper again to leave the team without one. Clean sheets are counted from
+                this — subbing off the keeper hands the glove to whoever comes on.
+              </Text>
+            </Stack>
+          )}
         </Stack>
       </Modal>
 
@@ -716,6 +772,7 @@ function PhoneConsole({
   onUndo,
   onEnd,
   onExit,
+  onLineup,
 }: {
   homeTeam: TeamInfo;
   awayTeam: TeamInfo;
@@ -746,6 +803,8 @@ function PhoneConsole({
   onUndo: () => void;
   onEnd: () => void;
   onExit: () => void;
+  /** Opens the substitutions + keeper sheet, which the phone has no other route to. */
+  onLineup: () => void;
 }) {
   const activeTeam = activeTeamId === awayTeam.id ? awayTeam : homeTeam;
   const sortedEvents = [...events].sort((a, b) => b.seq - a.seq);
@@ -757,6 +816,13 @@ function PhoneConsole({
           <button className="lcp-chip lcp-chip-outline" onClick={onExit}>
             ← Exit
           </button>
+          {/* The phone has no floating bar to hang this off — that one is for
+              the split-court layout only. */}
+          {!isFinished && (
+            <button className="lcp-chip lcp-chip-outline" onClick={onLineup}>
+              ⇄ Lineup
+            </button>
+          )}
           {isFinished && (
             <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.14em", color: "var(--text-muted)" }}>
               MATCH FINISHED

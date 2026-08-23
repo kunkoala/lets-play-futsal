@@ -99,17 +99,24 @@ type EditableMatch = Awaited<ReturnType<typeof findMatchWithLineup>>;
 /**
  * Loads a match that is open to correction, or explains why it isn't.
  *
- * In-progress matches are refused: the live console owns those, and it holds a
- * running clock this form knows nothing about.
+ * Goal edits refuse an in-progress match: the live console owns those, and it
+ * holds a running clock this form knows nothing about — a minute typed here
+ * would be measured against a different zero.
+ *
+ * Swapping the keeper has no such conflict, and is the one thing you most
+ * often need to fix *while* a match is being played, so it passes
+ * `allowInProgress`.
  */
 async function loadEditableMatch(
   matchId: number,
+  { allowInProgress = false }: { allowInProgress?: boolean } = {},
 ): Promise<
   | { ok: false; error: string }
   | { ok: true; match: NonNullable<EditableMatch> }
 > {
   const match = await findMatchWithLineup(matchId);
   if (!match) return { ok: false, error: "Match not found." };
+  if (match.status === "in_progress" && allowInProgress) return { ok: true, match };
   if (match.status !== "finished") {
     return { ok: false, error: "Finish the match in the live console first." };
   }
@@ -262,6 +269,10 @@ export async function removeGoal(
  * correct a clean sheet, since clean sheets are derived from this plus the
  * goals conceded rather than stored.
  *
+ * Allowed mid-match as well as after it: teams rotate the gloves round, and a
+ * keeper change is something you record as it happens rather than remember
+ * afterwards. Only the lineup row moves, so goals already scored are untouched.
+ *
  * At most one keeper per team per match, so the rest of that side is cleared
  * in the same transaction.
  */
@@ -275,7 +286,7 @@ export async function setMatchKeeper(
   const teamId = Number(formData.get("teamId"));
   if (!Number.isInteger(matchId) || !Number.isInteger(teamId)) return { error: "Invalid input." };
 
-  const loaded = await loadEditableMatch(matchId);
+  const loaded = await loadEditableMatch(matchId, { allowInProgress: true });
   if (!loaded.ok) return { error: loaded.error };
   const { match } = loaded;
 
@@ -304,6 +315,9 @@ export async function setMatchKeeper(
         ]),
   ]);
 
+  // The live console reads the lineup too, and is where a mid-match glove
+  // change is made from.
+  revalidatePath(`/admin/sessions/${match.sessionId}/live`);
   revalidateSession(match.sessionId);
 }
 
