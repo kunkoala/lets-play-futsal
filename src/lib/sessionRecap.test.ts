@@ -121,6 +121,123 @@ describe("summariseSession", () => {
       topAssister: null,
       mostCleanSheets: null,
       biggestWin: null,
+      scorerPodium: [],
+      assistPodium: [],
+      players: [],
     });
+  });
+});
+
+describe("summariseSession · podium", () => {
+  it("ranks the top three values, best first", () => {
+    const recap = summariseSession(
+      session([
+        {
+          status: "finished",
+          homeTeamId: 10,
+          awayTeamId: 20,
+          goalEvents: [
+            goal(10, alice),
+            goal(10, alice),
+            goal(10, alice),
+            goal(10, bob),
+            goal(10, bob),
+            goal(20, cara),
+          ],
+        },
+      ]),
+    );
+    expect(recap.scorerPodium).toEqual([
+      { place: 1, names: ["Alice"], value: 3 },
+      { place: 2, names: ["Bob"], value: 2 },
+      { place: 3, names: ["Cara"], value: 1 },
+    ]);
+  });
+
+  it("puts everyone tied at a value on the same place", () => {
+    const recap = summariseSession(
+      session([
+        {
+          status: "finished",
+          homeTeamId: 10,
+          awayTeamId: 20,
+          goalEvents: [goal(10, alice), goal(10, alice), goal(20, cara), goal(20, cara), goal(20, dan)],
+        },
+      ]),
+    );
+    // Alice and Cara share first on 2; Dan is second, not third.
+    expect(recap.scorerPodium).toEqual([
+      { place: 1, names: ["Alice", "Cara"], value: 2 },
+      { place: 2, names: ["Dan"], value: 1 },
+    ]);
+  });
+
+  it("leaves out anyone on zero rather than padding the podium", () => {
+    const recap = summariseSession(
+      session([
+        { status: "finished", homeTeamId: 10, awayTeamId: 20, goalEvents: [goal(10, alice)] },
+      ]),
+    );
+    expect(recap.scorerPodium).toEqual([{ place: 1, names: ["Alice"], value: 1 }]);
+    expect(recap.assistPodium).toEqual([]);
+  });
+});
+
+describe("summariseSession · player table", () => {
+  it("gives every player who took the pitch a row, contributions first", () => {
+    const recap = summariseSession(
+      session([
+        {
+          status: "finished",
+          homeTeamId: 10,
+          awayTeamId: 20,
+          goalEvents: [goal(10, bob, alice), goal(10, bob)],
+        },
+      ]),
+    );
+
+    expect(recap.players.map((p) => p.name)).toEqual(["Bob", "Alice", "Cara", "Dan"]);
+    expect(recap.players[0]).toMatchObject({
+      name: "Bob",
+      goals: 2,
+      assists: 0,
+      contributions: 2,
+      matchesPlayed: 1,
+      wins: 1,
+      cleanSheets: 1,
+    });
+    expect(recap.players[1]).toMatchObject({ name: "Alice", goals: 0, assists: 1, wins: 1 });
+    expect(recap.players[3]).toMatchObject({ name: "Dan", losses: 1, cleanSheets: 0 });
+  });
+
+  it("breaks a contributions tie in favour of the scorer", () => {
+    const recap = summariseSession(
+      session([
+        {
+          status: "finished",
+          homeTeamId: 10,
+          awayTeamId: 20,
+          // Bob scores once; Alice assists it. Both on one contribution.
+          goalEvents: [goal(10, bob, alice)],
+        },
+      ]),
+    );
+    expect(recap.players.slice(0, 2).map((p) => p.name)).toEqual(["Bob", "Alice"]);
+  });
+
+  it("counts a draw as neither a win nor a loss", () => {
+    const recap = summariseSession(
+      session([
+        {
+          status: "finished",
+          homeTeamId: 10,
+          awayTeamId: 20,
+          goalEvents: [goal(10, bob), goal(20, dan)],
+        },
+      ]),
+    );
+    for (const player of recap.players) {
+      expect(player).toMatchObject({ wins: 0, losses: 0, draws: 1 });
+    }
   });
 });

@@ -3,6 +3,7 @@ import {
   buildRatingHistory,
   MIN_SESSIONS_FOR_IMPROVEMENT,
   mostImproved,
+  MOVEMENT_FIELDS,
   movementOf,
   movementsFrom,
   type HistorySession,
@@ -71,7 +72,7 @@ describe("buildRatingHistory", () => {
       PLAYERS,
     );
     const points = history.get(1)!.points;
-    expect(points.map((p) => p.goals)).toEqual([2, 5]);
+    expect(points.map((p) => p.values.goals)).toEqual([2, 5]);
     expect(points.map((p) => p.goalsThisSession)).toEqual([2, 3]);
   });
 
@@ -85,8 +86,8 @@ describe("buildRatingHistory", () => {
       ],
       PLAYERS,
     );
-    expect(history.get(1)!.points[0].rank).toBe(1);
-    expect(history.get(2)!.points[2].rank).toBe(1);
+    expect(history.get(1)!.points[0].ranks.rating).toBe(1);
+    expect(history.get(2)!.points[2].ranks.rating).toBe(1);
   });
 
   it("gives a player with no finished match no points at all", () => {
@@ -122,7 +123,33 @@ describe("movementOf", () => {
     const bob = movementOf(history.get(2))!;
     expect(bob.previousRank).toBe(2);
     expect(bob.rankDelta).toBe(1);
-    expect(bob.ratingDelta).toBeGreaterThan(0);
+    expect(bob.valueDelta).toBeGreaterThan(0);
+  });
+
+  it("tracks each sortable metric separately, not just the rating", () => {
+    // Alice leads on goals throughout; Bob overtakes her on assists.
+    const history = buildRatingHistory(
+      [
+        session(1, { aliceGoals: 4, bobGoals: 0 }),
+        session(2, { aliceGoals: 3, bobGoals: 1 }),
+      ],
+      PLAYERS,
+    );
+    const alice = movementsFrom(history).get(1)!;
+    expect(alice.goals.valueDelta).toBe(3);
+    // Still top of the goals table, so no places moved there.
+    expect(alice.goals.rankDelta).toBe(0);
+  });
+
+  it("gives every sortable metric an entry so the arrow follows the active tab", () => {
+    const history = buildRatingHistory(
+      [session(1, { aliceGoals: 2, bobGoals: 1 }), session(2, { aliceGoals: 1, bobGoals: 3 })],
+      PLAYERS,
+    );
+    const bob = movementsFrom(history).get(2)!;
+    for (const field of MOVEMENT_FIELDS) {
+      expect(bob[field]).toBeDefined();
+    }
   });
 
   it("skips players with no comparison when mapping the whole field", () => {

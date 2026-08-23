@@ -252,8 +252,8 @@ export function PlayerProfileView({
             data.progress[data.progress.length - 1].rating -
             data.progress[data.progress.length - 2].rating,
           rankDelta:
-            data.progress[data.progress.length - 2].rank -
-            data.progress[data.progress.length - 1].rank,
+            data.progress[data.progress.length - 2].ranks.rating -
+            data.progress[data.progress.length - 1].ranks.rating,
         }
       : null;
 

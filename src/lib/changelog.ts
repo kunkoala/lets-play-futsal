@@ -45,15 +45,15 @@ export const CHANGELOG: readonly ChangelogEntry[] = [
       },
       {
         kind: "added",
-        text: "Games played sits right next to the rating on the leaderboard, so you can tell a 90 built over a season from a 90 built in one night.",
+        text: "Matches played sits right next to the rating on the leaderboard, so you can tell a 90 built over a season from a 90 built in two games.",
       },
       {
         kind: "added",
-        text: "Arrows on the leaderboard show how many places you moved since last matchday.",
+        text: "A column beside the rank shows how many places you moved since last matchday — and it follows whichever tab you're sorting by, so switch to Goals and it's your movement up the scoring charts.",
       },
       {
         kind: "added",
-        text: "Every session page now opens with a recap: most goals, most assists, most clean sheets, and the night's totals.",
+        text: "Every session page now has a top-three podium for goals and assists, plus a table of what everyone did that night — matches, goals, assists, clean sheets and results, so you can find your own row even on a quiet week.",
       },
       {
         kind: "added",

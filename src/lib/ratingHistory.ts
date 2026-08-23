@@ -13,22 +13,44 @@
  * matchdays is nothing. If a season ever gets long enough to notice, memoise
  * per season — the input only changes when a session is completed.
  */
-import { aggregateSeason, type AggregateSession, type AggregatePlayer } from "@/lib/seasonAggregate";
+import {
+  aggregateSeason,
+  type AggregateSession,
+  type AggregatePlayer,
+  type PlayerSeasonStats,
+} from "@/lib/seasonAggregate";
 
 /** A session plus the identity the history needs to label its points. */
 export type HistorySession = AggregateSession & { id: number; date: Date };
+
+/**
+ * The metrics the leaderboard can be sorted by, and therefore the ones a
+ * movement arrow can be shown against. Ranking every one of them costs a sort
+ * per metric per session — trivial at this scale, and it means the arrow
+ * always describes the column the table is actually ordered by, rather than
+ * quietly reporting rating movement next to a goals ranking.
+ */
+export const MOVEMENT_FIELDS = [
+  "rating",
+  "goals",
+  "assists",
+  "goalContributions",
+  "points",
+  "wins",
+  "winRate",
+] as const;
+
+export type MovementField = (typeof MOVEMENT_FIELDS)[number];
 
 export type RatingPoint = {
   sessionId: number;
   date: Date;
   /** 0-100, relative to everyone who had played by this point in the season. */
   rating: number;
-  /** 1-based standing at this point, among players with a finished match. */
-  rank: number;
-  /** Season-to-date totals as of this session. */
-  goals: number;
-  assists: number;
-  points: number;
+  /** 1-based standing in each sortable metric, as of this session. */
+  ranks: Record<MovementField, number>;
+  /** Season-to-date value behind each of those ranks. */
+  values: Record<MovementField, number>;
   /** Goals scored in this session alone — what the per-session bar chart plots. */
   goalsThisSession: number;
 };
@@ -40,20 +62,36 @@ export type PlayerRatingHistory = {
 };
 
 /**
- * Change since the previous session. `null` for a player with nothing to
- * compare against — their first appearance is "NEW", not "unchanged".
+ * Change since the previous session, in one metric. `null` for a player with
+ * nothing to compare against — their first appearance is "NEW", not
+ * "unchanged".
  */
 export type RatingMovement = {
-  /** Positive means the rating went up. */
-  ratingDelta: number;
+  /** Positive means the underlying number went up. */
+  valueDelta: number;
   /**
    * Positive means the player climbed the table. Inverted from the raw rank
    * difference on purpose: rank 5 → 2 is +3 places, not -3.
    */
   rankDelta: number;
   previousRank: number;
-  previousRating: number;
+  previousValue: number;
 };
+
+/**
+ * Positional rank in one metric, matching how the leaderboard itself orders
+ * rows: sort descending by value, and read off the index.
+ *
+ * `Array.prototype.sort` is stable and `standings` arrives in the players'
+ * own order, so ties resolve the same way here as they do in the table — the
+ * arrow can't disagree with the position the reader is looking at.
+ */
+function ranksFor(standings: readonly PlayerSeasonStats[], field: MovementField): Map<number, number> {
+  const ordered = [...standings].sort((a, b) => b[field] - a[field]);
+  const ranks = new Map<number, number>();
+  ordered.forEach((player, index) => ranks.set(player.playerId, index + 1));
+  return ranks;
+}
 
 /**
  * Replays the season one session at a time.
@@ -76,26 +114,31 @@ export function buildRatingHistory(
     const session = sessions[i];
     const standings = aggregateSeason(sessions.slice(0, i + 1), players);
 
-    // Rank is only defined for players who have actually finished a match;
-    // everyone else has a rating of 0 and would otherwise all tie for last.
-    const ranked = standings
-      .filter((s) => s.matchesPlayed > 0)
-      .sort((a, b) => b.rating - a.rating);
+    const ranksByField = new Map(
+      MOVEMENT_FIELDS.map((field) => [field, ranksFor(standings, field)] as const),
+    );
 
-    for (let rank = 0; rank < ranked.length; rank++) {
-      const player = ranked[rank];
+    for (const player of standings) {
+      // A player with no finished match has nothing to be ranked on — their
+      // rating is 0 and they would tie with everyone else who hasn't played.
+      if (player.matchesPlayed === 0) continue;
       const entry = history.get(player.playerId);
       if (!entry) continue;
+
+      const ranks = {} as Record<MovementField, number>;
+      const values = {} as Record<MovementField, number>;
+      for (const field of MOVEMENT_FIELDS) {
+        ranks[field] = ranksByField.get(field)!.get(player.playerId)!;
+        values[field] = player[field];
+      }
 
       const before = goalsBefore.get(player.playerId) ?? 0;
       entry.points.push({
         sessionId: session.id,
         date: session.date,
         rating: player.rating,
-        rank: rank + 1,
-        goals: player.goals,
-        assists: player.assists,
-        points: player.points,
+        ranks,
+        values,
         goalsThisSession: player.goals - before,
       });
       goalsBefore.set(player.playerId, player.goals);
@@ -105,29 +148,42 @@ export function buildRatingHistory(
   return history;
 }
 
-/** The last session's change for one player, or null if they have no previous one. */
-export function movementOf(history: PlayerRatingHistory | undefined): RatingMovement | null {
+/** The last session's change for one player in one metric, or null if they have no previous one. */
+export function movementOf(
+  history: PlayerRatingHistory | undefined,
+  field: MovementField = "rating",
+): RatingMovement | null {
   const points = history?.points ?? [];
   if (points.length < 2) return null;
 
   const latest = points[points.length - 1];
   const previous = points[points.length - 2];
   return {
-    ratingDelta: latest.rating - previous.rating,
-    rankDelta: previous.rank - latest.rank,
-    previousRank: previous.rank,
-    previousRating: previous.rating,
+    valueDelta: latest.values[field] - previous.values[field],
+    rankDelta: previous.ranks[field] - latest.ranks[field],
+    previousRank: previous.ranks[field],
+    previousValue: previous.values[field],
   };
 }
 
-/** Per-player movement since the previous session, keyed by player id. */
+/**
+ * Movement since the previous session for every player, in every sortable
+ * metric — `movements.get(playerId)?.goals` is that player's change in the
+ * goals table.
+ *
+ * All fields at once rather than one per request: it is a few dozen players by
+ * seven numbers, and it lets the leaderboard switch sort tabs without the
+ * server having to know which one is active.
+ */
 export function movementsFrom(
   history: ReadonlyMap<number, PlayerRatingHistory>,
-): Map<number, RatingMovement> {
-  const movements = new Map<number, RatingMovement>();
+): Map<number, Record<MovementField, RatingMovement>> {
+  const movements = new Map<number, Record<MovementField, RatingMovement>>();
   for (const [playerId, entry] of history) {
-    const movement = movementOf(entry);
-    if (movement) movements.set(playerId, movement);
+    if (entry.points.length < 2) continue;
+    const byField = {} as Record<MovementField, RatingMovement>;
+    for (const field of MOVEMENT_FIELDS) byField[field] = movementOf(entry, field)!;
+    movements.set(playerId, byField);
   }
   return movements;
 }

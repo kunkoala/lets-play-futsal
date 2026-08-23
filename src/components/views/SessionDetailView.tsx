@@ -1,7 +1,24 @@
-import { Box, Container, Group, Stack, Text } from "@mantine/core";
+import {
+  Box,
+  Container,
+  Group,
+  Stack,
+  Table,
+  TableTbody,
+  TableTd,
+  TableTh,
+  TableThead,
+  TableTr,
+  Text,
+} from "@mantine/core";
 import { computeScore } from "@/lib/matchScore";
 import { KEEPER_GLYPH } from "@/lib/keeperPref";
-import { summariseSession, type RecapLeader } from "@/lib/sessionRecap";
+import {
+  summariseSession,
+  type RecapLeader,
+  type RecapPlayerLine,
+  type RecapPodiumPlace,
+} from "@/lib/sessionRecap";
 import { NavLink } from "@/components/NavLink";
 import { ArrowLeft } from "@/components/icons";
 
@@ -140,6 +157,210 @@ function RecapCard({
   );
 }
 
+const PLACE_ACCENT = ["var(--volt)", "var(--text-muted)", "var(--team-yellow)"];
+
+/**
+ * Session podium, in the same shape as the season awards — the matchday
+ * equivalent of Top Scorer, so the same thing looks the same in both places.
+ *
+ * A place holds every name tied at its value, so two players on 3 goals are
+ * joint first and the next is second. Three *places*, not three names.
+ */
+function SessionPodium({
+  title,
+  glyph,
+  unit,
+  places,
+  accent,
+}: {
+  title: string;
+  glyph: string;
+  unit: string;
+  places: RecapPodiumPlace[];
+  accent: string;
+}) {
+  return (
+    <Box
+      style={{
+        flex: "1 1 260px",
+        minWidth: 240,
+        border: "1px solid var(--hairline)",
+        borderRadius: 16,
+        background: "var(--panel)",
+        padding: "16px 18px 8px",
+      }}
+    >
+      <Group gap={8} align="center" mb={places.length ? 12 : 4}>
+        <Text fz={15} component="span" aria-hidden>
+          {glyph}
+        </Text>
+        <Text
+          fw={700}
+          fz={11}
+          c="dimmed"
+          style={{ letterSpacing: "0.14em", textTransform: "uppercase" }}
+        >
+          {title}
+        </Text>
+      </Group>
+
+      {places.length === 0 ? (
+        <Text size="sm" c="dimmed" pb={10}>
+          Nobody yet.
+        </Text>
+      ) : (
+        <Stack gap={0}>
+          {places.map((entry, i) => (
+            <Group
+              key={entry.place}
+              justify="space-between"
+              wrap="nowrap"
+              gap="sm"
+              style={{
+                padding: "10px 0",
+                borderTop: i === 0 ? "none" : "1px solid var(--hairline)",
+              }}
+            >
+              <Group gap={11} wrap="nowrap" style={{ minWidth: 0 }}>
+                <Text
+                  className="display-face tabular-nums"
+                  fw={900}
+                  fz={17}
+                  w={18}
+                  ta="center"
+                  style={{
+                    color: i === 0 ? accent : PLACE_ACCENT[i] ?? "var(--text-muted)",
+                    flexShrink: 0,
+                  }}
+                >
+                  {entry.place}
+                </Text>
+                <Text fz={14} fw={600} style={{ minWidth: 0, lineHeight: 1.3 }}>
+                  {entry.names.join(", ")}
+                </Text>
+              </Group>
+              <Text className="tabular-nums" fw={800} fz={15} style={{ flexShrink: 0 }}>
+                {entry.value}
+                <Text span c="dimmed" fw={500} fz={11}>
+                  {" "}
+                  {unit}
+                </Text>
+              </Text>
+            </Group>
+          ))}
+        </Stack>
+      )}
+    </Box>
+  );
+}
+
+function StatTh({ children }: { children: React.ReactNode }) {
+  return (
+    <TableTh
+      style={{
+        textAlign: "center",
+        fontWeight: 700,
+        fontSize: 10,
+        letterSpacing: "0.12em",
+        textTransform: "uppercase",
+        color: "var(--text-muted)",
+        whiteSpace: "nowrap",
+      }}
+    >
+      {children}
+    </TableTh>
+  );
+}
+
+/**
+ * Everyone's night in one table — the point being that a player who scored
+ * nothing can still find their own row and see what they did. Ordered by goal
+ * contributions, so the podium's names are the ones at the top.
+ */
+function SessionStatsTable({
+  players,
+  basePath,
+}: {
+  players: RecapPlayerLine[];
+  basePath: string;
+}) {
+  return (
+    <Box
+      style={{
+        border: "1px solid var(--hairline)",
+        borderRadius: 16,
+        overflow: "hidden",
+        background: "var(--panel)",
+      }}
+    >
+      <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+        <Table verticalSpacing={12} horizontalSpacing="md" highlightOnHover style={{ minWidth: 460 }}>
+          <TableThead>
+            <TableTr style={{ borderBottom: "1px solid var(--hairline)" }}>
+              <TableTh
+                style={{
+                  textAlign: "left",
+                  fontWeight: 700,
+                  fontSize: 10,
+                  letterSpacing: "0.12em",
+                  textTransform: "uppercase",
+                  color: "var(--text-muted)",
+                }}
+              >
+                Player
+              </TableTh>
+              <StatTh>MP</StatTh>
+              <StatTh>G</StatTh>
+              <StatTh>A</StatTh>
+              <StatTh>G+A</StatTh>
+              <StatTh>CS</StatTh>
+              <StatTh>W–D–L</StatTh>
+            </TableTr>
+          </TableThead>
+          <TableTbody>
+            {players.map((player) => (
+              <TableTr key={player.playerId}>
+                <TableTd>
+                  <NavLink
+                    href={`${basePath}/players/${player.playerId}`}
+                    fw={600}
+                    fz={14}
+                    c="inherit"
+                    underline="hover"
+                  >
+                    {player.name}
+                  </NavLink>
+                </TableTd>
+                <SessionStat value={player.matchesPlayed} />
+                <SessionStat value={player.goals} accent={player.goals > 0} />
+                <SessionStat value={player.assists} />
+                <SessionStat value={player.contributions} />
+                <SessionStat value={player.cleanSheets} />
+                <SessionStat value={`${player.wins}–${player.draws}–${player.losses}`} />
+              </TableTr>
+            ))}
+          </TableTbody>
+        </Table>
+      </div>
+    </Box>
+  );
+}
+
+function SessionStat({ value, accent }: { value: string | number; accent?: boolean }) {
+  return (
+    <TableTd style={{ textAlign: "center" }}>
+      <Text
+        className="tabular-nums"
+        fw={accent ? 800 : 500}
+        fz={14}
+        style={accent ? { color: "var(--volt)" } : undefined}
+      >
+        {value}
+      </Text>
+    </TableTd>
+  );
+}
+
 /**
  * Shape shared by the Prisma query on `/sessions/[id]` and the generated demo
  * session — declared structurally so both satisfy it without conversion.
@@ -259,28 +480,43 @@ export function SessionDetailView({
               </Text>
             </Group>
             <Group align="stretch" gap={12} wrap="wrap">
-              <RecapCard
-                label="Most goals"
+              <SessionPodium
+                title="Top Scorer"
                 glyph="⚽"
                 unit="goals"
-                leader={recap.topScorer}
+                places={recap.scorerPodium}
                 accent="var(--volt)"
               />
-              <RecapCard
-                label="Most assists"
+              <SessionPodium
+                title="Top Assists"
                 glyph="🅰"
                 unit="assists"
-                leader={recap.topAssister}
+                places={recap.assistPodium}
                 accent="var(--team-blue)"
               />
+              {/* Not a podium: at 4-a-side most of the pitch keeps a clean
+                  sheet in any given match, so a top three would just be a long
+                  list of names. The leader alone is the interesting part. */}
               <RecapCard
-                label="Clean sheets"
+                label="Most clean sheets"
                 glyph={KEEPER_GLYPH}
                 unit="matches"
                 leader={recap.mostCleanSheets}
                 accent="var(--team-purple)"
               />
             </Group>
+          </Stack>
+        )}
+
+        {recap.players.length > 0 && (
+          <Stack gap={12} className="fs-fade-up" style={{ animationDelay: "0.06s" }}>
+            <Group justify="space-between" align="baseline" gap={10} wrap="wrap">
+              <Eyebrow>Everyone&apos;s night</Eyebrow>
+              <Text fz={11} c="dimmed">
+                Sorted by goals + assists
+              </Text>
+            </Group>
+            <SessionStatsTable players={recap.players} basePath={basePath} />
           </Stack>
         )}
 

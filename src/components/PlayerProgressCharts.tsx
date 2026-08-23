@@ -192,7 +192,7 @@ function RatingLine({ points }: { points: RatingPoint[] }) {
             {shortDate(active.date)}
           </Text>
           <Text fz={13} fw={800} className="tabular-nums">
-            {formatRating(active.rating)} · #{active.rank}
+            {formatRating(active.rating)} · #{active.ranks.rating}
           </Text>
         </Box>
       )}
