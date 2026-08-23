@@ -440,7 +440,7 @@ export function PlayerProfileView({
                       </TableTd>
                       <Td accent={row.goals > 0}>{row.goals}</Td>
                       <Td>{row.assists}</Td>
-                      <Td accent={row.mvps > 0}>{row.mvps > 0 ? row.mvps : "—"}</Td>
+                      <Td accent={row.mvp}>{row.mvp ? "🏆" : "—"}</Td>
                     </TableTr>
                   ))}
                   {profile.sessionHistory.length === 0 && (

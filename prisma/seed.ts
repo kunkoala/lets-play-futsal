@@ -120,11 +120,11 @@ async function createSession(params: {
   seasonId: number;
   date: string;
   attendees: Player[];
+  /** Player of the day — one per session, from anyone who turned up. */
+  mvp: Player;
   matchResults: {
     home: "Red" | "Blue" | "Green";
     away: "Red" | "Blue" | "Green";
-    /** Man of the match, from either roster. */
-    mvp: Player;
     events: {
       side: "home" | "away";
       scorer: Player | null;
@@ -137,6 +137,7 @@ async function createSession(params: {
       seasonId: params.seasonId,
       date: new Date(params.date),
       status: "completed",
+      mvpPlayerId: params.mvp.id,
     },
   });
 
@@ -191,7 +192,6 @@ async function createSession(params: {
         status: "finished",
         startedAt: new Date(params.date),
         endedAt: new Date(params.date),
-        mvpPlayerId: result.mvp.id,
       },
     });
 
@@ -234,12 +234,12 @@ async function main() {
     seasonId: season.id,
     date: "2026-08-06",
     attendees: session1Attendees,
+    mvp: byName("Raka Pratama"), // two goals and an assist across the night
     matchResults: [
       {
         // Red 3 - 2 Blue
         home: "Red",
         away: "Blue",
-        mvp: byName("Raka Pratama"), // a goal and an assist
         events: [
           { side: "home", scorer: byName("Fikri Ramadhan"), assist: byName("Raka Pratama") },
           { side: "home", scorer: byName("Dimas Aditya"), assist: null },
@@ -252,7 +252,6 @@ async function main() {
         // Green 1 - 1 Red (draw)
         home: "Green",
         away: "Red",
-        mvp: byName("Wahyu Setiawan"), // assist, and kept goal for Green
         events: [
           { side: "home", scorer: byName("Ilham Kurniawan"), assist: byName("Gilang Ramadhan") },
           { side: "away", scorer: byName("Bagus Saputra"), assist: null },
@@ -262,7 +261,6 @@ async function main() {
         // Green 0 - 2 Blue (includes one own goal benefiting Blue)
         home: "Green",
         away: "Blue",
-        mvp: byName("Aditya Nugroho"), // Blue's keeper, clean sheet
         events: [
           { side: "away", scorer: byName("Fajar Sidik"), assist: byName("Hafiz Rahman") },
           { side: "away", scorer: null, assist: null }, // own goal, unattributed
@@ -277,12 +275,12 @@ async function main() {
     seasonId: season.id,
     date: "2026-08-13",
     attendees: session2Attendees,
+    mvp: byName("Reza Pahlevi"), // a goal and two assists across the night
     matchResults: [
       {
         // Red 2 - 2 Green (draw)
         home: "Red",
         away: "Green",
-        mvp: byName("Gilang Ramadhan"), // a goal and an assist
         events: [
           { side: "home", scorer: byName("Raka Pratama"), assist: byName("Dimas Aditya") },
           { side: "home", scorer: byName("Bagus Saputra"), assist: null },
@@ -294,7 +292,6 @@ async function main() {
         // Blue 3 - 1 Red
         home: "Blue",
         away: "Red",
-        mvp: byName("Reza Pahlevi"), // a goal and an assist
         events: [
           { side: "home", scorer: byName("Reza Pahlevi"), assist: byName("Fajar Sidik") },
           { side: "home", scorer: byName("Hafiz Rahman"), assist: null },
@@ -306,7 +303,6 @@ async function main() {
         // Blue 1 - 2 Green
         home: "Blue",
         away: "Green",
-        mvp: byName("Surya Wijaya"), // a goal and an assist
         events: [
           { side: "away", scorer: byName("Nanda Prasetyo"), assist: byName("Surya Wijaya") },
           { side: "away", scorer: byName("Surya Wijaya"), assist: null },

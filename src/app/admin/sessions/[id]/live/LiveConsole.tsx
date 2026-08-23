@@ -79,7 +79,6 @@ export function LiveConsole({
     { eventId: number; teamId: number; scorerName: string } | null
   >(null);
   const [confirmEnd, setConfirmEnd] = useState(false);
-  const [mvpId, setMvpId] = useState<number | null>(null);
   const [showFeed, setShowFeed] = useState(false);
   const [cooldownIds, setCooldownIds] = useState<Set<number>>(new Set());
   // Phone layout only: which roster is tappable, and whether the list area
@@ -234,9 +233,6 @@ export function LiveConsole({
     startTransition(async () => {
       const fd = new FormData();
       fd.set("matchId", String(matchId));
-      // Omitted entirely when nobody was picked — the admin can still set an
-      // MVP later from the session page.
-      if (mvpId !== null) fd.set("mvpPlayerId", String(mvpId));
       await endMatch(undefined, fd); // redirects back to the session page on success
     });
   }
@@ -459,86 +455,22 @@ export function LiveConsole({
             </Text>
           </Text>
 
-          <MvpPicker
-            homeTeam={homeTeam}
-            awayTeam={awayTeam}
-            goalsFor={goalsFor}
-            selectedId={mvpId}
-            onSelect={(id) => setMvpId((current) => (current === id ? null : id))}
-          />
+          <Text fz={12} c="dimmed">
+            There&apos;s no man of the match any more — pick one player of the day for the
+            whole session from the session page when you&apos;re done.
+          </Text>
 
           <Group justify="flex-end">
             <Button variant="default" onClick={() => setConfirmEnd(false)}>
               Cancel
             </Button>
             <Button loading={isPending} onClick={handleEndMatch}>
-              {mvpId === null ? "End match" : `End match · MVP ${playersById.get(mvpId)?.name}`}
+              End match
             </Button>
           </Group>
         </Stack>
       </Modal>
     </div>
-  );
-}
-
-/**
- * Man of the match: one player across both rosters, tapped on the way out.
- * Optional by design — skipping just leaves the match without an MVP, and it
- * can be set later from the session page. Each chip carries its team color and
- * that player's goal count, which is usually all the reminder needed.
- */
-function MvpPicker({
-  homeTeam,
-  awayTeam,
-  goalsFor,
-  selectedId,
-  onSelect,
-}: {
-  homeTeam: TeamInfo;
-  awayTeam: TeamInfo;
-  goalsFor: (playerId: number) => number;
-  selectedId: number | null;
-  onSelect: (playerId: number) => void;
-}) {
-  return (
-    <Stack gap={8}>
-      <Text fw={700} fz={11} c="dimmed" style={{ letterSpacing: "0.12em" }}>
-        MAN OF THE MATCH — OPTIONAL
-      </Text>
-      {[homeTeam, awayTeam].map((team) => (
-        <Group key={team.id} gap={6}>
-          {team.players.map((p) => {
-            const selected = p.id === selectedId;
-            const goals = goalsFor(p.id);
-            return (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => onSelect(p.id)}
-                aria-pressed={selected}
-                style={{
-                  border: `1px solid ${selected ? "var(--volt)" : team.color}`,
-                  background: selected ? "var(--volt)" : "transparent",
-                  color: selected ? "#0D0F14" : "var(--text)",
-                  borderRadius: 20,
-                  padding: "6px 12px",
-                  fontSize: 13,
-                  fontWeight: selected ? 800 : 600,
-                  cursor: "pointer",
-                }}
-              >
-                {p.isKeeper ? `${KEEPER_GLYPH} ` : ""}
-                {p.name}
-                {goals > 0 ? ` ${goals}⚽` : ""}
-              </button>
-            );
-          })}
-        </Group>
-      ))}
-      <Text fz={11} c="dimmed">
-        Tap again to clear. You can also set this later from the session page.
-      </Text>
-    </Stack>
   );
 }
 

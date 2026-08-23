@@ -51,7 +51,7 @@ function sortValue(s: PlayerSeasonStats, field: SortField): number {
 const COLUMN_HELP: Record<string, string> = {
   rank: "Position in this season's standings, by whichever column is currently highlighted.",
   player: "Tap a name for that player's full profile and match-by-match history.",
-  rating: `Overall rating out of 100, blending every stat on this page. Match MVPs are worth 20% of it; goals, assists, points, win rate and matchdays make up the other 80%. Per-match rates are steadied against the league average for the first ${PRIOR_MATCHES} matches, so one big game doesn't top the table.`,
+  rating: `Overall rating out of 100, blending every stat on this page: goals, assists, points, win rate and matchdays. MVP awards are deliberately left out — the rating is about what you did on the pitch. Per-match rates are steadied against the league average for the first ${PRIOR_MATCHES} matches, so one big game doesn't top the table.`,
   goals: "Goals scored. Own goals count on the scoreboard but aren't credited to anyone.",
   assists: "Assists — the pass before a goal, when there was one.",
   goalContributions: "Goals plus assists: total attacking output, counting a goal and an assist equally.",
@@ -62,7 +62,7 @@ const COLUMN_HELP: Record<string, string> = {
   plusMinus:
     "Goal difference while you were on the pitch — your team's goals scored minus goals conceded, added up across every match.",
   cleanSheets: "Matches where your team conceded nothing. Counts for the whole team, not just the keeper.",
-  mvps: "Man-of-the-match awards, picked by the admin at the end of each match.",
+  mvps: "Player-of-the-day awards — one per matchday, picked at the end of the night. Just for fun: they don't affect your rating.",
   winRate: "Share of matches won. Draws count as neither a win nor a loss here.",
   form: "Your last five results, oldest on the left. Green is a win, yellow a draw, red a loss.",
 };
@@ -161,7 +161,7 @@ function RatingHero({ leader }: { leader: PlayerSeasonStats | null }) {
             fz={10}
             style={{ letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.7 }}
           >
-            Top rated · Leads the MVP race
+            Top rated · Leads the season MVP race
           </Text>
           <Text
             component="div"
@@ -173,8 +173,7 @@ function RatingHero({ leader }: { leader: PlayerSeasonStats | null }) {
             {leader.name}
           </Text>
           <Text component="div" fw={700} fz={13} style={{ opacity: 0.82 }}>
-            {leader.goals} goals · {leader.assists} assists · {leader.mvps} MVP
-            {leader.mvps === 1 ? "" : "s"} · {leader.matchesPlayed} matches
+            {leader.goals} goals · {leader.assists} assists · {leader.matchesPlayed} matches
           </Text>
         </Stack>
         <Group align="flex-end" gap={6} wrap="nowrap">
@@ -568,7 +567,7 @@ export function LeaderboardView({
             accent="var(--team-green)"
           />
           <LeaderCard
-            eyebrow="Most MVPs"
+            eyebrow="Player of the Day"
             glyph="🏆"
             leader={leaderBy(stats, "mvps")}
             unit="MVPs"

@@ -215,33 +215,6 @@ export async function resumeMatch(formData: FormData): Promise<void> {
   revalidatePath(`/admin/sessions/${match.sessionId}/live`);
 }
 
-/**
- * Man of the match must have actually played in it — either roster is fair
- * game, since the pick is one player across both teams.
- */
-async function assertPlayedInMatch(
-  match: { homeTeamId: number; awayTeamId: number },
-  playerId: number,
-): Promise<boolean> {
-  const rostered = await prisma.teamPlayer.findFirst({
-    where: { playerId, teamId: { in: [match.homeTeamId, match.awayTeamId] } },
-  });
-  return rostered !== null;
-}
-
-/**
- * Parses the optional `mvpPlayerId` field. Returns `undefined` when the admin
- * skipped the pick (so the column is left alone) and `null` when they
- * explicitly cleared it.
- */
-function readMvpField(formData: FormData): number | null | undefined {
-  const raw = formData.get("mvpPlayerId");
-  if (raw === null || raw === "") return undefined;
-  if (raw === "none") return null;
-  const id = Number(raw);
-  return Number.isInteger(id) ? id : undefined;
-}
-
 export async function endMatch(
   _prevState: MatchFormState,
   formData: FormData,
@@ -255,49 +228,11 @@ export async function endMatch(
   if (!match) return { error: "Match not found." };
   if (match.status !== "in_progress") return { error: "Match already finished." };
 
-  const mvpPlayerId = readMvpField(formData);
-  if (typeof mvpPlayerId === "number" && !(await assertPlayedInMatch(match, mvpPlayerId))) {
-    return { error: "MVP must be a player from one of the two teams." };
-  }
-
   await prisma.match.update({
     where: { id: matchId },
-    data: {
-      status: "finished",
-      endedAt: new Date(),
-      ...(mvpPlayerId === undefined ? {} : { mvpPlayerId }),
-    },
+    data: { status: "finished", endedAt: new Date() },
   });
 
   revalidatePath(`/admin/sessions/${match.sessionId}`);
   redirect(`/admin/sessions/${match.sessionId}`);
-}
-
-/**
- * Sets or clears the MVP on an already-finished match — the way to fix a
- * mis-tap, or to pick one for a match that was ended without a choice.
- */
-export async function setMatchMvp(
-  _prevState: MatchFormState,
-  formData: FormData,
-): Promise<MatchFormState> {
-  await requireAdmin();
-
-  const matchId = Number(formData.get("matchId"));
-  if (!Number.isInteger(matchId)) return { error: "Invalid match." };
-
-  const match = await prisma.match.findUnique({ where: { id: matchId } });
-  if (!match) return { error: "Match not found." };
-
-  const mvpPlayerId = readMvpField(formData);
-  if (mvpPlayerId === undefined) return { error: "Pick a player first." };
-  if (mvpPlayerId !== null && !(await assertPlayedInMatch(match, mvpPlayerId))) {
-    return { error: "MVP must be a player from one of the two teams." };
-  }
-
-  await prisma.match.update({ where: { id: matchId }, data: { mvpPlayerId } });
-
-  revalidatePath(`/admin/sessions/${match.sessionId}`);
-  revalidatePath(`/sessions/${match.sessionId}`);
-  revalidatePath("/awards");
 }

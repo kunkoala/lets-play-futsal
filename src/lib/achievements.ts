@@ -321,10 +321,13 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
   },
 
   // --- Recognition ---
+  // Thresholds are scaled for *session* MVPs: at most one per matchday, where
+  // the old match MVP could be won six times in a night. 5 was a reachable
+  // gold under the old award and would be a season-long grind under this one.
   {
     id: "man_of_the_match",
-    name: "Man of the Match",
-    description: "Win your first MVP.",
+    name: "Player of the Day",
+    description: "Win your first session MVP.",
     category: "Recognition",
     glyph: "🏆",
     ...tier("bronze", (s) => s.mvps > 0),
@@ -332,18 +335,18 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
   {
     id: "crowd_favorite",
     name: "Crowd Favorite",
-    description: "Win 5 MVPs.",
+    description: "Win 3 session MVPs.",
     category: "Recognition",
     glyph: "📣",
-    ...tier("gold", (s) => s.mvps >= 5),
+    ...tier("gold", (s) => s.mvps >= 3),
   },
   {
     id: "talk_of_the_season",
     name: "Talk of the Season",
-    description: "Win 3 MVPs in a single season.",
+    description: "Win 2 session MVPs in a single season.",
     category: "Recognition",
     glyph: "🗣️",
-    ...tier("silver", (s) => s.mvps >= 3),
+    ...tier("silver", (s) => s.mvps >= 2),
   },
 
   // --- Commitment ---

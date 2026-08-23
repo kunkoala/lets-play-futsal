@@ -421,6 +421,50 @@ export async function reopenSession(
   revalidatePath(`/admin/sessions/${sessionId}`);
 }
 
+/**
+ * Sets or clears the session MVP — the player of the day, picked once for the
+ * whole matchday rather than per match. Stays editable after the session is
+ * completed, since it's usually agreed on in the car park afterwards and a
+ * mis-tap shouldn't need the session reopening.
+ *
+ * The pick has no effect on any rating (see src/lib/rating.ts), so it needs no
+ * guard beyond "they were actually there".
+ */
+export async function setSessionMvp(
+  _prevState: SessionFormState,
+  formData: FormData,
+): Promise<SessionFormState> {
+  await requireAdmin();
+
+  const sessionId = Number(formData.get("sessionId"));
+  if (!Number.isInteger(sessionId)) return { error: "Invalid session." };
+
+  const session = await prisma.session.findUnique({ where: { id: sessionId } });
+  if (!session) return { error: "Session not found." };
+
+  const raw = formData.get("mvpPlayerId");
+  if (raw === null || raw === "") return { error: "Pick a player first." };
+
+  let mvpPlayerId: number | null = null;
+  if (raw !== "none") {
+    const id = Number(raw);
+    if (!Number.isInteger(id)) return { error: "Invalid player." };
+
+    const attended = await prisma.attendance.findUnique({
+      where: { sessionId_playerId: { sessionId, playerId: id } },
+    });
+    if (!attended) return { error: "MVP must be someone who turned up." };
+    mvpPlayerId = id;
+  }
+
+  await prisma.session.update({ where: { id: sessionId }, data: { mvpPlayerId } });
+
+  revalidatePath(`/admin/sessions/${sessionId}`);
+  revalidatePath(`/sessions/${sessionId}`);
+  revalidatePath("/awards");
+  revalidatePath("/");
+}
+
 export type RosterActionState = { error: string } | undefined;
 
 /**

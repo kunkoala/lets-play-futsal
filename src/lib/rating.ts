@@ -19,9 +19,11 @@
  *    therefore shrunk toward the league average with a Bayesian prior worth
  *    `PRIOR_MATCHES` matches — play more, and your own numbers take over.
  *
- * Weights sum to 100. Match MVPs carry the single largest share: it's the one
- * input that comes from people who actually watched the game, rather than from
- * arithmetic on the scoresheet.
+ * Weights sum to 100, and every one of them is earned on the pitch. Session
+ * MVP is deliberately *not* an input: it's a popularity-flavoured vote handed
+ * out for fun at the end of a matchday, and letting it move the rating meant
+ * the number stopped being a statement about how someone played. Goal
+ * contributions now carry the largest share instead.
  */
 import type { PlayerStats } from "@/lib/stats";
 
@@ -57,17 +59,9 @@ type Metric = {
 
 export const METRICS: readonly Metric[] = [
   {
-    key: "mvps",
-    label: "Match MVPs",
-    weight: 20,
-    kind: "total",
-    why: "The only human judgement in the formula, so it carries the most weight.",
-    value: (s) => s.mvps,
-  },
-  {
     key: "goalContributions",
     label: "Goals + assists",
-    weight: 14,
+    weight: 18,
     kind: "total",
     why: "Best single measure of attacking output — a goal and an assist count the same.",
     value: (s) => s.goalContributions,
@@ -75,7 +69,7 @@ export const METRICS: readonly Metric[] = [
   {
     key: "winRate",
     label: "Win %",
-    weight: 13,
+    weight: 16,
     kind: "rate",
     why: "Winning matters, but as a rate so it doesn't just reward turning up often.",
     value: (s) => s.winRate,
@@ -85,7 +79,7 @@ export const METRICS: readonly Metric[] = [
   {
     key: "points",
     label: "Points",
-    weight: 12,
+    weight: 15,
     kind: "total",
     why: "3 for a win, 1 for a draw — rewards a long season of good results.",
     value: (s) => s.points,
@@ -93,7 +87,7 @@ export const METRICS: readonly Metric[] = [
   {
     key: "goalsPerMatch",
     label: "Goals per match",
-    weight: 11,
+    weight: 14,
     kind: "rate",
     why: "Scoring form, independent of how many games you played.",
     value: (s) => s.goalsPerMatch,
@@ -103,7 +97,7 @@ export const METRICS: readonly Metric[] = [
   {
     key: "goals",
     label: "Goals",
-    weight: 10,
+    weight: 12,
     kind: "total",
     why: "Raw goals still count — the season's top scorer should feel it here.",
     value: (s) => s.goals,
@@ -111,7 +105,7 @@ export const METRICS: readonly Metric[] = [
   {
     key: "assistsPerMatch",
     label: "Assists per match",
-    weight: 9,
+    weight: 11,
     kind: "rate",
     why: "Creating chances, weighted a little under scoring them.",
     value: (s) => s.assistsPerMatch,
@@ -121,7 +115,7 @@ export const METRICS: readonly Metric[] = [
   {
     key: "wins",
     label: "Wins",
-    weight: 6,
+    weight: 8,
     kind: "total",
     why: "Kept low on purpose — it overlaps points, and wins depend on teammates.",
     value: (s) => s.wins,
@@ -129,7 +123,7 @@ export const METRICS: readonly Metric[] = [
   {
     key: "gamesPlayed",
     label: "Matchdays",
-    weight: 5,
+    weight: 6,
     kind: "total",
     why: "Showing up week after week is worth something, but it can't carry a rating.",
     value: (s) => s.gamesPlayed,

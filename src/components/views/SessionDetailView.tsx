@@ -88,6 +88,8 @@ export type SessionDetail = {
   date: Date;
   status?: string;
   season: { name: string };
+  /** Player of the day — one per session, or null if nobody was picked. */
+  mvpPlayer: { id: number; name: string } | null;
   teams: readonly {
     id: number;
     name: string;
@@ -105,7 +107,6 @@ export type SessionDetail = {
     awayTeamId: number;
     homeTeam: { name: string; color: string };
     awayTeam: { name: string; color: string };
-    mvpPlayer: { id: number; name: string } | null;
     goalEvents: readonly {
       id: number;
       teamId: number;
@@ -156,6 +157,37 @@ export function SessionDetailView({
             {session.season.name}
           </Text>
         </div>
+
+        {session.mvpPlayer && (
+          <Box
+            className="fs-fade-up"
+            style={{
+              animationDelay: "0.03s",
+              border: "1px solid var(--volt)",
+              borderRadius: 16,
+              background: "rgba(200,255,47,.08)",
+              padding: "16px 18px",
+            }}
+          >
+            <Text
+              fz={10}
+              fw={800}
+              c="var(--text-muted)"
+              style={{ letterSpacing: "0.14em", textTransform: "uppercase" }}
+            >
+              Player of the day
+            </Text>
+            <NavLink
+              href={`${basePath}/players/${session.mvpPlayer.id}`}
+              c="inherit"
+              underline="hover"
+            >
+              <Text fw={900} fz={22} mt={2} style={{ color: "var(--volt)" }}>
+                🏆 {session.mvpPlayer.name}
+              </Text>
+            </NavLink>
+          </Box>
+        )}
 
         <Stack gap={12} className="fs-fade-up" style={{ animationDelay: "0.05s" }}>
           <Eyebrow>Teams</Eyebrow>
@@ -256,22 +288,6 @@ export function SessionDetailView({
                   <Text fz={11} fw={700} mt={10} style={{ color: "var(--team-yellow)" }}>
                     ● LIVE
                   </Text>
-                )}
-                {m.mvpPlayer && (
-                  <Group gap={6} mt={10} wrap="nowrap">
-                    <Text fz={11} fw={800} style={{ color: "var(--volt)" }}>
-                      🏆 MVP
-                    </Text>
-                    <NavLink
-                      href={`${basePath}/players/${m.mvpPlayer.id}`}
-                      fz={13}
-                      fw={600}
-                      c="inherit"
-                      underline="hover"
-                    >
-                      {m.mvpPlayer.name}
-                    </NavLink>
-                  </Group>
                 )}
                 {m.goalEvents.length > 0 && (
                   <Group

@@ -16,9 +16,10 @@ function top(
 }
 
 /**
- * Season MVP standings: highest overall rating, which already folds in match
- * MVPs (20% of it) alongside goals, assists, points, win rate and appearances.
- * Only players who have finished a match are ranked.
+ * Season MVP standings: highest overall rating, built from goals, assists,
+ * points, win rate and appearances. Session MVP awards are pointedly not part
+ * of it (see src/lib/rating.ts), so the season's biggest prize can't be won on
+ * popularity. Only players who have finished a match are ranked.
  */
 function ratingRanking(stats: PlayerSeasonStats[]): PlayerSeasonStats[] {
   return [...stats]
@@ -62,7 +63,7 @@ export function AwardsView({
       ? {
           player: { id: ratedWinner.playerId, name: ratedWinner.name },
           source: "rating" as const,
-          subtitle: `Rating ${formatRating(ratedWinner.rating)} / 100 · ${ratedWinner.mvps} match MVP${ratedWinner.mvps === 1 ? "" : "s"}`,
+          subtitle: `Rating ${formatRating(ratedWinner.rating)} / 100 · ${ratedWinner.goalContributions} goal contribution${ratedWinner.goalContributions === 1 ? "" : "s"}`,
           runnerUp: ranking[1]
             ? { name: ranking[1].name, value: formatRating(ranking[1].rating) }
             : null,
@@ -131,7 +132,7 @@ export function AwardsView({
             basePath={basePath}
           />
           <Podium
-            title="Match MVPs"
+            title="Player of the Day"
             glyph="🏆"
             unit="MVPs"
             items={top(stats, "mvps")}

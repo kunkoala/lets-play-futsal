@@ -12,14 +12,16 @@ every week), previewing keeper coverage before it's locked in. From there the
 matchmaker always proposes who plays next — fewest matches played first,
 tie-broken by longest wait, dodging immediate rematches unless fairness says
 otherwise — while a live match clock (duration, pause, break) and courtside
-scoreboard track every goal and assist as it happens, minute and all, MVP
-included.
+scoreboard track every goal and assist as it happens, minute and all. At the
+end of the night, one player of the day gets picked for the whole session.
 
 All of it rolls up automatically into a public leaderboard: goals, assists,
-G+A, points, form, clean sheets, match MVPs, and a single 0-100 player rating
+G+A, points, form, clean sheets, session MVPs, and a single 0-100 player rating
 that blends volume and rate stats with a Bayesian prior so one lucky game can't
-outrank a season of showing up — capped off with end-of-semester awards and a
-23-strong Xbox-style achievement badge grid on every player's profile.
+outrank a season of showing up. The rating is built purely from what happens on
+the pitch — the MVP award is for fun and deliberately doesn't count toward it.
+Capped off with end-of-semester awards and a 23-strong Xbox-style achievement
+badge grid on every player's profile.
 
 Want to see it without real data? **`/demo`** runs the whole app on a generated
 season — nothing there touches the database.

@@ -26,9 +26,9 @@ datasource db {
 //   table. All of that is derived from `GoalEvent` rows at query time. The
 //   extended stats (G+A, per-match rates, points, form, clean sheets, +/-,
 //   braces/hat-tricks, MVP counts) are derivations too — see src/lib/stats.ts.
-//   `Match.mvpPlayerId` and `TeamPlayer.isKeeper` are the exceptions that must
-//   be stored: they record human decisions (who was picked, who went in goal),
-//   which no amount of goal-event arithmetic can recover.
+//   `Session.mvpPlayerId` and `TeamPlayer.isKeeper` are the exceptions that
+//   must be stored: they record human decisions (who was picked, who went in
+//   goal), which no amount of goal-event arithmetic can recover.
 // - Referential actions: rows that only make sense as children of a
 //   session/team/match (Attendance, Team, TeamPlayer, Match, GoalEvent) use
 //   onDelete: Cascade on that parent link — including Match.homeTeam/
@@ -108,7 +108,7 @@ model Player {
   goalsScored     GoalEvent[]  @relation("GoalEventScorer")
   assistsGiven    GoalEvent[]  @relation("GoalEventAssist")
   awards          Award[]
-  matchMvps       Match[]      @relation("MatchMvp")
+  sessionMvps     Session[]    @relation("SessionMvp")
 
   @@map("player")
 }
@@ -119,13 +119,25 @@ model Session {
   date     DateTime      @db.Date
   notes    String?
   status   SessionStatus @default(draft)
+  // Player of the day, picked by the admin from everyone who turned up, once
+  // per matchday rather than once per match. Optional — a session may finish
+  // without a pick, and the pick stays editable afterwards.
+  //
+  // Deliberately has no effect on anything derived: `rating.ts` does not read
+  // it, so this is a fun award that cannot be farmed into a better rating.
+  // Left at the Prisma default for an optional FK (SET NULL), like
+  // GoalEvent.scorer/assist. Distinct from `Award`/`AwardType.mvp`, which is
+  // the *season* MVP.
+  mvpPlayerId Int? @map("mvp_player_id")
 
   season      Season       @relation(fields: [seasonId], references: [id])
+  mvpPlayer   Player?      @relation("SessionMvp", fields: [mvpPlayerId], references: [id])
   attendances Attendance[]
   teams       Team[]
   matches     Match[]
 
   @@index([seasonId])
+  @@index([mvpPlayerId])
   @@map("session")
 }
 
@@ -208,13 +220,8 @@ model Match {
   // Stamped when the halfway water break is taken, so resuming play doesn't
   // immediately trip the break again.
   breakTakenAt   DateTime? @map("break_taken_at") @db.Timestamptz
-  // Man of the match, chosen from either roster when the admin ends the
-  // match. Optional — a match may finish without anyone being picked. Left at
-  // the Prisma default for an optional FK (SET NULL), like scorer/assist.
-  mvpPlayerId Int?       @map("mvp_player_id")
 
   session    Session     @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  mvpPlayer  Player?     @relation("MatchMvp", fields: [mvpPlayerId], references: [id])
   // homeTeam/awayTeam cascade too: Team only ever exists as a child of the
   // same Session (never deleted independently), so when a Session is torn
   // down, Postgres's cascade from Session -> Team and Session -> Match fire
@@ -228,7 +235,6 @@ model Match {
   @@index([sessionId])
   @@index([homeTeamId])
   @@index([awayTeamId])
-  @@index([mvpPlayerId])
   @@map("match")
 }
 

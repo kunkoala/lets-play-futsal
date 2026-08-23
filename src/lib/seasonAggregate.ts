@@ -31,6 +31,8 @@ export type AggregatePlayer = {
 
 export type AggregateSession = {
   attendances: readonly { playerId: number }[];
+  /** Player of the day, or null if nobody was picked. */
+  mvpPlayerId: number | null;
   teams: readonly {
     id: number;
     players: readonly { playerId: number; isKeeper: boolean }[];
@@ -40,7 +42,6 @@ export type AggregateSession = {
     homeTeamId: number;
     awayTeamId: number;
     status: string;
-    mvpPlayerId: number | null;
     goalEvents: readonly {
       teamId: number;
       scorerId: number | null;
@@ -68,6 +69,12 @@ export function aggregateSeason(
     for (const a of session.attendances) {
       const t = totals.get(a.playerId);
       if (t) t.gamesPlayed += 1;
+    }
+
+    // Once per matchday, not per match — so it can't ride along on applyMatch.
+    if (session.mvpPlayerId !== null) {
+      const t = totals.get(session.mvpPlayerId);
+      if (t) t.mvps += 1;
     }
 
     const rosters = new Map<number, readonly { playerId: number; isKeeper: boolean }[]>();
@@ -102,7 +109,6 @@ export function aggregateSeason(
             playerGoals: goals.get(member.playerId) ?? 0,
             assists: assists.get(member.playerId) ?? 0,
             keeper: member.isKeeper,
-            mvp: match.mvpPlayerId === member.playerId,
           });
         }
       }

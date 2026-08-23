@@ -16,8 +16,8 @@ export type PlayerSessionHistoryRow = {
   keeper: boolean;
   goals: number;
   assists: number;
-  /** Man-of-the-match awards won across that day's matches. */
-  mvps: number;
+  /** Whether this player was the session MVP that day. */
+  mvp: boolean;
 };
 
 export type PlayerProfile = {
@@ -75,6 +75,14 @@ export async function getPlayerProfile(playerId: number): Promise<PlayerProfile 
     allTime.gamesPlayed += 1;
     if (inActiveSeason) thisSeason.gamesPlayed += 1;
 
+    // Session MVP is a matchday fact, so it's counted here rather than inside
+    // the per-match loop below.
+    const sessionMvp = session.mvpPlayerId === playerId;
+    if (sessionMvp) {
+      allTime.mvps += 1;
+      if (inActiveSeason) thisSeason.mvps += 1;
+    }
+
     // The team this player was shuffled onto — absent if the session was
     // completed without them being rostered.
     const team = session.teams.find((t) => t.players.some((tp) => tp.playerId === playerId)) ?? null;
@@ -89,7 +97,7 @@ export async function getPlayerProfile(playerId: number): Promise<PlayerProfile 
       keeper,
       goals: 0,
       assists: 0,
-      mvps: 0,
+      mvp: sessionMvp,
     };
 
     for (const match of session.matches) {
@@ -109,20 +117,17 @@ export async function getPlayerProfile(playerId: number): Promise<PlayerProfile 
         if (e.assistId === playerId) assists += 1;
       }
 
-      const mvp = match.mvpPlayerId === playerId;
       const contribution = {
         goalsFor: onHome ? home : away,
         goalsAgainst: onHome ? away : home,
         playerGoals,
         assists,
         keeper,
-        mvp,
       };
       for (const totals of accumulators) applyMatch(totals, contribution);
 
       row.goals += playerGoals;
       row.assists += assists;
-      if (mvp) row.mvps += 1;
     }
 
     history.push(row);

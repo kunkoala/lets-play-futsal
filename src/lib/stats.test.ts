@@ -19,7 +19,6 @@ function contribution(overrides: Partial<MatchContribution> = {}): MatchContribu
     playerGoals: 0,
     assists: 0,
     keeper: false,
-    mvp: false,
     ...overrides,
   };
 }
@@ -97,9 +96,9 @@ describe("applyMatch", () => {
     expect(t.form).toEqual(["L", "D", "W", "L", "W"]);
   });
 
-  it("counts MVP awards", () => {
-    const t = totalsOf({ goalsFor: 1, goalsAgainst: 0, mvp: true }, { goalsFor: 1, goalsAgainst: 2 });
-    expect(t.mvps).toBe(1);
+  it("leaves MVPs alone — they're a per-session award the caller counts, not a per-match one", () => {
+    const t = totalsOf({ goalsFor: 1, goalsAgainst: 0 }, { goalsFor: 1, goalsAgainst: 2 });
+    expect(t.mvps).toBe(0);
   });
 });
 
@@ -136,7 +135,6 @@ describe("deriveRates", () => {
       assistsPerMatch: 0,
       contributionsPerMatch: 0,
       winRate: 0,
-      mvpRate: 0,
       concededPerKeeperMatch: 0,
     });
   });

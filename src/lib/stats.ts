@@ -37,7 +37,12 @@ export type PlayerTotals = {
   braces: number;
   /** Matches with 3 or more goals. */
   hatTricks: number;
-  /** Man-of-the-match awards. */
+  /**
+   * Session MVPs won — one per matchday at most, awarded by the admin after
+   * the last match. Accumulated by the caller's per-session loop rather than
+   * by `applyMatch`, because it isn't a per-match fact. Purely decorative: it
+   * is not an input to the rating (see rating.ts).
+   */
   mvps: number;
   /** Matches spent in goal (only counts when the shuffle put them there). */
   keeperMatches: number;
@@ -60,8 +65,6 @@ export type PlayerRates = {
   contributionsPerMatch: number;
   /** 0..1. */
   winRate: number;
-  /** 0..1 — share of matches where this player was picked MVP. */
-  mvpRate: number;
   /** Goals let in per match spent in goal, or 0 if they've never kept. */
   concededPerKeeperMatch: number;
 };
@@ -99,8 +102,6 @@ export type MatchContribution = {
   assists: number;
   /** Whether the shuffle put this player in goal for the team they played on. */
   keeper: boolean;
-  /** Whether this player was picked man of the match. */
-  mvp: boolean;
 };
 
 export function resultOf(goalsFor: number, goalsAgainst: number): MatchResult {
@@ -125,7 +126,6 @@ export function applyMatch(totals: PlayerTotals, c: MatchContribution): void {
   if (c.goalsAgainst === 0) totals.cleanSheets += 1;
   if (c.playerGoals === 2) totals.braces += 1;
   if (c.playerGoals >= 3) totals.hatTricks += 1;
-  if (c.mvp) totals.mvps += 1;
 
   if (c.keeper) {
     totals.keeperMatches += 1;
@@ -158,7 +158,6 @@ export function deriveRates(t: PlayerTotals): PlayerRates {
     assistsPerMatch: perMatch(t.assists, t.matchesPlayed),
     contributionsPerMatch: perMatch(goalContributions, t.matchesPlayed),
     winRate: perMatch(t.wins, t.matchesPlayed),
-    mvpRate: perMatch(t.mvps, t.matchesPlayed),
     concededPerKeeperMatch: perMatch(t.keeperConceded, t.keeperMatches),
   };
 }

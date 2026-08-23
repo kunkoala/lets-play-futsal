@@ -89,7 +89,7 @@ export function RatingBreakdown({
                   height: "100%",
                   width: `${Math.round(c.normalized * 100)}%`,
                   borderRadius: 3,
-                  background: c.key === "mvps" ? "var(--volt)" : "var(--team-blue)",
+                  background: "var(--team-blue)",
                 }}
               />
             </Box>
@@ -98,8 +98,8 @@ export function RatingBreakdown({
       </Stack>
 
       <Text fz={11} c="dimmed" mt={12}>
-        Bars show how close you are to the season&apos;s best in each stat. Match MVPs are worth
-        20% of the rating; everything else splits the other 80%.
+        Bars show how close you are to the season&apos;s best in each stat. Everything here is
+        earned on the pitch — MVP awards don&apos;t count toward the rating.
       </Text>
     </Box>
   );
