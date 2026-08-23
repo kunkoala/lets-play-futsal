@@ -22,7 +22,7 @@ import {
 import { NavLink } from "@/components/NavLink";
 import { PlayerNameList } from "@/components/PlayerNameList";
 import { ArrowLeft } from "@/components/icons";
-import { SessionTabs } from "./SessionTabs";
+import { PanelTabs } from "@/components/PanelTabs";
 
 function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
@@ -507,8 +507,20 @@ export function SessionDetailView({
           </Box>
         )}
 
-        <SessionTabs
-          stats={
+        <PanelTabs
+          defaultValue="matches"
+          tabs={[
+            {
+              value: "matches",
+              label: "Matches",
+              content: (
+                <MatchesPanel session={session} currentTeams={currentTeams} basePath={basePath} />
+              ),
+            },
+            {
+              value: "stats",
+              label: "Statistics",
+              content: (
             <Stack gap="xl">
               {recap.matchesPlayed === 0 && (
                 <Text fz={14} c="dimmed">
@@ -570,11 +582,10 @@ export function SessionDetailView({
                   <SessionStatsTable players={recap.players} basePath={basePath} />
                 </Stack>
               )}
-            </Stack>
-          }
-          matches={
-            <MatchesPanel session={session} currentTeams={currentTeams} basePath={basePath} />
-          }
+                </Stack>
+              ),
+            },
+          ]}
         />
       </Stack>
     </Container>
